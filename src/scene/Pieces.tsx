@@ -29,6 +29,11 @@ import {
 } from './fighters/anims'
 import { now, TIME_SCALE } from './fighters/clock'
 import { FxLayer, type FxEvent, type FxType } from './fighters/Fx'
+import {
+  buildLethalDuel,
+  sampleBeat,
+  type BoutBeat,
+} from './fighters/bouts'
 import { HeroFighter, type FighterApi } from './fighters/HeroFighter'
 import { outlineUniforms } from './fighters/materials'
 import { isPointerDrag } from './isPointerDrag'
@@ -48,6 +53,10 @@ interface Plan {
   waitUntil: number
   finish: number
   finishStyle: MoveStyle
+  /** Shared exchange before the signature. Empty on plain moves. */
+  beats?: BoutBeat[]
+  /** Seconds from `start` when `beats` hands off to the signature (or the move ends). */
+  beatsEnd?: number
   /** Facing blend rate while traveling; high values read as instant vector redirects. */
   turnRate?: number
   /**
@@ -61,9 +70,15 @@ interface Ghost {
   piece: TrackedPiece
   /** Rest position once any carried plan finishes (usually the destination tile). */
   pos: THREE.Vector2
+  /** Where the victim is standing when the duel clock starts. */
+  origin: THREE.Vector2
   attacker: THREE.Vector2
   hitAt: number
   vanishAt: number
+  /** Exchange that plays after `carry`, before the killing signature. */
+  beats: BoutBeat[]
+  duelStart: number
+  duelUntil: number
   /** Non-lethal blows of the combo (absolute times) that stagger before the kill. */
   hurts: { at: number; zone: HitZone; hold?: HoldKind }[]
   dmg: DamageType
@@ -153,6 +168,16 @@ function heroSeed(id: string): number {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 9973
   return (h % 1000) / 1000
+}
+
+function hashBout(...parts: string[]): number {
+  let h = 2166136261
+  const s = parts.join('|')
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
 }
 
 const fxColor = (heroId: string | null, color: 'w' | 'b', awakened = false) => {
@@ -277,6 +302,18 @@ function TeamGlow({ color, focused }: { color: 'w' | 'b'; focused: boolean }) {
 
 // ───────────────────────── One fighter on the board ─────────────────────────
 
+function adoptBeat(
+  beats: BoutBeat[],
+  pt: number,
+  st: { pos: THREE.Vector2 },
+  setKind: (kind: AnimInput['kind']) => number,
+): { anim: AnimInput; yaw: number; y: number; speed: number; yawRate: number } {
+  const sampled = sampleBeat(beats, pt, st.pos)
+  if (sampled.anim.kind === 'ready') sampled.anim = { kind: 'ready', t: setKind('ready') }
+  else setKind(sampled.anim.kind)
+  return sampled
+}
+
 function playPlan(
   plan: Plan,
   pt: number,
@@ -284,6 +321,9 @@ function playPlan(
   setKind: (kind: AnimInput['kind']) => number,
   faceYaw: number,
 ): { anim: AnimInput; yaw: number; y: number; speed: number; yawRate: number } {
+  if (plan.beats && plan.beats.length && pt < (plan.beatsEnd ?? 0)) {
+    return adoptBeat(plan.beats, pt, st, setKind)
+  }
   let yaw = faceYaw
   let y = 0
   let speed = 0
@@ -387,7 +427,7 @@ function BoardFighter({
   const state = useRef({
     yaw: homeYaw(piece.color),
     pos: ghost
-      ? (ghost.carry?.from.clone() ?? ghost.pos.clone())
+      ? (ghost.carry?.from.clone() ?? ghost.origin.clone())
       : coords(piece.square),
     since: now(),
     lastKind: 'idle' as AnimInput['kind'],
@@ -427,6 +467,13 @@ function BoardFighter({
         y = played.y
         speed = played.speed
         yawRate = played.yawRate
+      } else if (ghost.beats.length && t < ghost.duelUntil) {
+        const played = adoptBeat(ghost.beats, t - ghost.duelStart, st, setKind)
+        anim = played.anim
+        yaw = played.yaw
+        y = played.y
+        speed = played.speed
+        yawRate = played.yawRate
       } else {
         st.pos.copy(ghost.pos)
         const toA = new THREE.Vector2().subVectors(ghost.attacker, ghost.pos)
@@ -447,6 +494,8 @@ function BoardFighter({
       const shrink = THREE.MathUtils.smoothstep(t, ghost.vanishAt, ghost.vanishAt + 0.22)
       scale = UNIT_SCALE * Math.max(0.0001, 1 - shrink)
     } else if (defeatedAt !== null && t >= defeatedAt) {
+      const home = coords(piece.square)
+      if (st.pos.distanceToSquared(home) > 1e-4) st.pos.lerp(home, 1 - Math.exp(-10 * dt))
       anim = { kind: 'death', t: t - defeatedAt, dmg: 'none', zone: 'mid' }
       yaw = st.yaw
     } else {
@@ -466,11 +515,11 @@ function BoardFighter({
       } else {
         if (plan) director.plans.delete(piece.id)
         const home = coords(piece.square)
-        // Snap if we drifted off-tile (stale plans / identity glitches); else ease in.
-        if (st.pos.distanceToSquared(home) > CELL_SIZE * CELL_SIZE * 0.25) {
+        // Snap only for real teleports (plaza-scale). A short leftover eases home.
+        if (st.pos.distanceToSquared(home) > CELL_SIZE * CELL_SIZE * 2.56) {
           st.pos.copy(home)
         } else {
-          st.pos.lerp(home, 1 - Math.exp(-12 * dt))
+          st.pos.lerp(home, 1 - Math.exp(-10 * dt))
         }
         anim = selected
           ? { kind: 'ready', t: setKind('ready') }
@@ -581,6 +630,23 @@ export function Pieces({
     outlineUniforms.uMinPx.value = 1.05 * dpr
     outlineUniforms.uMaxPx.value = 2.6 * dpr
     if (boardFreeAtRef) boardFreeAtRef.current = director.freeAt
+    if (import.meta.env.DEV) {
+      const time = now()
+      let drifting = 0
+      for (const p of pieces) {
+        const home = coords(p.square)
+        const pos = director.pos.get(p.id)
+        const plan = director.plans.get(p.id)
+        const busy = !!plan && time < planEnd(plan)
+        if (!busy && pos && pos.distanceTo(home) > CELL_SIZE * 0.12) drifting++
+      }
+      ;(window as unknown as { __idle?: unknown }).__idle = {
+        drifting,
+        duels: [...director.plans.values()].filter(
+          (plan) => (plan.beats?.length ?? 0) > 0 && time < planEnd(plan),
+        ).length,
+      }
+    }
   })
 
   useLayoutEffect(() => {
@@ -616,10 +682,14 @@ export function Pieces({
 
     for (const mover of movers) {
       const old = byId.get(mover.id)!
-      // Always path square→square. Mid-path director.pos caused “walk in from
-      // the plaza” whenever a queued plan overwrote an in-flight one.
+      // A queued plan still departs from where that plan was going to land.
       const existing = director.plans.get(mover.id)
-      const from = existing ? existing.to.clone() : coords(old.square)
+      const logical = existing ? existing.to.clone() : coords(old.square)
+      let from = logical.clone()
+      if (!existing) {
+        const vis = director.pos.get(mover.id)
+        if (vis && vis.distanceTo(logical) < CELL_SIZE * 1.25) from = vis.clone()
+      }
       if (existing) t0 = Math.max(t0, planEnd(existing))
       const to = coords(mover.square)
       const style = moveStyle(old.type, mover.heroId, mover.color, mover.awakened)
@@ -665,24 +735,42 @@ export function Pieces({
       t0 = Math.max(t0, victimDoneAt)
 
       const atk = attackFor(moverDesign)
-      // Aim at the tile they arrive on, not a mid-path position.
-      const vPos = victimPlan
-        ? victimPlan.to.clone()
-        : (director.pos.get(victim.id)?.clone() ?? coords(victim.square))
-      const dir = new THREE.Vector2().subVectors(vPos, from)
-      const len = dir.length()
-      if (len > 1e-6) dir.multiplyScalar(1 / len)
-      else dir.set(0, 1)
-      const stop = atk.ranged
-        ? from.clone()
-        : vPos.clone().addScaledVector(dir, -Math.min(len || CELL_SIZE, CELL_SIZE * 0.41))
-      const approach = atk.ranged ? 0 : travelTime(style, from.distanceTo(stop), moverDesign)
-      const attackAt = approach
+      const vLogical = victimPlan ? victimPlan.to.clone() : coords(victim.square)
+      let vStart = vLogical.clone()
+      if (!victimPlan) {
+        const vis = director.pos.get(victim.id)
+        if (vis && vis.distanceTo(vLogical) < CELL_SIZE * 1.25) vStart = vis.clone()
+      }
       const isMinato = moverDesign.extras.includes('minatoSuit')
-      if (isMinato && approach > 0) {
-        const kunai = minatoKunaiTravelFx(from, stop, t0, approach, fxColor(mover.heroId, mover.color, mover.awakened))
+      const duel = buildLethalDuel({
+        start: from,
+        fireHome: logical,
+        vStart,
+        vHome: vLogical,
+        ranged: atk.ranged,
+        style,
+        seed: hashBout(mover.id, victim.id, old.square, victim.square),
+        snapAt: isMinato ? MINATO_SNAP : undefined,
+        signatureDur: atk.clip.dur,
+        travel: (dist) => travelTime(style, dist, moverDesign),
+      })
+      const opening = duel.attacker[0]
+      if (isMinato && opening?.kind === 'travel' && opening.style === 'teleport' && opening.dur > 0.08) {
+        const kunai = minatoKunaiTravelFx(
+          opening.from,
+          opening.to,
+          t0 + opening.t,
+          opening.dur,
+          fxColor(mover.heroId, mover.color, mover.awakened),
+        )
         if (kunai) newFx.push(kunai)
       }
+      const attackAt = duel.attackAt
+      const stop = duel.stop
+      const vPos = duel.killPos
+      const dir = new THREE.Vector2().subVectors(vPos, stop)
+      if (dir.lengthSq() > 1e-6) dir.normalize()
+      else dir.set(0, 1)
       const hitAt = t0 + attackAt + atk.hit
       const vDesign = getHeroDesign(victim.heroId, victim.color, {
         awakened: victim.awakened,
@@ -698,7 +786,7 @@ export function Pieces({
         stop,
         to,
         style,
-        approach,
+        approach: 0,
         attackAt,
         attackDur: atk.clip.dur,
         victim: vPos,
@@ -707,6 +795,8 @@ export function Pieces({
         snapAt: isMinato ? MINATO_SNAP : undefined,
         finishStyle,
         turnRate,
+        beats: duel.attacker,
+        beatsEnd: attackAt,
       }
       director.plans.set(mover.id, plan)
 
@@ -714,6 +804,7 @@ export function Pieces({
       newGhosts.push({
         piece: victim,
         pos: vPos,
+        origin: vStart,
         attacker: stop,
         hitAt,
         vanishAt,
@@ -722,10 +813,27 @@ export function Pieces({
         zone: lethal?.zone ?? 'mid',
         sever: atk.sever,
         carry: victimPlan,
+        beats: duel.victim,
+        duelStart: t0,
+        duelUntil: t0 + attackAt,
       })
 
-      // Signature effect.
+      // Signature effect. Duel taps are the non-lethal exchanges before it.
       const { c1, c2 } = fxColor(mover.heroId, mover.color, mover.awakened)
+      for (const tap of duel.taps) {
+        newFx.push({
+          id: fxId++,
+          kind: 'hit',
+          start: t0 + tap.t,
+          travel: 0,
+          dur: 0.32,
+          from: new THREE.Vector3(tap.from.x, ZONE_Y[tap.zone] * UNIT_SCALE * 0.9, tap.from.y),
+          to: new THREE.Vector3(tap.at.x, ZONE_Y[tap.zone] * UNIT_SCALE, tap.at.y),
+          color: '#fff1c4',
+          color2: c1,
+          size: UNIT_SCALE * 0.32,
+        })
+      }
       const up = UNIT_SCALE * 0.78
       const fwd = new THREE.Vector3(dir.x, 0, dir.y)
       const src = new THREE.Vector3(stop.x, up, stop.y).addScaledVector(fwd, UNIT_SCALE * 0.35)

@@ -53,20 +53,20 @@ export interface DifficultyConfig {
 }
 
 /** World size of one battle sector (chess square). */
-export const CELL_SIZE = 4.6
+export const CELL_SIZE = 7.8
 
 /**
- * Fighters are authored at ~1.1 local units tall; this brings them to ~0.75 of a
- * cell so people read correctly against the plaza. City dressing should scale
- * off PERSON_HEIGHT / FLOOR_HEIGHT so shops and towers match the cast.
+ * Fighters are authored at ~1.1 local units tall; ~0.365 of a cell keeps people
+ * the same absolute size while pads get roomier. City dressing should scale off
+ * PERSON_HEIGHT / FLOOR_HEIGHT so ruins and foliage match the cast.
  */
-export const UNIT_SCALE = CELL_SIZE * 0.62
+export const UNIT_SCALE = CELL_SIZE * 0.365
 /** Approx athletic fighter standing height in world units. */
 export const PERSON_HEIGHT = UNIT_SCALE * 1.15
 /** Typical building floor-to-floor height (~3m for a ~1.8m person). */
 export const FLOOR_HEIGHT = PERSON_HEIGHT * 1.7
-/** How many cells of plaza tile extend past each board edge. */
-export const WORLD_TILE_MARGIN = 10
+/** How many cells of overgrown apron extend past each board edge. */
+export const WORLD_TILE_MARGIN = 6
 
 export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   easy: {

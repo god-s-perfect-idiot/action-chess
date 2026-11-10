@@ -505,15 +505,18 @@ type MoveName =
   | 'knee'
   | 'lowKick'
 
+/** Short strikes used when two fighters actually trade blows. The signature stays the finisher. */
+export type SkirmishMove = Exclude<MoveName, 'spinBackKick'>
+
 const MOVES: Record<MoveName, Move> = {
   jab: {
     dur: 0.28,
     contact: 0.1,
     zone: 'high',
     keys: [
-      [0.04, { hipY: -0.06, hips: [0, -0.32, 0], chest: [0, 0.12, 0], lArm: [-0.95, 0, 0.28], lElbow: [-1.8, 0, 0] }],
-      [0.1, { root: [0, 0, 0.09], hipY: -0.07, hips: [0.02, -0.45, 0], spine: [0.12, 0.02, 0], chest: [0, -0.12, 0], head: [0.05, 0.12, 0], lFoot: [0.03, 0, 0.18], rFoot: [0.05, 0, -0.06], lArm: [-1.55, 0.05, 0.1], lElbow: [-0.06, 0, 0], lHand: [0, 0, 0.2] }, 'snap'],
-      [0.16, { root: [0, 0, 0.07], hipY: -0.07, hips: [0.02, -0.42, 0], spine: [0.1, 0.04, 0], chest: [0, -0.08, 0], lFoot: [0.03, 0, 0.17], lArm: [-1.3, 0, 0.2], lElbow: [-0.9, 0, 0] }],
+      [0.04, { hipY: -0.07, hips: [0.02, -0.4, 0], spine: [0.06, 0.1, 0], chest: [0, 0.18, 0], head: [0.02, 0.06, 0], lFoot: [0.03, 0, 0.12], lArm: [-1.05, 0.06, 0.18], lElbow: [-1.45, 0, 0], rArm: [-0.55, 0, 0.36], rElbow: [-2.2, 0, 0], rHand: [0.4, 0, 0] }],
+      [0.1, { root: [0, 0, 0.12], hipY: -0.05, hips: [0.06, -0.68, 0], spine: [0.08, -0.04, 0], chest: [0, -0.32, 0], head: [0.02, 0.2, 0], lFoot: [0.02, 0, 0.22], rFoot: [0.06, 0, -0.02], lToe: 0.2, lArm: [-1.66, 0.02, 0.02], lElbow: [-0.02, 0, 0], lHand: [0, 0, 0.1], rArm: [-0.75, 0, 0.32], rElbow: [-2.25, 0, 0], rHand: [0.45, 0, 0] }, 'snap'],
+      [0.16, { root: [0, 0, 0.05], hipY: -0.07, hips: [0.02, -0.36, 0], chest: [0, -0.04, 0], lFoot: [0.03, 0, 0.14], lArm: [-0.9, 0, 0.28], lElbow: [-1.85, 0, 0], rArm: [-0.5, 0, 0.4], rElbow: [-2.15, 0, 0] }],
       [0.28, {}],
     ],
   },
@@ -522,9 +525,9 @@ const MOVES: Record<MoveName, Move> = {
     contact: 0.13,
     zone: 'high',
     keys: [
-      [0.05, { hipY: -0.07, hips: [0, -0.42, 0], chest: [0, 0, 0], rArm: [-0.2, 0, 0.45], rElbow: [-2.2, 0, 0], rFoot: [0.05, 0, -0.1] }],
-      [0.13, { root: [0, 0, 0.11], hipY: -0.09, hips: [0.04, 0.3, 0], spine: [0.14, 0.1, 0], chest: [0, 0.06, 0], head: [0.06, -0.2, 0], lFoot: [0.03, 0, 0.17], rFoot: [0.05, 0.015, -0.05], rToe: 0.55, rArm: [-1.57, 0, 0.04], rElbow: [-0.04, 0, 0], rHand: [0, 0, 0.2], lArm: [-0.95, 0, 0.3], lElbow: [-2.0, 0, 0] }, 'snap'],
-      [0.2, { root: [0, 0, 0.08], hipY: -0.08, hips: [0.02, 0.2, 0], spine: [0.12, 0.08, 0], lFoot: [0.03, 0, 0.15], rArm: [-1.3, 0, 0.2], rElbow: [-0.9, 0, 0], rToe: 0.3 }],
+      [0.05, { hipY: -0.08, hips: [0.04, -0.55, 0], spine: [0.1, -0.12, 0], chest: [0, -0.16, 0], head: [0.04, -0.1, 0], rFoot: [0.06, 0, -0.12], rArm: [-0.15, 0.15, 0.55], rElbow: [-2.35, 0, 0], lArm: [-0.85, 0, 0.3], lElbow: [-2.05, 0, 0], lHand: [0.35, 0, 0] }],
+      [0.13, { root: [0, 0, 0.14], hipY: -0.06, hips: [0.08, 0.55, 0], spine: [0.12, 0.22, 0], chest: [0, 0.16, 0], head: [0.04, -0.28, 0], lFoot: [0.02, 0, 0.2], rFoot: [0.05, 0.02, -0.02], rToe: 0.7, rArm: [-1.64, 0.02, 0.02], rElbow: [-0.02, 0, 0], rHand: [0, 0, 0.12], lArm: [-0.85, 0, 0.3], lElbow: [-2.15, 0, 0], lHand: [0.4, 0, 0] }, 'snap'],
+      [0.2, { root: [0, 0, 0.07], hipY: -0.07, hips: [0.02, 0.22, 0], spine: [0.08, 0.08, 0], lFoot: [0.03, 0, 0.14], rToe: 0.25, rArm: [-1.05, 0, 0.22], rElbow: [-1.15, 0, 0], lArm: [-0.7, 0, 0.32], lElbow: [-2.0, 0, 0] }],
       [0.32, {}],
     ],
   },
@@ -533,9 +536,9 @@ const MOVES: Record<MoveName, Move> = {
     contact: 0.15,
     zone: 'high',
     keys: [
-      [0.07, { hipY: -0.09, hips: [0, -0.55, 0], spine: [0.1, -0.1, 0], chest: [0, -0.15, 0], lArm: [-0.5, -0.3, 1.1], lElbow: [-1.6, 0, 0], lFoot: [0.03, 0, 0.13] }],
-      [0.15, { root: [0, 0, 0.12], hipY: -0.09, hips: [0.02, 0.15, 0], spine: [0.16, 0.05, 0], chest: [0, 0.08, 0], head: [0.05, 0.15, 0.05], lFoot: [0.03, 0, 0.15], lToe: 0.35, lArm: [0, -1.25, 1.45], lElbow: [-1.45, 0, 0], lHand: [0, 0, 0], rArm: [-0.5, 0, 0.4], rElbow: [-2.2, 0, 0] }, 'snap'],
-      [0.23, { root: [0, 0, 0.1], hipY: -0.08, hips: [0, 0.3, 0], spine: [0.14, 0.12, 0], chest: [0, 0.12, 0], lFoot: [0.03, 0, 0.14], lArm: [-0.3, -1.3, 1.2], lElbow: [-1.7, 0, 0] }],
+      [0.07, { hipY: -0.1, hips: [0.04, -0.7, 0], spine: [0.12, -0.22, 0], chest: [0, -0.2, 0], head: [0.04, -0.12, 0], lFoot: [0.02, 0, 0.14], lToe: 0.15, lArm: [-0.35, -0.15, 1.25], lElbow: [-1.85, 0, 0], rArm: [-0.55, 0, 0.38], rElbow: [-2.2, 0, 0] }],
+      [0.15, { root: [0, 0, 0.1], hipY: -0.08, hips: [0.06, 0.45, 0], spine: [0.14, 0.18, 0], chest: [0, 0.14, 0], head: [0.04, 0.22, 0.06], lFoot: [0.04, 0.02, 0.16], lToe: 0.55, rFoot: [0.05, 0, -0.02], lArm: [-0.15, -1.35, 1.15], lElbow: [-1.35, 0, 0], lHand: [0.15, 0, 0], rArm: [-0.65, 0, 0.36], rElbow: [-2.2, 0, 0] }, 'snap'],
+      [0.23, { root: [0, 0, 0.06], hipY: -0.08, hips: [0.02, 0.35, 0], spine: [0.1, 0.12, 0], lFoot: [0.03, 0, 0.12], lArm: [-0.4, -1.15, 0.95], lElbow: [-1.7, 0, 0], rArm: [-0.55, 0, 0.38], rElbow: [-2.1, 0, 0] }],
       [0.34, {}],
     ],
   },
@@ -544,9 +547,9 @@ const MOVES: Record<MoveName, Move> = {
     contact: 0.16,
     zone: 'high',
     keys: [
-      [0.08, { hipY: -0.14, hips: [0.12, -0.45, 0], spine: [0.28, -0.05, 0.08], chest: [0, 0, 0], head: [-0.1, 0, 0], rArm: [0.05, 0, 0.35], rElbow: [-1.75, 0, 0], rFoot: [0.05, 0, -0.1] }],
-      [0.16, { root: [0, 0.02, 0.1], hipY: -0.02, hips: [0, 0.3, 0], spine: [-0.08, 0.15, -0.04], chest: [-0.1, 0.1, 0], head: [-0.2, -0.1, 0], lFoot: [0.03, 0, 0.14], rFoot: [0.05, 0.03, -0.05], rToe: 0.7, rArm: [-1.05, 0, 0.1], rElbow: [-1.9, 0, 0], rHand: [-0.3, 0, 0], lArm: [-0.9, 0, 0.35], lElbow: [-2.0, 0, 0] }, 'snap'],
-      [0.24, { root: [0, 0.01, 0.08], hipY: -0.04, hips: [0, 0.25, 0], spine: [-0.02, 0.12, 0], rArm: [-1.3, 0, 0.15], rElbow: [-1.6, 0, 0], rToe: 0.4, lFoot: [0.03, 0, 0.13] }],
+      [0.08, { hipY: -0.18, hips: [0.22, -0.4, 0], spine: [0.42, -0.08, 0.06], chest: [0.12, 0, 0], head: [0.12, -0.06, 0], rFoot: [0.06, 0, -0.12], rArm: [0.35, 0.05, 0.28], rElbow: [-1.55, 0, 0], rHand: [0.7, 0, 0], lArm: [-0.8, 0, 0.34], lElbow: [-2.1, 0, 0] }],
+      [0.16, { root: [0, 0.03, 0.12], hipY: -0.02, hips: [-0.06, 0.48, 0], spine: [-0.22, 0.18, -0.04], chest: [-0.16, 0.1, 0], head: [-0.35, -0.12, 0], lFoot: [0.03, 0, 0.16], rFoot: [0.05, 0.04, -0.02], rToe: 0.85, rArm: [-1.15, 0.04, 0.06], rElbow: [-2.05, 0, 0], rHand: [-0.55, 0, 0], lArm: [-0.9, 0, 0.32], lElbow: [-2.05, 0, 0] }, 'snap'],
+      [0.24, { root: [0, 0.01, 0.06], hipY: -0.05, hips: [0, 0.28, 0], spine: [-0.06, 0.1, 0], head: [-0.12, -0.06, 0], rToe: 0.35, rArm: [-1.25, 0, 0.16], rElbow: [-1.7, 0, 0], lFoot: [0.03, 0, 0.12] }],
       [0.36, {}],
     ],
   },
@@ -607,6 +610,229 @@ const MOVES: Record<MoveName, Move> = {
       [0.42, {}],
     ],
   },
+}
+
+const skirmishClips = new Map<SkirmishMove, Clip>()
+
+/** Stance-to-stance strike. Contact time is when the other fighter should flinch. */
+export function skirmishStats(move: SkirmishMove): { dur: number; contact: number; zone: HitZone } {
+  const m = MOVES[move]
+  return { dur: m.dur, contact: m.contact, zone: m.zone }
+}
+
+export function skirmishClip(move: SkirmishMove): Clip {
+  let c = skirmishClips.get(move)
+  if (!c) {
+    const m = MOVES[move]
+    c = clip([[0, {}], ...m.keys], STANCE)
+    skirmishClips.set(move, c)
+  }
+  return c
+}
+
+// ───────────────────────── Choreographed exchanges ─────────────────────────
+//
+// Paired clips. Lead and answer share one clock so a block, slip, check, or
+// duck lands on the same frame as the strike. They do not reset to stance
+// between punches — the recovery of one shot is the load of the next.
+// Only blows in `contacts` actually land. The rest are caught, slipped, or miss.
+
+export type ExchangeRole = 'lead' | 'answer'
+
+export type ExchangeName =
+  | 'oneTwo'
+  | 'shellHook'
+  | 'slipRiposte'
+  | 'checkSwing'
+  | 'duckKnee'
+  | 'bodyUpper'
+
+export interface ExchangeContact {
+  t: number
+  zone: HitZone
+  /** Who throws the blow that gets through. */
+  who: ExchangeRole
+}
+
+interface Exchange {
+  contacts: ExchangeContact[]
+  lead: KeySpec[]
+  answer: KeySpec[]
+}
+
+/** Playback order. Consecutive picks step by 5 so a rally never repeats a phrase. */
+export const EXCHANGE_ORDER: ExchangeName[] = [
+  'oneTwo',
+  'shellHook',
+  'slipRiposte',
+  'checkSwing',
+  'duckKnee',
+  'bodyUpper',
+]
+
+const EXCHANGES: Record<ExchangeName, Exchange> = {
+  // Jab caught on the glove, cross straightens them.
+  oneTwo: {
+    contacts: [{ t: 0.5, zone: 'high', who: 'lead' }],
+    lead: [
+      [0.06, { hipY: -0.07, hips: [0.02, -0.36, 0], spine: [0.06, 0.08, 0], chest: [0, 0.14, 0], lFoot: [0.03, 0, 0.1], lArm: [-1.05, 0.05, 0.2], lElbow: [-1.5, 0, 0], rArm: [-0.55, 0, 0.38], rElbow: [-2.2, 0, 0], rHand: [0.4, 0, 0] }],
+      [0.16, { root: [0, 0, 0.1], hipY: -0.05, hips: [0.05, -0.62, 0], spine: [0.08, -0.02, 0], chest: [0, -0.28, 0], head: [0.02, 0.16, 0], lFoot: [0.02, 0, 0.2], rFoot: [0.06, 0, -0.02], lArm: [-1.64, 0.02, 0.02], lElbow: [-0.03, 0, 0], lHand: [0, 0, 0.1], rArm: [-0.72, 0, 0.34], rElbow: [-2.25, 0, 0], rHand: [0.45, 0, 0] }, 'snap'],
+      [0.3, { root: [0, 0, 0.06], hipY: -0.08, hips: [0.04, -0.5, 0], spine: [0.1, -0.14, 0], chest: [0, -0.12, 0], lFoot: [0.03, 0, 0.14], lArm: [-0.85, 0, 0.3], lElbow: [-2.0, 0, 0], lHand: [0.35, 0, 0], rArm: [-0.2, 0.12, 0.52], rElbow: [-2.35, 0, 0], rFoot: [0.06, 0, -0.1] }],
+      [0.5, { root: [0, 0, 0.14], hipY: -0.06, hips: [0.08, 0.58, 0], spine: [0.12, 0.24, 0], chest: [0, 0.18, 0], head: [0.04, -0.26, 0], lFoot: [0.02, 0, 0.2], rFoot: [0.05, 0.02, -0.01], rToe: 0.75, rArm: [-1.66, 0.02, 0.02], rElbow: [-0.02, 0, 0], rHand: [0, 0, 0.1], lArm: [-0.85, 0, 0.28], lElbow: [-2.15, 0, 0], lHand: [0.4, 0, 0] }, 'snap'],
+      [0.64, { root: [0, 0, 0.06], hipY: -0.07, hips: [0.02, 0.2, 0], spine: [0.08, 0.08, 0], rToe: 0.2, rArm: [-1.1, 0, 0.2], rElbow: [-1.05, 0, 0], lArm: [-0.7, 0, 0.32], lElbow: [-2.0, 0, 0] }],
+      [0.78, {}],
+    ],
+    answer: [
+      [0.08, { hipY: -0.08, spine: [-0.04, 0, 0], head: [0.12, 0, 0], lArm: [-0.6, -0.12, 0.7], lElbow: [-2.2, 0, 0], rArm: [-0.55, 0.1, 0.74], rElbow: [-2.25, 0, 0], lHand: [0.45, 0, 0], rHand: [0.45, 0, 0] }],
+      [0.16, { root: [0, 0, -0.04], hipY: -0.09, hips: [0.02, 0.08, 0], spine: [-0.1, 0.06, 0], chest: [-0.06, 0, 0], head: [0.2, 0.1, 0.04], lFoot: [0.03, 0, 0.06], rFoot: [0.05, 0, -0.12], lArm: [-0.7, -0.18, 0.62], lElbow: [-2.3, 0, 0], rArm: [-0.62, 0.12, 0.66], rElbow: [-2.35, 0, 0], lHand: [0.55, 0, 0], rHand: [0.55, 0, 0] }, 'snap'],
+      [0.32, { hipY: -0.08, spine: [-0.06, 0, 0], head: [0.16, 0.04, 0], lArm: [-0.62, -0.16, 0.68], lElbow: [-2.25, 0, 0], rArm: [-0.55, 0.1, 0.72], rElbow: [-2.3, 0, 0], lHand: [0.5, 0, 0], rHand: [0.5, 0, 0] }],
+      [0.5, { root: [-0.03, 0, -0.08], hipY: -0.07, hips: [0, -0.2, 0], spine: [-0.28, -0.22, 0.08], chest: [-0.14, -0.1, 0], neck: [-0.15, 0, 0], head: [-0.4, -0.45, 0.2], lFoot: [0.03, 0, 0.04], rFoot: [0.06, 0, -0.16], lArm: [-0.35, 0, 0.85], lElbow: [-1.1, 0, 0], rArm: [-0.3, 0.2, 0.9], rElbow: [-0.85, 0, 0], blink: 1 }, 'snap'],
+      [0.64, { root: [-0.02, 0, -0.05], hipY: -0.08, spine: [-0.12, -0.1, 0], head: [-0.15, -0.18, 0.06], lArm: [-0.6, 0, 0.5], lElbow: [-1.6, 0, 0], rArm: [-0.5, 0, 0.55], rElbow: [-1.5, 0, 0] }],
+      [0.78, {}],
+    ],
+  },
+  // Two shots into a tight shell, then the hook bends around it.
+  shellHook: {
+    contacts: [{ t: 0.66, zone: 'high', who: 'lead' }],
+    lead: [
+      [0.12, { root: [0, 0, 0.08], hipY: -0.05, hips: [0.04, -0.55, 0], chest: [0, -0.22, 0], head: [0.02, 0.12, 0], lFoot: [0.02, 0, 0.18], lArm: [-1.6, 0.02, 0.04], lElbow: [-0.05, 0, 0], rArm: [-0.7, 0, 0.34], rElbow: [-2.2, 0, 0], rHand: [0.4, 0, 0] }, 'snap'],
+      [0.24, { root: [0, 0, 0.05], hipY: -0.08, hips: [0.04, -0.48, 0], spine: [0.08, -0.12, 0], lArm: [-0.8, 0, 0.3], lElbow: [-2.05, 0, 0], rArm: [-0.18, 0.1, 0.5], rElbow: [-2.3, 0, 0], rFoot: [0.06, 0, -0.1] }],
+      [0.36, { root: [0, 0, 0.12], hipY: -0.06, hips: [0.06, 0.5, 0], spine: [0.1, 0.2, 0], chest: [0, 0.14, 0], head: [0.03, -0.22, 0], lFoot: [0.02, 0, 0.18], rFoot: [0.05, 0.02, -0.02], rToe: 0.6, rArm: [-1.58, 0.02, 0.06], rElbow: [-0.08, 0, 0], lArm: [-0.8, 0, 0.3], lElbow: [-2.1, 0, 0], lHand: [0.35, 0, 0] }, 'snap'],
+      [0.5, { hipY: -0.1, hips: [0.04, -0.65, 0], spine: [0.12, -0.24, 0], chest: [0, -0.18, 0], lFoot: [0.02, 0, 0.14], lArm: [-0.3, -0.1, 1.3], lElbow: [-1.9, 0, 0], rArm: [-0.55, 0, 0.4], rElbow: [-2.15, 0, 0] }],
+      [0.66, { root: [0, 0, 0.1], hipY: -0.08, hips: [0.08, 0.5, 0], spine: [0.14, 0.22, 0], chest: [0, 0.16, 0], head: [0.04, 0.24, 0.06], lFoot: [0.04, 0.02, 0.16], lToe: 0.6, rFoot: [0.05, 0, -0.02], lArm: [-0.1, -1.4, 1.05], lElbow: [-1.3, 0, 0], lHand: [0.1, 0, 0], rArm: [-0.65, 0, 0.34], rElbow: [-2.2, 0, 0] }, 'snap'],
+      [0.82, { root: [0, 0, 0.05], hipY: -0.08, hips: [0.02, 0.28, 0], lArm: [-0.45, -1.05, 0.85], lElbow: [-1.65, 0, 0], rArm: [-0.55, 0, 0.38], rElbow: [-2.05, 0, 0] }],
+      [1.0, {}],
+    ],
+    answer: [
+      [0.08, { hipY: -0.08, head: [0.14, 0, 0], lArm: [-0.55, -0.18, 0.78], lElbow: [-2.3, 0, 0], rArm: [-0.5, 0.14, 0.8], rElbow: [-2.35, 0, 0], lHand: [0.55, 0, 0], rHand: [0.55, 0, 0] }],
+      [0.12, { root: [0, 0, -0.03], hipY: -0.09, spine: [-0.08, 0.04, 0], head: [0.22, 0.08, 0.04], lArm: [-0.65, -0.22, 0.7], lElbow: [-2.35, 0, 0], rArm: [-0.58, 0.16, 0.72], rElbow: [-2.4, 0, 0], lHand: [0.6, 0, 0], rHand: [0.6, 0, 0] }, 'snap'],
+      [0.28, { hipY: -0.09, spine: [-0.06, 0, 0], head: [0.16, 0.02, 0], lArm: [-0.58, -0.2, 0.76], lElbow: [-2.3, 0, 0], rArm: [-0.52, 0.14, 0.78], rElbow: [-2.35, 0, 0] }],
+      [0.36, { root: [0.02, 0, -0.05], hipY: -0.1, spine: [-0.12, -0.06, 0], head: [0.2, -0.08, -0.04], lFoot: [0.03, 0, 0.04], rFoot: [0.05, 0, -0.12], lArm: [-0.7, -0.24, 0.64], lElbow: [-2.4, 0, 0], rArm: [-0.62, 0.18, 0.66], rElbow: [-2.4, 0, 0], lHand: [0.65, 0, 0], rHand: [0.65, 0, 0] }, 'snap'],
+      [0.52, { hipY: -0.09, head: [0.14, 0, 0], lArm: [-0.6, -0.2, 0.72], lElbow: [-2.3, 0, 0], rArm: [-0.55, 0.12, 0.74], rElbow: [-2.3, 0, 0] }],
+      [0.66, { root: [0.04, 0, -0.07], hipY: -0.08, hips: [0, 0.25, 0], spine: [-0.22, 0.28, -0.08], chest: [-0.1, 0.12, 0], head: [-0.35, 0.55, -0.22], lFoot: [0.04, 0, 0.06], rFoot: [0.06, 0, -0.14], lArm: [-0.45, -0.3, 0.7], lElbow: [-1.7, 0, 0], rArm: [-0.25, 0, 0.95], rElbow: [-0.7, 0, 0], blink: 1 }, 'snap'],
+      [0.84, { root: [0.02, 0, -0.04], spine: [-0.08, 0.12, 0], head: [-0.1, 0.2, -0.06], lArm: [-0.6, 0, 0.45], lElbow: [-1.6, 0, 0], rArm: [-0.45, 0, 0.55], rElbow: [-1.4, 0, 0] }],
+      [1.0, {}],
+    ],
+  },
+  // Jab misses the slip. The answer's cross comes back down the middle.
+  slipRiposte: {
+    contacts: [{ t: 0.48, zone: 'high', who: 'answer' }],
+    lead: [
+      [0.08, { hipY: -0.07, hips: [0.02, -0.32, 0], lArm: [-1.1, 0.04, 0.16], lElbow: [-1.35, 0, 0], rArm: [-0.55, 0, 0.38], rElbow: [-2.15, 0, 0] }],
+      [0.16, { root: [0, 0, 0.14], hipY: -0.04, hips: [0.06, -0.7, 0], spine: [0.1, -0.06, 0], chest: [0, -0.3, 0], head: [0.04, 0.18, 0], lFoot: [0.02, 0, 0.24], rFoot: [0.06, 0, 0], lArm: [-1.68, 0, 0], lElbow: [0, 0, 0], lHand: [0, 0, 0.08], rArm: [-0.7, 0, 0.32], rElbow: [-2.2, 0, 0] }, 'snap'],
+      [0.3, { root: [0, 0, 0.12], hipY: -0.05, hips: [0.04, -0.55, 0], chest: [0, -0.18, 0], lFoot: [0.02, 0, 0.2], lArm: [-1.5, 0, 0.06], lElbow: [-0.25, 0, 0], rArm: [-0.65, 0, 0.34], rElbow: [-2.1, 0, 0] }],
+      [0.48, { root: [-0.02, 0, -0.06], hipY: -0.08, hips: [0, 0.15, 0], spine: [-0.32, 0.12, 0.06], chest: [-0.16, 0, 0], neck: [-0.18, 0, 0], head: [-0.48, 0.35, 0.12], lFoot: [0.04, 0, 0.08], rFoot: [0.06, 0, -0.14], lArm: [-0.4, 0, 0.7], lElbow: [-1.0, 0, 0], rArm: [-0.35, 0, 0.75], rElbow: [-0.9, 0, 0], blink: 1 }, 'snap'],
+      [0.66, { root: [0, 0, -0.03], spine: [-0.12, 0.06, 0], head: [-0.16, 0.12, 0.04], lArm: [-0.65, 0, 0.4], lElbow: [-1.6, 0, 0], rArm: [-0.5, 0, 0.45], rElbow: [-1.55, 0, 0] }],
+      [0.88, {}],
+    ],
+    answer: [
+      [0.08, { root: [0.05, 0, -0.02], hipY: -0.08, hips: [0, 0.2, 0.06], spine: [0.06, 0.18, 0.08], head: [0.06, 0.28, 0.1], lArm: [-0.7, 0, 0.4], lElbow: [-1.9, 0, 0], rArm: [-0.25, 0.1, 0.48], rElbow: [-2.2, 0, 0] }],
+      [0.16, { root: [0.1, 0, -0.02], hipY: -0.09, hips: [0.04, 0.4, 0.1], spine: [0.08, 0.35, 0.12], chest: [0, 0.12, 0], head: [0.08, 0.5, 0.16], lFoot: [0.04, 0, 0.08], rFoot: [0.05, 0, -0.06], lArm: [-0.75, 0, 0.36], lElbow: [-1.95, 0, 0], rArm: [-0.15, 0.2, 0.55], rElbow: [-2.3, 0, 0] }, 'snap'],
+      [0.3, { root: [0.08, 0, 0.04], hipY: -0.08, hips: [0.06, 0.15, 0], spine: [0.1, -0.05, 0], head: [0.04, 0.12, 0], rFoot: [0.05, 0, -0.1], rArm: [-0.35, 0.05, 0.4], rElbow: [-2.15, 0, 0], lArm: [-0.8, 0, 0.3], lElbow: [-2.05, 0, 0], lHand: [0.35, 0, 0] }],
+      [0.48, { root: [0.04, 0, 0.14], hipY: -0.05, hips: [0.08, -0.45, 0], spine: [0.1, -0.2, 0], chest: [0, -0.16, 0], head: [0.02, -0.22, 0], lFoot: [0.03, 0, 0.18], rFoot: [0.04, 0.02, 0.02], rToe: 0.65, rArm: [-1.66, -0.02, 0.02], rElbow: [-0.02, 0, 0], rHand: [0, 0, 0.1], lArm: [-0.85, 0, 0.28], lElbow: [-2.15, 0, 0] }, 'snap'],
+      [0.66, { root: [0.02, 0, 0.06], hipY: -0.07, hips: [0.02, -0.15, 0], rToe: 0.2, rArm: [-1.15, 0, 0.18], rElbow: [-0.95, 0, 0], lArm: [-0.7, 0, 0.32], lElbow: [-2.0, 0, 0] }],
+      [0.88, {}],
+    ],
+  },
+  // Low kick meets a shin check. The right hand then swings over the dropped guard.
+  checkSwing: {
+    contacts: [{ t: 0.76, zone: 'high', who: 'lead' }],
+    lead: [
+      [0.12, { hipY: -0.08, hips: [0, 0.35, -0.06], spine: [0.06, -0.16, 0], lFoot: [0.03, 0, 0.08], rFoot: [0.1, 0.1, -0.06], rToe: 0.35, lArm: [-0.9, 0, 0.4], lElbow: [-1.8, 0, 0], rArm: [-0.2, 0, 0.55], rElbow: [-1.5, 0, 0] }],
+      [0.26, { hipY: -0.07, hips: [0, 1.05, -0.12], spine: [0.06, -0.55, 0], chest: [0, -0.2, 0], head: [0.06, -0.28, 0], lFoot: [0.03, 0, 0.08], lToe: 0.3, rFoot: [-0.02, 0.22, 0.4], rToe: 0.95, lArm: [-1.05, 0, 0.45], lElbow: [-1.7, 0, 0], rArm: [0.35, 0, 0.65], rElbow: [-0.7, 0, 0] }, 'snap'],
+      [0.42, { hipY: -0.08, hips: [0.02, 0.25, 0], spine: [0.06, -0.08, 0], rFoot: [0.08, 0.04, -0.04], rToe: 0.15, rArm: [-0.15, 0.25, 1.15], rElbow: [-1.75, 0, 0], lArm: [-0.7, 0, 0.35], lElbow: [-1.9, 0, 0] }],
+      [0.6, { hipY: -0.1, hips: [0.06, -0.55, 0], spine: [0.14, -0.35, 0], chest: [0, -0.2, 0], head: [0.06, -0.2, 0], rFoot: [0.07, 0, -0.12], rArm: [-0.05, 0.45, 1.4], rElbow: [-1.55, 0, 0], lArm: [-0.85, 0, 0.4], lElbow: [-1.7, 0, 0] }],
+      [0.76, { root: [0, 0, 0.12], hipY: -0.06, hips: [0.1, 0.85, 0], spine: [0.16, 0.4, 0], chest: [0, 0.22, 0], head: [0.04, 0.3, 0.08], lFoot: [0.03, 0, 0.16], rFoot: [0.05, 0.03, 0.02], rToe: 0.7, rArm: [-0.2, -1.15, 1.05], rElbow: [-1.15, 0, 0], rHand: [0.1, 0, 0], lArm: [0.45, 0, 0.7], lElbow: [-0.55, 0, 0] }, 'snap'],
+      [0.92, { root: [0, 0, 0.06], hips: [0.04, 0.4, 0], spine: [0.08, 0.16, 0], rArm: [-0.45, -0.7, 0.7], rElbow: [-1.4, 0, 0], lArm: [0.1, 0, 0.5], lElbow: [-1.1, 0, 0] }],
+      [1.06, {}],
+    ],
+    answer: [
+      [0.14, { hipY: -0.06, hips: [0.08, -0.12, 0], lFoot: [0.04, 0.18, 0.06], lToe: 0.25, lArm: [-0.7, 0, 0.4], lElbow: [-1.7, 0, 0], rArm: [-0.45, 0, 0.42], rElbow: [-2.0, 0, 0], head: [0.12, -0.08, 0] }],
+      [0.26, { hipY: -0.04, hips: [0.12, -0.2, 0.06], spine: [0.06, -0.08, 0], head: [0.2, -0.12, 0], lFoot: [0.02, 0.36, 0.16], lToe: 0.55, rFoot: [0.05, 0, -0.06], lArm: [-0.45, 0, 0.55], lElbow: [-1.3, 0, 0], rArm: [-0.35, 0, 0.5], rElbow: [-1.45, 0, 0] }, 'snap'],
+      [0.46, { hipY: -0.07, hips: [0.04, 0, 0], lFoot: [0.05, 0.08, 0.04], lToe: 0.2, head: [0.1, 0, 0], lArm: [-0.55, 0, 0.4], lElbow: [-1.5, 0, 0], rArm: [-0.4, 0, 0.4], rElbow: [-1.6, 0, 0] }],
+      [0.76, { root: [-0.04, 0, -0.08], hipY: -0.08, hips: [0, -0.35, 0], spine: [-0.3, -0.3, 0.1], chest: [-0.14, -0.12, 0], neck: [-0.16, 0, 0], head: [-0.42, -0.55, 0.22], lFoot: [0.04, 0, 0.04], rFoot: [0.07, 0, -0.16], lArm: [-0.3, 0, 0.9], lElbow: [-0.8, 0, 0], rArm: [-0.2, 0, 1.0], rElbow: [-0.6, 0, 0], blink: 1 }, 'snap'],
+      [0.92, { root: [-0.02, 0, -0.04], spine: [-0.1, -0.12, 0], head: [-0.14, -0.2, 0.06], lArm: [-0.55, 0, 0.5], lElbow: [-1.4, 0, 0], rArm: [-0.4, 0, 0.6], rElbow: [-1.3, 0, 0] }],
+      [1.06, {}],
+    ],
+  },
+  // Wide swing clears the duck. The knee finds them on the way back up.
+  duckKnee: {
+    contacts: [{ t: 0.76, zone: 'mid', who: 'lead' }],
+    lead: [
+      [0.14, { hipY: -0.1, hips: [0.04, -0.5, 0], spine: [0.12, -0.3, 0], chest: [0, -0.16, 0], head: [0.04, -0.16, 0], rFoot: [0.06, 0, -0.1], rArm: [-0.1, 0.4, 1.35], rElbow: [-1.6, 0, 0], lArm: [-0.8, 0, 0.45], lElbow: [-1.6, 0, 0] }],
+      [0.3, { root: [0, 0, 0.08], hipY: -0.05, hips: [0.08, 0.9, 0], spine: [0.1, 0.45, 0], chest: [0, 0.24, 0], head: [0.02, 0.35, 0.06], lFoot: [0.03, 0, 0.12], rFoot: [0.05, 0.02, 0.04], rToe: 0.45, rArm: [0.15, -1.25, 1.2], rElbow: [-0.85, 0, 0], lArm: [0.5, 0, 0.75], lElbow: [-0.4, 0, 0] }, 'snap'],
+      [0.46, { root: [0, 0, 0.06], hipY: -0.08, hips: [0.04, 0.3, 0], spine: [0.16, 0.1, 0], rArm: [-0.6, -0.4, 0.55], rElbow: [-1.4, 0, 0], lArm: [-0.4, 0, 0.45], lElbow: [-1.2, 0, 0], rFoot: [0.05, 0, -0.04] }],
+      [0.62, { root: [0, 0, 0.12], hipY: -0.06, spine: [0.22, 0, 0], chest: [0.08, 0, 0], lFoot: [0.03, 0, 0.16], lArm: [-1.35, 0, 0.2], lElbow: [-0.7, 0, 0], rArm: [-1.35, 0, 0.2], rElbow: [-0.7, 0, 0], lHand: [0.45, 0, 0], rHand: [0.45, 0, 0] }],
+      [0.76, { root: [0, 0.03, 0.18], hipY: -0.02, hips: [-0.16, 0.12, 0], spine: [0.36, 0, 0], chest: [0.14, 0, 0], head: [-0.18, 0, 0], lFoot: [0.03, 0, 0.08], lToe: 0.6, rFoot: [0, 0.4, 0.16], rToe: 1.05, lArm: [-1.05, 0, 0.22], lElbow: [-1.35, 0, 0], rArm: [-1.05, 0, 0.22], rElbow: [-1.35, 0, 0], lHand: [0.65, 0, 0], rHand: [0.65, 0, 0] }, 'snap'],
+      [0.94, {}],
+    ],
+    answer: [
+      [0.14, { hipY: -0.12, spine: [0.28, 0, 0], chest: [0.1, 0, 0], head: [0.22, 0, 0], lArm: [-0.7, 0, 0.4], lElbow: [-1.8, 0, 0], rArm: [-0.55, 0, 0.42], rElbow: [-1.9, 0, 0] }],
+      [0.3, { root: [0, -0.02, 0], hipY: -0.22, hips: [0.18, 0, 0], spine: [0.7, 0, 0], chest: [0.28, 0, 0], head: [0.5, 0, 0], lFoot: [0.05, 0, 0.06], rFoot: [0.06, 0, -0.04], lArm: [-0.15, 0, 0.35], lElbow: [-1.1, 0, 0], rArm: [-0.1, 0, 0.35], rElbow: [-1.05, 0, 0] }, 'snap'],
+      [0.5, { hipY: -0.12, spine: [0.35, 0, 0], chest: [0.12, 0, 0], head: [0.2, 0, 0], lArm: [-1.1, 0, 0.3], lElbow: [-1.2, 0, 0], rArm: [-1.1, 0, 0.3], rElbow: [-1.2, 0, 0], lHand: [0.4, 0, 0], rHand: [0.4, 0, 0] }],
+      [0.76, { root: [0, 0.01, -0.06], hipY: -0.16, hips: [0.28, 0, 0], spine: [0.62, 0, 0], chest: [0.3, 0, 0], head: [0.4, 0, 0], lFoot: [0.04, 0.04, 0.04], rFoot: [0.06, 0, -0.14], lToe: 0.4, lArm: [-0.35, -0.4, 0.2], lElbow: [-1.5, 0, 0], rArm: [-0.35, 0.4, 0.2], rElbow: [-1.5, 0, 0], blink: 1 }, 'snap'],
+      [0.94, {}],
+    ],
+  },
+  // Level change: body jab, body cross, then the uppercut as the elbows stay down.
+  bodyUpper: {
+    contacts: [
+      { t: 0.2, zone: 'mid', who: 'lead' },
+      { t: 0.46, zone: 'mid', who: 'lead' },
+      { t: 0.76, zone: 'high', who: 'lead' },
+    ],
+    lead: [
+      [0.1, { hipY: -0.14, hips: [0.16, -0.3, 0], spine: [0.32, 0.06, 0], chest: [0.1, 0, 0], head: [0.1, 0.06, 0], lFoot: [0.03, 0, 0.1], lArm: [-0.7, 0.04, 0.22], lElbow: [-1.7, 0, 0], rArm: [-0.5, 0, 0.38], rElbow: [-2.15, 0, 0] }],
+      [0.2, { root: [0, 0, 0.1], hipY: -0.12, hips: [0.2, -0.5, 0], spine: [0.4, -0.06, 0], chest: [0.16, -0.12, 0], head: [0.14, 0.1, 0], lFoot: [0.02, 0, 0.18], rFoot: [0.06, 0, -0.04], lArm: [-1.35, 0.08, 0.18], lElbow: [-0.35, 0, 0], lHand: [0.15, 0, 0], rArm: [-0.6, 0, 0.34], rElbow: [-2.15, 0, 0], rHand: [0.4, 0, 0] }, 'snap'],
+      [0.32, { hipY: -0.14, hips: [0.16, -0.4, 0], spine: [0.32, -0.1, 0], lArm: [-0.75, 0, 0.28], lElbow: [-1.85, 0, 0], rArm: [0.15, 0.05, 0.32], rElbow: [-1.7, 0, 0], rFoot: [0.06, 0, -0.1] }],
+      [0.46, { root: [0, 0, 0.12], hipY: -0.12, hips: [0.22, 0.4, 0], spine: [0.42, 0.14, 0], chest: [0.16, 0.1, 0], head: [0.12, -0.12, 0], lFoot: [0.02, 0, 0.16], rFoot: [0.05, 0.02, -0.02], rToe: 0.55, rArm: [-1.3, 0.06, 0.16], rElbow: [-0.4, 0, 0], rHand: [0.1, 0, 0], lArm: [-0.75, 0, 0.3], lElbow: [-2.05, 0, 0] }, 'snap'],
+      [0.6, { hipY: -0.18, hips: [0.24, -0.15, 0], spine: [0.46, -0.06, 0.04], chest: [0.14, 0, 0], head: [0.16, 0, 0], rFoot: [0.06, 0, -0.1], rArm: [0.4, 0.04, 0.26], rElbow: [-1.45, 0, 0], rHand: [0.75, 0, 0], lArm: [-0.7, 0, 0.32], lElbow: [-2.0, 0, 0] }],
+      [0.76, { root: [0, 0.04, 0.12], hipY: -0.01, hips: [-0.08, 0.5, 0], spine: [-0.24, 0.16, 0], chest: [-0.18, 0.08, 0], head: [-0.38, -0.1, 0], lFoot: [0.03, 0, 0.16], rFoot: [0.05, 0.05, -0.01], rToe: 0.9, rArm: [-1.2, 0.04, 0.04], rElbow: [-2.1, 0, 0], rHand: [-0.6, 0, 0], lArm: [-0.85, 0, 0.3], lElbow: [-2.05, 0, 0] }, 'snap'],
+      [0.9, { root: [0, 0.01, 0.05], hipY: -0.05, spine: [-0.06, 0.08, 0], head: [-0.12, -0.04, 0], rToe: 0.3, rArm: [-1.2, 0, 0.16], rElbow: [-1.65, 0, 0] }],
+      [1.04, {}],
+    ],
+    answer: [
+      [0.12, { hipY: -0.1, spine: [0.12, 0, 0], lArm: [-0.45, -0.35, 0.22], lElbow: [-1.85, 0, 0], rArm: [-0.4, 0.35, 0.22], rElbow: [-1.9, 0, 0], head: [0.12, 0, 0] }],
+      [0.2, { root: [0, 0, -0.04], hipY: -0.14, hips: [0.16, 0.08, 0], spine: [0.4, 0.06, 0], chest: [0.2, 0, 0], head: [0.18, 0.08, 0], lFoot: [0.04, 0, 0.04], rFoot: [0.05, 0, -0.1], lArm: [-0.35, -0.45, 0.16], lElbow: [-1.95, 0, 0], rArm: [-0.3, 0.4, 0.18], rElbow: [-1.9, 0, 0], blink: 1 }, 'snap'],
+      [0.34, { hipY: -0.12, spine: [0.28, 0, 0], chest: [0.12, 0, 0], lArm: [-0.4, -0.4, 0.18], lElbow: [-1.9, 0, 0], rArm: [-0.35, 0.35, 0.2], rElbow: [-1.85, 0, 0] }],
+      [0.46, { root: [0.02, 0, -0.06], hipY: -0.16, hips: [0.2, -0.1, 0], spine: [0.5, -0.08, 0], chest: [0.26, 0, 0], head: [0.22, -0.1, 0], rFoot: [0.06, 0, -0.14], lArm: [-0.3, -0.5, 0.14], lElbow: [-2.0, 0, 0], rArm: [-0.25, 0.45, 0.14], rElbow: [-2.0, 0, 0], blink: 1 }, 'snap'],
+      [0.62, { hipY: -0.14, spine: [0.36, 0, 0], chest: [0.16, 0, 0], head: [0.16, 0, 0], lArm: [-0.4, -0.4, 0.18], lElbow: [-1.9, 0, 0], rArm: [-0.35, 0.4, 0.18], rElbow: [-1.85, 0, 0] }],
+      [0.76, { root: [0, 0.02, -0.08], hipY: -0.04, hips: [-0.04, 0.1, 0], spine: [-0.4, 0.12, 0], chest: [-0.2, 0, 0], neck: [-0.22, 0, 0], head: [-0.6, 0.15, 0.08], lFoot: [0.03, 0, 0.06], rFoot: [0.06, 0, -0.16], lArm: [-0.15, 0, 1.05], lElbow: [-0.45, 0, 0], rArm: [-0.1, 0, 1.1], rElbow: [-0.35, 0, 0], blink: 1 }, 'snap'],
+      [0.9, { root: [0, 0, -0.04], spine: [-0.12, 0.04, 0], head: [-0.18, 0.06, 0], lArm: [-0.5, 0, 0.6], lElbow: [-1.2, 0, 0], rArm: [-0.4, 0, 0.65], rElbow: [-1.1, 0, 0] }],
+      [1.04, {}],
+    ],
+  },
+}
+
+const exchangeClips = new Map<string, Clip>()
+const exchangeChecked = new Set<string>()
+
+export function exchangeClip(name: ExchangeName, role: ExchangeRole): Clip {
+  const key = `${name}:${role}`
+  let c = exchangeClips.get(key)
+  if (!c) {
+    c = clip([[0, {}], ...EXCHANGES[name][role]], STANCE)
+    exchangeClips.set(key, c)
+  }
+  return c
+}
+
+/** Shared length and the blows that actually land. */
+export function exchangeStats(name: ExchangeName): { dur: number; contacts: ExchangeContact[] } {
+  const lead = exchangeClip(name, 'lead')
+  const answer = exchangeClip(name, 'answer')
+  if (import.meta.env.DEV && !exchangeChecked.has(name)) {
+    exchangeChecked.add(name)
+    if (Math.abs(lead.dur - answer.dur) > 0.03) {
+      throw new Error(`exchange ${name} lead ${lead.dur.toFixed(3)} vs answer ${answer.dur.toFixed(3)}`)
+    }
+    for (const hit of EXCHANGES[name].contacts) {
+      if (hit.t <= 0.04 || hit.t >= lead.dur - 0.04) {
+        throw new Error(`exchange ${name} contact ${hit.t} outside ${lead.dur.toFixed(3)}`)
+      }
+    }
+  }
+  return { dur: lead.dur, contacts: EXCHANGES[name].contacts }
 }
 
 // ───────────────────────── Signature attacks ─────────────────────────
@@ -2727,6 +2953,11 @@ export type AnimInput =
   | { kind: 'ready'; t: number }
   | { kind: 'move'; style: MoveStyle; t: number; p: number; dist: number }
   | { kind: 'attack'; t: number }
+  /**
+   * A strike, or one side of a paired exchange.
+   * `exchange` plays the choreographed phrase instead of the single `move`.
+   */
+  | { kind: 'skirmish'; t: number; move: SkirmishMove; exchange?: ExchangeName; role?: ExchangeRole }
   /** Staggered by blow `n` (1-based) of a combo, `t` seconds ago. */
   | { kind: 'hurt'; t: number; zone: HitZone; n: number; hold?: HoldKind }
   | { kind: 'death'; t: number; dmg: DamageType; zone: HitZone; sever?: SeverSpec }
@@ -2846,6 +3077,9 @@ export function evalPose(d: HeroDesign, a: AnimInput, seed: number): Pose {
     }
     case 'attack':
       return sampleClip(attackFor(d).clip, a.t, restPose())
+    case 'skirmish':
+      if (a.exchange && a.role) return sampleClip(exchangeClip(a.exchange, a.role), a.t, restPose())
+      return sampleClip(skirmishClip(a.move), a.t, restPose())
     case 'hurt':
       return hurtPose(a.t, a.zone, a.n, a.hold)
     case 'death':

@@ -1,4 +1,4 @@
-import { OrbitControls, Sky } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import type { MutableRefObject } from 'react'
 import * as THREE from 'three'
@@ -30,35 +30,26 @@ const OVERVIEW_DISTANCE = BOARD_SPAN * 1.28
 function SceneContent(props: ChessSceneProps) {
   return (
     <>
-      <color attach="background" args={[PALETTE.sky]} />
-      {/* Light fog — rooftop should keep a clear sky dome */}
-      <fog attach="fog" args={[PALETTE.fog, 170, 420]} />
-      <Sky
-        distance={450000}
-        sunPosition={[55, 55, -12]}
-        inclination={0.52}
-        azimuth={0.18}
-        mieCoefficient={0.003}
-        rayleigh={1.15}
-        turbidity={1.6}
-      />
+      <color attach="background" args={[PALETTE.fog]} />
+      {/* Fog starts past the 8×8 + apron; only the outer berm melts away */}
+      <fog attach="fog" args={[PALETTE.fog, 95, 165]} />
 
-      <ambientLight intensity={1.05} />
-      <hemisphereLight args={['#e8f4ff', '#b0b8a8', 0.95]} />
+      <ambientLight intensity={0.92} />
+      <hemisphereLight args={['#c8d8c0', '#6a7858', 0.85]} />
       <directionalLight
         castShadow
-        position={[36, 56, -14]}
-        intensity={2.35}
+        position={[36, 48, -14]}
+        intensity={1.95}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={220}
-        shadow-camera-left={-80}
-        shadow-camera-right={80}
-        shadow-camera-top={80}
-        shadow-camera-bottom={-80}
-        color="#fff6e8"
+        shadow-camera-far={180}
+        shadow-camera-left={-90}
+        shadow-camera-right={90}
+        shadow-camera-top={90}
+        shadow-camera-bottom={-90}
+        color="#fff2d8"
       />
-      <directionalLight position={[-24, 22, 28]} intensity={0.55} color="#a8d8f8" />
-      <pointLight position={[0, 22, 0]} intensity={0.45} distance={60} color="#fff8ec" />
+      <directionalLight position={[-24, 18, 22]} intensity={0.45} color="#98b878" />
+      <pointLight position={[0, 16, 0]} intensity={0.3} distance={65} color="#fff8ec" />
 
       <Cityscape />
 
@@ -102,16 +93,16 @@ export function ChessScene(props: ChessSceneProps) {
         position: [camDist * 0.55, camDist * 0.72, -camDist * 0.85],
         fov: 42,
         near: 0.5,
-        far: 480,
+        far: 220,
       }}
       gl={{
         antialias: true,
         alpha: false,
-        toneMappingExposure: 1.12,
+        toneMappingExposure: 1.08,
         powerPreference: 'high-performance',
       }}
       onCreated={({ gl }) => {
-        gl.setClearColor(new THREE.Color(PALETTE.sky), 1)
+        gl.setClearColor(new THREE.Color(PALETTE.fog), 1)
       }}
     >
       <SceneContent {...props} />

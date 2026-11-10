@@ -26,6 +26,7 @@ const RATE: Record<AnimInput['kind'], number> = {
   ready: 12,
   move: 16,
   attack: 34,
+  skirmish: 34,
   hurt: 30,
   death: 18,
 }
@@ -517,6 +518,10 @@ function thrustFor(anim: AnimInput, speed: number, t: number): number {
     if (u < 0.36) return 2.1
     if (u < 0.7) return 1.55
     return 0.85
+  }
+  if (anim.kind === 'skirmish') {
+    if (anim.exchange) return 1.15
+    return anim.t < 0.18 ? 1.35 : 0.75
   }
   void t
   return 0
@@ -1298,6 +1303,7 @@ export function HeroFighter({
         if (hasRiotHarden) {
           const hardening =
             (anim.kind === 'move' && speed > 0.06) ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t > 0.04 && anim.t < 0.85)
           dr.harden += ((hardening ? 1 : 0) - dr.harden) * (1 - Math.exp(-12 * Math.min(dt, 0.1)))
           const on = dr.harden > 0.08
@@ -1334,6 +1340,7 @@ export function HeroFighter({
             anim.kind === 'idle' ||
             anim.kind === 'ready' ||
             (anim.kind === 'move' && speed > 0.04) ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t < 0.95)
           dr.trail += ((cowling ? 1 : 0) - dr.trail) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
           const g = fullCowlAura.current
@@ -1358,7 +1365,7 @@ export function HeroFighter({
                 c.rotation.y = dr.t * 4 + i
               }
             })
-            if (anim.kind === 'move' || anim.kind === 'attack') {
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
               g.position.x += Math.sin(dr.t * 48) * 0.025
               g.position.y += Math.cos(dr.t * 40) * 0.02
             }
@@ -1370,6 +1377,7 @@ export function HeroFighter({
             anim.kind === 'idle' ||
             anim.kind === 'ready' ||
             (anim.kind === 'move' && speed > 0.04) ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t < 0.95)
           dr.trail += ((raging ? 1 : 0) - dr.trail) * (1 - Math.exp(-16 * Math.min(dt, 0.1)))
           const g = ssj2Aura.current
@@ -1394,7 +1402,7 @@ export function HeroFighter({
                 c.rotation.z = dr.t * 4 + i * 0.8
               }
             })
-            if (anim.kind === 'move' || anim.kind === 'attack') {
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
               g.position.x += Math.sin(dr.t * 55) * 0.03
               g.position.y += Math.cos(dr.t * 48) * 0.025
             }
@@ -1406,6 +1414,7 @@ export function HeroFighter({
             anim.kind === 'idle' ||
             anim.kind === 'ready' ||
             anim.kind === 'move' ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t < 0.95)
           dr.trail += ((diving ? 1 : 0) - dr.trail) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
           const g = spiritDiveAura.current
@@ -1429,7 +1438,7 @@ export function HeroFighter({
                 c.rotation.y = dr.t * 3.5 + i
               }
             })
-            if (anim.kind === 'move' || anim.kind === 'attack') {
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
               g.position.x += Math.sin(dr.t * 36) * 0.02
               g.position.y += Math.cos(dr.t * 30) * 0.018
             }
@@ -1441,6 +1450,7 @@ export function HeroFighter({
             anim.kind === 'idle' ||
             anim.kind === 'ready' ||
             (anim.kind === 'move' && speed > 0.04) ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t < 0.95)
           dr.thunder += ((thundering ? 1 : 0) - dr.thunder) * (1 - Math.exp(-16 * Math.min(dt, 0.1)))
           const g = zenitsuAura.current
@@ -1465,7 +1475,7 @@ export function HeroFighter({
                 c.rotation.z = dr.t * 5 + i * 0.9
               }
             })
-            if (anim.kind === 'move' || anim.kind === 'attack') {
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
               g.position.x += Math.sin(dr.t * 60) * 0.032
               g.position.y += Math.cos(dr.t * 52) * 0.028
             }
@@ -1477,6 +1487,7 @@ export function HeroFighter({
             anim.kind === 'idle' ||
             anim.kind === 'ready' ||
             (anim.kind === 'move' && speed > 0.04) ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t < 0.98)
           dr.mugetsu += ((voiding ? 1 : 0) - dr.mugetsu) * (1 - Math.exp(-12 * Math.min(dt, 0.1)))
           const g = mugetsuAura.current
@@ -1495,7 +1506,7 @@ export function HeroFighter({
               c.rotation.y = dr.t * (0.9 + i * 0.35)
               c.rotation.z = Math.sin(dr.t * 2.2 + i) * 0.15
             })
-            if (anim.kind === 'move' || anim.kind === 'attack') {
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
               g.position.x += Math.sin(dr.t * 28) * 0.018
               g.position.y += Math.cos(dr.t * 22) * 0.014
             }
@@ -1508,6 +1519,7 @@ export function HeroFighter({
             anim.kind === 'idle' ||
             anim.kind === 'ready' ||
             anim.kind === 'move' ||
+            anim.kind === 'skirmish' ||
             (anim.kind === 'attack' && anim.t < 0.98) ||
             anim.kind === 'hurt'
           dr.jackpot += ((jackpotting ? 1 : 0) - dr.jackpot) * (1 - Math.exp(-16 * Math.min(dt, 0.1)))
@@ -1533,7 +1545,7 @@ export function HeroFighter({
                 c.rotation.z = dr.t * 3 + i * 0.7
               }
             })
-            if (anim.kind === 'move' || anim.kind === 'attack') {
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
               g.position.x += Math.sin(dr.t * 55) * 0.03
               g.position.y += Math.cos(dr.t * 42) * 0.025
             }
@@ -1544,7 +1556,7 @@ export function HeroFighter({
           const t = dr.t + seed * 3
           const hardenedMove = hasRiotHarden && anim.kind === 'move' && dr.harden > 0.2
           const active =
-            anim.kind === 'idle' || anim.kind === 'ready' || anim.kind === 'attack' || hardenedMove
+            anim.kind === 'idle' || anim.kind === 'ready' || anim.kind === 'attack' || anim.kind === 'skirmish' || hardenedMove
           for (const [side, g] of [
             ['l', tremor.current.l],
             ['r', tremor.current.r],
@@ -1570,7 +1582,7 @@ export function HeroFighter({
           const cycle = (t * 0.55) % 1
           // Assemble (0–0.45) → hold (0.45–0.7) → snap apart (0.7–1).
           const assemble = cycle < 0.45 ? cycle / 0.45 : cycle < 0.7 ? 1 : 1 - (cycle - 0.7) / 0.3
-          const show = anim.kind === 'idle' || anim.kind === 'ready' || anim.kind === 'attack'
+          const show = anim.kind === 'idle' || anim.kind === 'ready' || anim.kind === 'attack' || anim.kind === 'skirmish'
           magField.current.visible = show && assemble > 0.04
           if (show) {
             magField.current.children.forEach((c, i) => {

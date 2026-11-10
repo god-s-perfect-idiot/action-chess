@@ -1805,7 +1805,7 @@ export function buildExtras(c: Ctx) {
       add('head', <P s={S.box(r * 0.22, r * 0.36, r * 0.85, r * 0.08)} m={M.trim} p={[s * r * 0.92, ey + r * 0.02, -r * 0.05]} r={[0, s * 0.12, 0]} />)
       add('head', <P s={S.panel(r * 0.16, r * 0.5, r * 0.04)} m={M.trim} p={[s * r * 0.55, ey - r * 0.12, -r * 0.78]} r={[0.35, s * 0.4, s * 0.1]} />)
     })
-    add('head', <P s={S.box(r * 1.15, r * 0.24, r * 0.22, r * 0.06)} m={M.trim} p={[0, ey + r * 0.02, -r * 0.9]} />
+    add('head', <P s={S.box(r * 1.15, r * 0.24, r * 0.22, r * 0.06)} m={M.trim} p={[0, ey + r * 0.02, -r * 0.9]} />)
 
     // Stiff high collar over the gakuran neck.
     add('chest', <P s={S.cyl(0.072 * Math.sqrt(L), 0.06 * Math.sqrt(L), 0.11, 16, true)} m={M.primary} p={[0, ch * 1.05, -0.01]} />)
