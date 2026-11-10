@@ -203,7 +203,7 @@ export const HEROES: HeroDef[] = [
     piece: 'n',
     color: 'w',
     startSquare: 'g1',
-    blurb: 'Opens a silver portal on the pad — steps through, L done.',
+    blurb: 'Opens a silver portal behind them — pulls them in, snaps shut.',
     gimmick: 'Spatial Gate',
     look: 'Messy sandy hair, purple eyes, Black Bulls cloak, olive tunic, floating grimoire',
     stats: { pwr: 2, spd: 5, sty: 4 },

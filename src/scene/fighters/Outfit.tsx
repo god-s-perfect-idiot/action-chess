@@ -51,27 +51,29 @@ export function buildBody(c: Ctx) {
   const engineArmor = has('engineVents')
   const cuff =
     d.top === 'bodysuit'
-      ? engineArmor ||
-          voltSplit ||
-          has('saitamaSuit') ||
-          has('guySuit') ||
-          has('eightGates') ||
-          has('dekuSuit') ||
-          has('dekuAwaken') ||
-          has('allMightSuit') ||
-          has('allMightTruth')
-        ? M.secondary
-        : M.accent
+      ? voltSplit
+        ? M.primary
+        : engineArmor ||
+            has('saitamaSuit') ||
+            has('guySuit') ||
+            has('eightGates') ||
+            has('dekuSuit') ||
+            has('dekuAwaken') ||
+            has('allMightSuit') ||
+            has('allMightTruth')
+          ? M.secondary
+          : M.accent
       : M.trim
 
   // ── Pelvis ──
-  const pelvisMat = robeLegs ? M.primary : M.secondary
+  const pelvisMat = robeLegs || voltSplit ? M.primary : M.secondary
   add(
     'pelvis',
     <P s={S.box(pr.pelvisW, 0.11, pr.pelvisD, 0.04)} m={pelvisMat} p={[0, -0.005, 0]} />,
   )
   if (
     !robeLegs &&
+    !voltSplit &&
     d.top !== 'idolDress' &&
     d.bottom !== 'skirt' &&
     !has('saitamaSuit') &&
@@ -88,11 +90,9 @@ export function buildBody(c: Ctx) {
   ) {
     add(
       'pelvis',
-      <P s={S.box(pr.pelvisW * 1.04, 0.022, pr.pelvisD * 1.06, 0.01)} m={voltSplit ? M.secondary : M.trim} p={[0, 0.04, 0]} />,
+      <P s={S.box(pr.pelvisW * 1.04, 0.022, pr.pelvisD * 1.06, 0.01)} m={M.trim} p={[0, 0.04, 0]} />,
     )
-    if (!voltSplit) {
-      add('pelvis', <P s={S.box(0.03, 0.026, 0.01, 0.004)} m={M.metal} p={[0, 0.04, pr.pelvisD * 0.54]} />)
-    }
+    add('pelvis', <P s={S.box(0.03, 0.026, 0.01, 0.004)} m={M.metal} p={[0, 0.04, pr.pelvisD * 0.54]} />)
   }
 
   // ── Legs ──
@@ -102,12 +102,12 @@ export function buildBody(c: Ctx) {
   const shR1 = 0.025 * L
   const flare =
     robeLegs ? 0.07 : d.bottom === 'hakama' ? 0.06 : d.bottom === 'baggy' ? 0.025 : 0
-  const legMatBase = robeLegs ? M.primary : M.secondary
+  const legMatBase = robeLegs || voltSplit ? M.primary : M.secondary
 
   sides((s, l) => {
     const thigh = `${l}Thigh` as BoneName
     const shin = `${l}Shin` as BoneName
-    const legMat = voltSplit ? M.secondary : legMatBase
+    const legMat = legMatBase
     if (flare > 0) {
       const tTop = thR0 * 1.25
       const tBot = tTop + flare * 0.6
@@ -474,10 +474,16 @@ function buildShoes(c: Ctx) {
         add(foot, <P s={S.box(fw * 0.94, 0.008, 0.05, 0.003)} m={M.light} line={false} p={[s * 0.001, -A + 0.05, FL * 0.4]} r={[0.3, 0, 0]} />)
         break
       case 'boots':
-        sole(M.dark, 0.024)
-        upper(M.trim, 0.06)
-        shaft(M.trim, 0.15)
-        add(shin, <P s={S.cyl(shR1 * 1.58, shR1 * 1.58, 0.016, 12)} m={M.metal} p={[0, -pr.shin + 0.13, 0]} />)
+        if (has('arcSuit')) {
+          sole(M.primary, 0.024)
+          upper(M.primary, 0.06)
+          shaft(M.primary, 0.15)
+        } else {
+          sole(M.dark, 0.024)
+          upper(M.trim, 0.06)
+          shaft(M.trim, 0.15)
+          add(shin, <P s={S.cyl(shR1 * 1.58, shR1 * 1.58, 0.016, 12)} m={M.metal} p={[0, -pr.shin + 0.13, 0]} />)
+        }
         break
       case 'heels':
         add(foot, <P s={S.box(fw * 0.8, 0.04, FL + 0.03, 0.016)} m={M.trim} p={[0, -A + 0.034, FL * 0.38]} r={[0.12, 0, 0]} />)
@@ -568,7 +574,7 @@ function buildHands(c: Ctx) {
     let scale = 1
     if (d.hands === 'wraps') mat = M.light
     if (d.hands === 'gloves' || d.hands === 'claws')
-      mat = voltGauntlets ? M.secondary : has('engineVents') ? M.secondary : has('overhaulSuit') ? M.light : M.trim
+      mat = voltGauntlets ? M.primary : has('engineVents') ? M.secondary : has('overhaulSuit') ? M.light : M.trim
     if (d.hands === 'mitts') {
       mat = M.accent
       scale = 1.5
@@ -586,8 +592,8 @@ function buildHands(c: Ctx) {
     }
     if (d.hands === 'gloves') {
       if (voltGauntlets) {
-        // Navy speedster gloves — forearm wrap + cyan cuff ring.
-        add(fore, <P s={S.cyl(0.028 * pr.limb, 0.03 * pr.limb, pr.forearm * 0.72, 12)} m={M.secondary} p={[0, -pr.forearm * 0.62, 0]} />)
+        // Navy speedster gloves — same suit navy + cyan cuff ring.
+        add(fore, <P s={S.cyl(0.028 * pr.limb, 0.03 * pr.limb, pr.forearm * 0.72, 12)} m={M.primary} p={[0, -pr.forearm * 0.62, 0]} />)
         add(fore, <P s={S.cyl(0.031 * pr.limb, 0.031 * pr.limb, 0.018, 12)} m={M.glow} line={false} shadow={false} p={[0, -pr.forearm * 0.32, 0]} />)
         add(fore, <P s={S.box(0.014 * pr.limb, 0.04, 0.01, 0.003)} m={M.accent} line={false} p={[0.03 * pr.limb, -pr.forearm * 0.5, 0]} r={[0, 0, 0.4]} />)
       } else if (has('engineVents')) {

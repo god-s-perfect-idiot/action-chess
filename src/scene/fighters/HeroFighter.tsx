@@ -170,14 +170,11 @@ function PortalTrail({
 }) {
   const mats = useMemo(
     () => ({
-      a: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.78, depthWrite: false }),
-      b: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.48, depthWrite: false }),
-      core: new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.6, depthWrite: false }),
+      a: new THREE.MeshBasicMaterial({ color }),
+      b: new THREE.MeshBasicMaterial({ color: color2 }),
+      core: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
       fill: new THREE.MeshBasicMaterial({
         color,
-        transparent: true,
-        opacity: 0.18,
-        depthWrite: false,
         side: THREE.DoubleSide,
       }),
     }),
@@ -1060,7 +1057,12 @@ export function HeroFighter({
         const target = evalPose(design, anim, seed)
         const cur = pose.current
         cur.rootRot[1] = target.rootRot[1] + wrapAngle(cur.rootRot[1] - target.rootRot[1])
-        const k = 1 - Math.exp(-RATE[anim.kind] * Math.min(dt, 0.1))
+        // Speedster idle lap needs a snappy follow so the circle doesn't lag into a wobble.
+        const rate =
+          anim.kind === 'idle' && target.prop > 0.2 && (hasVoltForm || hasZenitsuTrail)
+            ? 26
+            : RATE[anim.kind]
+        const k = 1 - Math.exp(-rate * Math.min(dt, 0.1))
         lerpPose(cur, cur, target, k)
         cur.vis = target.vis
         cur.prop = target.prop
@@ -1091,7 +1093,9 @@ export function HeroFighter({
         if ((hasVoltForm || hasVectorForm || hasZenitsuTrail) && streaks.current) {
           const trailing =
             (anim.kind === 'move' && speed > 0.12) ||
-            (hasZenitsuTrail && anim.kind === 'attack' && anim.t > 0.05 && anim.t < 0.85)
+            (hasZenitsuTrail && anim.kind === 'attack' && anim.t > 0.05 && anim.t < 0.85) ||
+            // Flash / awakened Zenitsu idle lap — prop marks the lightning orbit.
+            ((hasVoltForm || hasZenitsuTrail) && anim.kind === 'idle' && cur.prop > 0.2)
           dr.trail += ((trailing ? 1 : 0) - dr.trail) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
           const body = b.body
           const g = streaks.current

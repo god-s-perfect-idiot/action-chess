@@ -17,7 +17,8 @@ export function buildHead(c: Ctx) {
     c.has('smileMask') ||
     c.has('engineVents') ||
     c.has('kanekiMask') ||
-    c.has('shukakuAwaken')
+    c.has('shukakuAwaken') ||
+    c.has('dominoMask')
 
   if (!c.has('shukakuAwaken')) {
     add('head', <P s={S.sphere(r, 20, 16)} m={M.skin} sc={[0.96, 1, 0.98]} />)
@@ -700,13 +701,14 @@ function buildHeadgear(c: Ctx) {
     add('head', <P s={S.box(r * 0.25, r * 0.05, r * 0.05, r * 0.02)} m={M.trim} line={false} p={[0, ey + r * 0.02, r * 1.07]} />)
   }
   if (has('dominoMask')) {
-    // Flash Manhattan cowl — open crown for red spikes, cyan lenses, atom mark.
-    // Eye-band face plate leaves mouth visible; crown open for hair.
-    add('head', <P s={S.box(r * 1.55, r * 0.48, r * 0.26, r * 0.12)} m={M.primary} p={[0, ey + r * 0.06, r * 0.72]} />)
-    add('head', <P s={S.box(r * 1.2, r * 0.22, r * 0.14, r * 0.06)} m={M.primary} p={[0, -r * 0.35, r * 0.78]} />)
+    // Flash Manhattan cowl — full face/jaw/cheek wrap, open crown for red spikes.
+    add('head', <P s={S.sphere(r * 1.12, 18, 14)} m={M.primary} p={[0, -r * 0.04, r * 0.02]} sc={[1.02, 1.0, 1.06]} />)
+    add('head', <P s={S.sphere(r * 0.86, 14, 12)} m={M.primary} p={[0, -r * 0.42, r * 0.16]} sc={[0.92, 0.8, 0.9]} />)
+    // Brow ridge + bridge over the lenses.
+    add('head', <P s={S.box(r * 1.55, r * 0.28, r * 0.22, r * 0.1)} m={M.primary} p={[0, ey + r * 0.22, r * 0.78]} />)
     sides((s) => {
-      add('head', <P s={S.box(r * 0.38, r * 0.95, r * 0.7, r * 0.12)} m={M.primary} p={[s * r * 0.78, -r * 0.08, r * 0.08]} r={[0.08, s * 0.12, s * 0.05]} />)
-      add('head', <P s={S.box(r * 0.22, r * 0.55, r * 0.35, r * 0.08)} m={M.primary} p={[s * r * 0.85, r * 0.2, -r * 0.25]} r={[0.2, s * 0.4, s * -0.15]} />)
+      add('head', <P s={S.box(r * 0.42, r * 1.1, r * 0.78, r * 0.14)} m={M.primary} p={[s * r * 0.74, -r * 0.06, r * 0.06]} r={[0.06, s * 0.1, s * 0.04]} />)
+      add('head', <P s={S.box(r * 0.28, r * 0.6, r * 0.42, r * 0.1)} m={M.primary} p={[s * r * 0.84, r * 0.12, -r * 0.28]} r={[0.18, s * 0.38, s * -0.12]} />)
       // Winged ear bolts.
       add('head', <P s={S.box(r * 0.08, r * 0.22, r * 0.28, r * 0.03)} m={M.metal} line={false} p={[s * r * 1.05, r * 0.28, -r * 0.08]} r={[0.2, s * 0.4, s * -0.55]} />)
       add('head', <P s={S.box(r * 0.05, r * 0.12, r * 0.14, r * 0.02)} m={M.glow} line={false} shadow={false} p={[s * r * 1.1, r * 0.36, -r * 0.12]} r={[0.25, s * 0.45, s * -0.6]} />)
@@ -716,7 +718,7 @@ function buildHeadgear(c: Ctx) {
       const x = s * r * 0.34
       const y = ey + r * 0.02
       const z = faceZ(r, x, y)
-      add('head', <P s={S.box(r * 0.48, r * 0.22, r * 0.08, r * 0.06)} m={M.secondary} p={[x, y, z + r * 0.02]} r={[0, s * 0.28, s * 0.06]} />)
+      add('head', <P s={S.box(r * 0.48, r * 0.22, r * 0.08, r * 0.06)} m={M.secondary} p={[x, y, z + r * 0.06]} r={[0, s * 0.28, s * 0.06]} />)
       add(
         'head',
         <P
@@ -724,15 +726,15 @@ function buildHeadgear(c: Ctx) {
           m={M.glow}
           line={false}
           shadow={false}
-          p={[x, y + r * 0.01, z + r * 0.09]}
+          p={[x, y + r * 0.01, z + r * 0.13]}
           r={[0, s * 0.28, 0]}
         />,
       )
     })
-    add('head', <P s={S.box(r * 0.16, r * 0.08, r * 0.04, r * 0.02)} m={M.secondary} line={false} p={[0, ey + r * 0.04, faceZ(r, 0, ey) + r * 0.04]} />)
+    add('head', <P s={S.box(r * 0.16, r * 0.08, r * 0.04, r * 0.02)} m={M.secondary} line={false} p={[0, ey + r * 0.04, faceZ(r, 0, ey) + r * 0.08]} />)
     // Dr. Manhattan forehead mark — circle + nucleus.
-    add('head', <P s={S.cyl(r * 0.12, r * 0.12, r * 0.04, 14)} m={M.glow} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.02]} r={[Math.PI / 2, 0, 0]} />)
-    add('head', <P s={S.cyl(r * 0.04, r * 0.04, r * 0.03, 10)} m={M.metal} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.05]} r={[Math.PI / 2, 0, 0]} />)
+    add('head', <P s={S.cyl(r * 0.12, r * 0.12, r * 0.04, 14)} m={M.glow} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.06]} r={[Math.PI / 2, 0, 0]} />)
+    add('head', <P s={S.cyl(r * 0.04, r * 0.04, r * 0.03, 10)} m={M.metal} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.09]} r={[Math.PI / 2, 0, 0]} />)
   }
   if (has('shades')) {
     sides((s) => {

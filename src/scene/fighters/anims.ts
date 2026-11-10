@@ -652,7 +652,10 @@ export type FxKind =
   | 'getsuga'
   | 'sand'
 
-type SigHit = number | { t: number; zone?: HitZone; /** Keep the victim reaction until the next blow. */ hold?: boolean }
+/** `true` / `'trap'` = floor trap; `'portal'` = dragged into a gate behind them. */
+export type HoldKind = boolean | 'trap' | 'portal'
+
+type SigHit = number | { t: number; zone?: HitZone; /** Keep the victim reaction until the next blow. */ hold?: HoldKind }
 
 interface Sig {
   clip: Clip
@@ -898,23 +901,31 @@ const SIGS: Record<AttackStyle, Sig> = {
     ),
   },
   portalGate: {
-    // Spatial Magic: cast a gate → teleport through → palm strike from the exit.
-    hit: 0.54,
+    // Spatial Magic: open a gate behind them → pull them in → snap it shut (dismember).
+    hit: 0.48,
+    hits: [
+      { t: 0.48, zone: 'mid', hold: 'portal' },
+      { t: 0.95, zone: 'mid' },
+    ],
     zone: 'mid',
-    release: 0.54,
+    release: 0.22,
     ranged: false,
     fx: 'portal',
     clip: clip(
       [
         [0, P({ prop: 0 }, IDLES.portalReady(0))],
-        [0.12, { prop: 1, hipY: -0.12, spine: [0.12, -0.4, 0], chest: [0, -0.2, 0], rArm: [-1.5, 0.2, 0.1], rElbow: [-0.05, 0, 0], rHand: [-0.7, 0, 0.25], lArm: [0.35, 0, 0.55], lElbow: [-1.4, 0, 0], head: [0.05, -0.3, 0] }],
-        [0.2, { prop: 1, vis: 0, root: [0, 0.08, 0.1], hipY: -0.06, rArm: [-1.55, 0, 0.05], rElbow: [0, 0, 0] }],
-        [0.38, { prop: 1, vis: 0, root: [0, 0.1, 0.36] }],
-        [0.44, { prop: 1, vis: 1, root: [0, 0.04, 0.38], hipY: -0.1, hips: [0, -0.45, 0], spine: [0.1, -0.35, 0], chest: [0, -0.15, 0], lFoot: [0.04, 0.02, 0.14], rFoot: [0.05, 0.02, -0.1], lArm: [-0.8, 0, 0.4], lElbow: [-1.5, 0, 0], rArm: [0.4, 0, 0.5], rElbow: [-1.7, 0, 0], head: [0.05, -0.2, 0] }],
-        [0.54, { prop: 0.6, root: [0, 0, 0.42], hipY: -0.12, hips: [0, 0.45, 0], spine: [0.18, -0.45, 0], chest: [0, -0.15, 0], lFoot: [0.04, 0, 0.18], rFoot: [0.05, 0, -0.12], rArm: [-1.55, 0, 0.05], rElbow: [0, 0, 0], rHand: [-1.2, 0, 0], lArm: [0.3, 0, 0.55], lElbow: [-1.3, 0, 0], head: [0.05, -0.2, 0] }, 'snap'],
-        [0.72, { prop: 0.2, root: [0, 0, 0.38], hipY: -0.1, hips: [0, 0.15, 0], spine: [0.1, -0.15, 0], rArm: [-1.35, 0, 0.15], rElbow: [-0.2, 0, 0], rHand: [-0.9, 0, 0], lArm: [-0.55, 0, 0.5], lElbow: [-1.2, 0, 0] }],
-        [0.95, { prop: 0, root: [0, 0, 0.28], hipY: -0.08, spine: [0.1, 0, 0], lArm: [-0.55, 0, 0.45], rArm: [-0.55, 0, 0.45], lElbow: [-1.3, 0, 0], rElbow: [-1.3, 0, 0] }],
-        [1.15, P({ prop: 0 }, IDLES.portalReady(0))],
+        // Plant and cast — right palm opens the far gate.
+        [0.16, { prop: 0.55, hipY: -0.1, root: [0, 0, 0.04], hips: [0.04, -0.25, 0], spine: [0.1, -0.35, 0], chest: [0.04, -0.15, 0], head: [0.05, -0.35, 0], lFoot: [0.04, 0, 0.1], rFoot: [0.05, 0, -0.08], lArm: [0.35, 0, 0.55], lElbow: [-1.45, 0, 0], rArm: [-1.35, 0.25, 0.15], rElbow: [-0.15, 0, 0], rHand: [-0.85, 0, 0.35] }],
+        // Gate blooms — hold the cast while it opens behind them.
+        [0.32, { prop: 1, hipY: -0.12, root: [0, 0, 0.06], hips: [0.05, -0.2, 0], spine: [0.12, -0.4, 0], chest: [0.05, -0.18, 0], head: [0.06, -0.4, 0], lFoot: [0.04, 0, 0.12], rFoot: [0.05, 0, -0.1], lArm: [0.3, 0, 0.55], lElbow: [-1.5, 0, 0], rArm: [-1.5, 0.15, 0.08], rElbow: [-0.05, 0, 0], rHand: [-1.05, 0, 0.25] }],
+        // Yank — fingers curl; the portal sucks them in.
+        [0.48, { prop: 1, hipY: -0.14, root: [0, 0, 0.08], hips: [0.08, 0.35, 0], spine: [0.18, -0.25, 0], chest: [0.08, -0.1, 0], head: [0.08, -0.25, 0], lFoot: [0.04, 0, 0.14], rFoot: [0.06, 0, -0.1], lArm: [-0.55, 0, 0.5], lElbow: [-1.55, 0, 0], rArm: [-0.85, 0.1, 0.25], rElbow: [-1.85, 0, 0], rHand: [0.55, 0, 0.15] }, 'snap'],
+        // Keep the pull open a beat while they thrash into the gate.
+        [0.72, { prop: 1, hipY: -0.12, root: [0, 0, 0.06], hips: [0.06, 0.2, 0], spine: [0.14, -0.2, 0], chest: [0.06, -0.08, 0], head: [0.05, -0.2, 0], lFoot: [0.04, 0, 0.12], rFoot: [0.05, 0, -0.1], lArm: [-0.5, 0, 0.5], lElbow: [-1.5, 0, 0], rArm: [-0.75, 0.1, 0.28], rElbow: [-1.7, 0, 0], rHand: [0.4, 0, 0.1] }],
+        // Fist crush — portal snaps shut and cuts them apart.
+        [0.95, { prop: 0.15, hipY: -0.14, root: [0, 0, 0.1], hips: [0.1, 0.45, 0], spine: [0.22, -0.35, 0], chest: [0.1, -0.12, 0], head: [0.1, -0.15, 0], lFoot: [0.04, 0, 0.16], rFoot: [0.06, 0, -0.1], lArm: [0.25, 0, 0.55], lElbow: [-1.35, 0, 0], rArm: [-1.55, 0, 0.05], rElbow: [0, 0, 0], rHand: [-0.35, 0, 0] }, 'snap'],
+        [1.15, { prop: 0, hipY: -0.1, root: [0, 0, 0.06], spine: [0.1, -0.1, 0], lArm: [-0.55, 0, 0.45], rArm: [-0.7, 0, 0.4], lElbow: [-1.4, 0, 0], rElbow: [-1.2, 0, 0] }],
+        [1.35, P({ prop: 0 }, IDLES.portalReady(0))],
       ],
       REST,
     ),
@@ -2355,7 +2366,7 @@ const COMBOS: Partial<Record<AttackStyle, ComboSpec>> = {
   turboPunch: { post: ['roundhouse'], cut: 0.7 },
   flyingKick: { pre: ['frontKick', 'spinBackKick'] },
   phasePunch: { dmg: 'slash', sever: 'head' },
-  portalGate: { pre: ['jab', 'cross'] },
+  portalGate: { dmg: 'slash', sever: 'all' },
   flyingRaijin: { dmg: 'blunt' },
   boogieWoogie: { dmg: 'blunt' },
   wristShot: { dmg: 'pierce', sever: 'head' },
@@ -2436,7 +2447,7 @@ const DAMAGE: Record<FxKind, DamageType> = {
   magnet: 'blunt',
   speed: 'blunt',
   phase: 'blunt',
-  portal: 'blunt',
+  portal: 'slash',
   kunai: 'pierce',
   rasengan: 'blunt',
   bullet: 'pierce',
@@ -2460,8 +2471,8 @@ const DAMAGE: Record<FxKind, DamageType> = {
 export interface Hit {
   t: number
   zone: HitZone
-  /** Keep this reaction posed until the next blow / death (floor trap, etc.). */
-  hold?: boolean
+  /** Keep this reaction posed until the next blow / death (floor trap, portal suck, etc.). */
+  hold?: HoldKind
 }
 
 export interface AttackDef {
@@ -2664,7 +2675,40 @@ function trapPose(t: number): Pose {
   return out
 }
 
-function hurtPose(t: number, zone: HitZone, n: number, hold = false): Pose {
+/** Dragged backward into a spatial gate — limbs thrash as the body stretches away. */
+function portalSuckPose(t: number): Pose {
+  const pull = t < 0.18 ? smooth(t / 0.18) : 1
+  const thrash = sin(t * 22) * 0.14
+  const thrash2 = cos(t * 17) * 0.12
+  return P(
+    {
+      // −Z is away from the attacker (victim faces them); portal sits behind.
+      root: [thrash * 0.04, 0.04 + pull * 0.1, -0.08 - pull * 0.62],
+      hipY: -0.06 - pull * 0.08,
+      hips: [0.12 + thrash * 0.2, thrash2 * 0.55, thrash * 0.15],
+      spine: [-0.55 * pull + thrash * 0.15, thrash2 * 0.45, thrash * 0.2],
+      chest: [-0.28 * pull, thrash * 0.25, thrash2 * 0.12],
+      neck: [-0.2 * pull, 0, 0],
+      head: [-0.35 * pull + thrash * 0.1, thrash2 * 0.7, thrash * 0.25],
+      // Arms reach forward toward the attacker / claw at the rim.
+      lArm: [-2.35 + thrash * 0.5, -0.65 + thrash2, 0.75],
+      rArm: [-2.3 - thrash * 0.5, 0.65 - thrash2, 0.75],
+      lElbow: [-0.25, 0, 0],
+      rElbow: [-0.25, 0, 0],
+      lHand: [-0.35, 0, 0.2],
+      rHand: [-0.35, 0, 0.2],
+      lFoot: [0.05, 0.08 + thrash * 0.06, 0.08],
+      rFoot: [0.06, 0.06 - thrash * 0.05, -0.06],
+      lToe: 0.45,
+      rToe: 0.4,
+      blink: 1,
+    },
+    STANCE,
+  )
+}
+
+function hurtPose(t: number, zone: HitZone, n: number, hold: HoldKind = false): Pose {
+  if (hold === 'portal') return portalSuckPose(t)
   if (hold) return trapPose(t)
   const env = t < 0.05 ? smooth(t / 0.05) : 1 - smooth((t - 0.08) / 0.38)
   const target = hurtTargets[zone][n % 2]
@@ -2684,7 +2728,7 @@ export type AnimInput =
   | { kind: 'move'; style: MoveStyle; t: number; p: number; dist: number }
   | { kind: 'attack'; t: number }
   /** Staggered by blow `n` (1-based) of a combo, `t` seconds ago. */
-  | { kind: 'hurt'; t: number; zone: HitZone; n: number; hold?: boolean }
+  | { kind: 'hurt'; t: number; zone: HitZone; n: number; hold?: HoldKind }
   | { kind: 'death'; t: number; dmg: DamageType; zone: HitZone; sever?: SeverSpec }
 
 function scaleClip(c: Clip, s: number): Clip {
@@ -2709,7 +2753,7 @@ function scaleAttack(a: AttackDef, mul: number): AttackDef {
     hit: a.hit * s,
     release: a.release * s,
     fxAt: a.fxAt * s,
-    hits: a.hits.map((h) => ({ t: h.t * s, zone: h.zone })),
+    hits: a.hits.map((h) => ({ t: h.t * s, zone: h.zone, hold: h.hold })),
     throwFx: a.throwFx
       ? { kind: a.throwFx.kind, at: a.throwFx.at * s, travel: a.throwFx.travel * s }
       : undefined,

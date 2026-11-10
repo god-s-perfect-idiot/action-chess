@@ -22,6 +22,7 @@ import {
   deathDuration,
   type AnimInput,
   type DamageType,
+  type HoldKind,
   type HitZone,
   type MoveStyle,
   type SeverSpec,
@@ -64,7 +65,7 @@ interface Ghost {
   hitAt: number
   vanishAt: number
   /** Non-lethal blows of the combo (absolute times) that stagger before the kill. */
-  hurts: { at: number; zone: HitZone; hold?: boolean }[]
+  hurts: { at: number; zone: HitZone; hold?: HoldKind }[]
   dmg: DamageType
   zone: HitZone
   sever?: SeverSpec
@@ -746,6 +747,7 @@ export function Pieces({
       }
       const rasengan = atk.fx === 'rasengan'
       const babylon = atk.fx === 'babylon'
+      const portal = atk.fx === 'portal'
       const inferno = atk.fx === 'inferno'
       const fxFrom = rasengan
         ? new THREE.Vector3(vPos.x, up * 1.85, vPos.y)
@@ -762,9 +764,19 @@ export function Pieces({
         start:
           t0 +
           attackAt +
-          (atk.ranged || babylon ? atk.release : rasengan ? atk.fxAt - 0.16 : atk.fxAt),
+          (atk.ranged || babylon || portal
+            ? atk.release
+            : rasengan
+              ? atk.fxAt - 0.16
+              : atk.fxAt),
         travel:
-          atk.ranged || babylon ? Math.max(0, atk.hit - atk.release) : rasengan ? 0.16 : 0,
+          atk.ranged || babylon
+            ? Math.max(0, atk.hit - atk.release)
+            : portal
+              ? Math.max(0, atk.fxAt - atk.release)
+              : rasengan
+                ? 0.16
+                : 0,
         dur:
           atk.fx === 'beam' || atk.fx === 'darkBeam' || atk.fx === 'murasaki' || atk.fx === 'percentBlast'
             ? atk.fx === 'murasaki' || atk.fx === 'percentBlast'
@@ -776,9 +788,11 @@ export function Pieces({
                 ? 0.75
                 : inferno
                   ? 1.35
-                  : sakura || babylon
-                    ? 0.95
-                    : 0.6,
+                  : portal
+                    ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
+                    : sakura || babylon
+                      ? 0.95
+                      : 0.6,
         from: fxFrom,
         to: fxTo,
         color: sakura ? '#ff8ec8' : babylon ? '#f0d050' : inferno ? '#ff6a18' : c1,

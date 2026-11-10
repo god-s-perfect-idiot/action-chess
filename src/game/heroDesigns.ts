@@ -905,7 +905,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     weapon: 'none',
     idle: 'portalReady',
     attack: 'portalGate',
-    death: 'dissolve',
+    death: 'crumple',
     tempo: 0.95,
     locomotion: 'teleport',
   },
@@ -1209,9 +1209,10 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     moveSpeedMul: 0.95,
   },
   'night-sonic': {
+    // Kirishima — Gaara-height but fit/athletic, not lanky.
     body: 'athletic',
     figure: 'm',
-    tweak: { bulk: 1.04, shoulders: 1.08, height: 1.02 },
+    tweak: { height: 1.0, bulk: 1.02, shoulders: 1.04, head: 1.02 },
     palette: {
       // Bare torso — primary matches skin so the tank reads as skin.
       skin: '#c48a68',

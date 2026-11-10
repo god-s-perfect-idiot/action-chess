@@ -333,11 +333,11 @@ export function buildExtras(c: Ctx) {
       add(b, <P s={S.box(w * 0.5, h * 0.5, 0.01, 0.003)} m={M.glow} line={false} shadow={false} p={[x, y, 0.04 * L]} r={[0, 0, rot]} />)
     })
 
-    // Dark boot shafts with cyan heel glow.
+    // Boot shafts in suit navy with cyan heel glow.
     sides((_s, l) => {
       const shin = `${l}Shin` as BoneName
       const foot = `${l}Foot` as BoneName
-      add(shin, <P s={S.cyl(0.038 * L, 0.042 * L, pr.shin * 0.55, 12)} m={M.secondary} p={[0, -pr.shin * 0.68, 0]} />)
+      add(shin, <P s={S.cyl(0.038 * L, 0.042 * L, pr.shin * 0.55, 12)} m={M.primary} p={[0, -pr.shin * 0.68, 0]} />)
       add(shin, <P s={S.cyl(0.04 * L, 0.04 * L, 0.014, 12)} m={M.glow} line={false} shadow={false} p={[0, -pr.shin * 0.48, 0]} />)
       add(foot, <P s={S.box(0.02 * L, 0.012, 0.04, 0.004)} m={M.accent} line={false} p={[0, 0.018, 0.04]} r={[0, 0, 0.5]} />)
     })
@@ -1794,15 +1794,18 @@ export function buildExtras(c: Ctx) {
   if (has('gojoSuit')) {
     // Gojo — black blindfold, sky-high collar, slim jujutsu blacks, dress shoes.
     const r = pr.headR
+    const ey = -r * 0.08
+    // Face surface at eye height — prior band sat at ~0.72r and was buried in the head.
+    const faceFront = 0.98 * r * Math.sqrt(Math.max(0, 1 - (ey / r) * (ey / r)))
 
-    // Thick fabric blindfold wrapping the eyes.
-    add('head', <P s={S.box(r * 1.85, r * 0.38, r * 0.55, r * 0.12)} m={M.trim} p={[0, -r * 0.06, r * 0.28]} />)
-    add('head', <P s={S.box(r * 1.7, r * 0.28, r * 0.18, r * 0.06)} m={M.dark} p={[0, -r * 0.06, r * 0.72]} />)
+    // Thick fabric blindfold wrapping the eyes (must sit outside the head sphere).
+    add('head', <P s={S.box(r * 1.65, r * 0.42, r * 0.28, r * 0.12)} m={M.trim} p={[0, ey, faceFront - r * 0.02]} />)
+    add('head', <P s={S.box(r * 1.48, r * 0.3, r * 0.12, r * 0.06)} m={M.dark} p={[0, ey, faceFront + r * 0.12]} />)
     sides((s) => {
-      add('head', <P s={S.box(r * 0.22, r * 0.32, r * 0.7, r * 0.08)} m={M.trim} p={[s * r * 0.92, -r * 0.04, -r * 0.05]} r={[0, s * 0.15, 0]} />)
-      add('head', <P s={S.panel(r * 0.18, r * 0.55, r * 0.04)} m={M.trim} p={[s * r * 0.55, -r * 0.2, -r * 0.75]} r={[0.35, s * 0.4, s * 0.1]} />)
+      add('head', <P s={S.box(r * 0.22, r * 0.36, r * 0.85, r * 0.08)} m={M.trim} p={[s * r * 0.92, ey + r * 0.02, -r * 0.05]} r={[0, s * 0.12, 0]} />)
+      add('head', <P s={S.panel(r * 0.16, r * 0.5, r * 0.04)} m={M.trim} p={[s * r * 0.55, ey - r * 0.12, -r * 0.78]} r={[0.35, s * 0.4, s * 0.1]} />)
     })
-    add('head', <P s={S.box(r * 1.2, r * 0.22, r * 0.2, r * 0.06)} m={M.trim} p={[0, -r * 0.02, -r * 0.85]} />)
+    add('head', <P s={S.box(r * 1.15, r * 0.24, r * 0.22, r * 0.06)} m={M.trim} p={[0, ey + r * 0.02, -r * 0.9]} />
 
     // Stiff high collar over the gakuran neck.
     add('chest', <P s={S.cyl(0.072 * Math.sqrt(L), 0.06 * Math.sqrt(L), 0.11, 16, true)} m={M.primary} p={[0, ch * 1.05, -0.01]} />)

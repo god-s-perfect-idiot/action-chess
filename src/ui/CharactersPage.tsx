@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { HEROES, type HeroDef } from '../game/heroes'
+import { HEROES } from '../game/heroes'
 import { getHeroDesign } from '../game/heroDesigns'
 import { PIECE_CODENAME } from '../game/types'
 import { ANIM_MODES, CharacterStage, DAMAGE_TYPES, type AnimMode } from '../scene/CharacterStage'
@@ -18,25 +18,15 @@ function StatPips({ label, value }: { label: string; value: number }) {
   )
 }
 
-function sideLabel(color: HeroDef['color']) {
-  return color === 'w' ? 'Dawn' : 'Eclipse'
-}
-
 export function CharactersPage({ onBack }: { onBack: () => void }) {
   const [selectedId, setSelectedId] = useState(HEROES[0]?.id ?? '')
   const [mode, setMode] = useState<AnimMode>('idle')
   const [damage, setDamage] = useState<DamageType | null>(null)
-  const [filter, setFilter] = useState<'all' | 'w' | 'b'>('all')
   const [awakened, setAwakened] = useState(false)
 
-  const roster = useMemo(
-    () => (filter === 'all' ? HEROES : HEROES.filter((h) => h.color === filter)),
-    [filter],
-  )
-
   const hero = useMemo(
-    () => roster.find((h) => h.id === selectedId) ?? roster[0] ?? HEROES[0],
-    [roster, selectedId],
+    () => HEROES.find((h) => h.id === selectedId) ?? HEROES[0],
+    [selectedId],
   )
 
   const canAwaken = hero?.piece === 'p'
@@ -72,34 +62,16 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
           <aside className="chars-list-panel">
             <div className="panel-head">
               <span>Fighters</span>
-              <span className="chars-count">{roster.length}</span>
-            </div>
-            <div className="chars-filter">
-              {(
-                [
-                  ['all', 'All'],
-                  ['w', 'Dawn'],
-                  ['b', 'Eclipse'],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`chars-filter-btn ${filter === key ? 'active' : ''} filter-${key}`}
-                  onClick={() => setFilter(key)}
-                >
-                  {label}
-                </button>
-              ))}
+              <span className="chars-count">{HEROES.length}</span>
             </div>
             <ul className="chars-list">
-              {roster.map((h) => {
+              {HEROES.map((h) => {
                 const active = h.id === hero?.id
                 return (
                   <li key={h.id}>
                     <button
                       type="button"
-                      className={`chars-row ${active ? 'active' : ''} side-${h.color}`}
+                      className={`chars-row ${active ? 'active' : ''}`}
                       onClick={() => {
                         setSelectedId(h.id)
                         if (h.piece !== 'p') setAwakened(false)
@@ -109,7 +81,7 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
                       <span className="chars-row-body">
                         <span className="chars-row-name">{h.codename}</span>
                         <span className="chars-row-meta">
-                          {PIECE_CODENAME[h.piece]} · {sideLabel(h.color)}
+                          {PIECE_CODENAME[h.piece]}
                         </span>
                       </span>
                     </button>
@@ -183,9 +155,6 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
               <>
                 <div className="panel-head">
                   <span>Profile</span>
-                  <span className={`chars-side-pill side-${hero.color}`}>
-                    {sideLabel(hero.color)}
-                  </span>
                 </div>
                 <div className="hero-title-row">
                   <p className="hero-codename">{hero.codename}</p>
@@ -228,7 +197,7 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
                 ) : null}
               </>
             ) : (
-              <p className="lock-empty">No fighters in this filter.</p>
+              <p className="lock-empty">No fighters in the roster.</p>
             )}
           </aside>
         </div>

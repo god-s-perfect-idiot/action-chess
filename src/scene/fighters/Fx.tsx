@@ -740,6 +740,89 @@ function Gravity({ e }: { e: FxEvent }) {
   )
 }
 
+/** Opaque spatial gate behind the target — opens, sucks, then snaps shut. */
+function PortalSnap({ e }: { e: FxEvent }) {
+  const mats = useMemo(
+    () => ({
+      rim: new THREE.MeshBasicMaterial({ color: e.color }),
+      rimAlt: new THREE.MeshBasicMaterial({ color: e.color2 }),
+      core: new THREE.MeshBasicMaterial({ color: '#f4f7fb' }),
+      fill: new THREE.MeshBasicMaterial({ color: e.color, side: THREE.DoubleSide }),
+      dark: new THREE.MeshBasicMaterial({ color: '#0c1018', side: THREE.DoubleSide }),
+      blood: new THREE.MeshBasicMaterial({ color: '#8a0a14' }),
+    }),
+    [e.color, e.color2],
+  )
+  const behind = useMemo(() => {
+    const forward = new THREE.Vector3().subVectors(e.to, e.from)
+    if (forward.lengthSq() < 1e-8) forward.set(0, 0, 1)
+    else forward.normalize()
+    // Sit just past the victim, facing back toward the attacker.
+    return new THREE.Vector3().copy(e.to).addScaledVector(forward, e.size * 0.72)
+  }, [e.from, e.to, e.size])
+
+  const ref = useFx(e, (g, tp, u) => {
+    g.position.copy(behind)
+    g.lookAt(e.from)
+    // Travel: bloom open. Impact: hold while sucking, then crush shut with the kill.
+    let open = 0
+    if (u < 0) open = ease(tp)
+    else if (u < 0.68) open = 1
+    else open = 1 - ease((u - 0.68) / 0.22)
+    const pulse = 1 + Math.sin((now() - e.start) * 9) * 0.04 * open
+    const s = Math.max(0.0001, open * e.size * 1.35 * pulse)
+    g.scale.setScalar(s)
+    g.visible = open > 0.04
+    // Inner suction rings crawl inward during the pull.
+    const pull = u < 0 ? 0 : Math.min(1, u / 0.68)
+    g.children.forEach((c, i) => {
+      if (i < 3) {
+        const ring = c as THREE.Object3D
+        const wave = ((now() - e.start) * 1.6 + i * 0.45) % 1
+        const shrink = 1 - pull * 0.35 - wave * 0.12
+        ring.scale.setScalar(Math.max(0.0001, shrink))
+        ring.rotation.z = (now() - e.start) * (1.2 + i * 0.35) * (i % 2 ? 1 : -1)
+      } else if (i === 5) {
+        // Blood spray only on the snap.
+        const snap = u >= 0.68 && u < 0.95 ? pop((u - 0.68) / 0.27, 0.15, 0.55) : 0
+        c.visible = snap > 0.04
+        c.scale.setScalar(Math.max(0.0001, snap * 1.4))
+      }
+    })
+  })
+
+  return (
+    <group ref={ref} visible={false}>
+      <group>
+        <P s={S.torus(0.48, 0.04, Math.PI * 2, 32)} m={mats.rim} line={false} shadow={false} />
+      </group>
+      <group>
+        <P s={S.torus(0.36, 0.028, Math.PI * 2, 28)} m={mats.rimAlt} line={false} shadow={false} />
+      </group>
+      <group>
+        <P s={S.torus(0.24, 0.02, Math.PI * 2, 24)} m={mats.core} line={false} shadow={false} />
+      </group>
+      <P s={S.cyl(0.42, 0.42, 0.02, 28)} m={mats.fill} line={false} shadow={false} r={[Math.PI / 2, 0, 0]} />
+      <P s={S.cyl(0.28, 0.28, 0.016, 24)} m={mats.dark} line={false} shadow={false} r={[Math.PI / 2, 0, 0]} />
+      <group>
+        {Array.from({ length: 8 }, (_, i) => {
+          const a = (i / 8) * Math.PI * 2
+          return (
+            <P
+              key={i}
+              s={S.sphere(0.05, 6, 5)}
+              m={mats.blood}
+              line={false}
+              shadow={false}
+              p={[Math.cos(a) * 0.22, Math.sin(a) * 0.22, 0.08]}
+            />
+          )
+        })}
+      </group>
+    </group>
+  )
+}
+
 /** Green wind crescent blades racing the travel path. */
 function WindBlades({ e }: { e: FxEvent }) {
   const M = useMats(e)
@@ -1365,15 +1448,16 @@ function FxView({ e }: { e: FxEvent }) {
         </>
       )
     case 'portal':
+      // Gate blooms behind them, pulls, then snaps shut — limbs come apart.
       return (
         <>
-          <Ring e={e} radius={1.6} />
-          <Ring e={e} radius={1.05} delay={0.1} />
-          <Ring e={e} radius={0.55} delay={0.2} />
-          <Ring e={e} ground radius={1.4} delay={0.08} />
-          <Volley e={e} count={3} shape="ring" />
-          <Debris e={e} count={12} kind="star" />
-          <Burst e={e} spikes={8} scale={0.85} />
+          <PortalSnap e={e} />
+          <Ring e={e} ground radius={1.5} delay={0.05} />
+          <Ring e={e} ground radius={0.85} delay={0.18} />
+          <SpeedLines e={e} />
+          <Burst e={e} spikes={10} scale={0.95} />
+          <Debris e={e} count={14} kind="star" />
+          <Debris e={e} count={10} kind="blood" />
         </>
       )
     case 'kunai':

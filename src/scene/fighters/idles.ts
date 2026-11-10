@@ -353,30 +353,82 @@ export const IDLES: Record<IdleStyle, IdleFn> = {
     })
   },
   speedCrouch: (t) => {
-    // Three-point speedster halt — one hand grounded, arcs twitching.
-    const j = (k: number) => noise(floor(t * 16) + k) * 0.06
-    const surge = beat(t, 2.1, 0.35)
-    const tap = (t * 11) % 1
-    const tapLift = tap < 0.4 ? sin((tap / 0.4) * PI) : 0
+    // Three-point crouch that ramps voltage, then every few seconds laps the pad as lightning.
+    const TAU = PI * 2
+    const period = 3.8
+    const local = t % period
+    // 0–1.5 ramp · 1.5–1.65 launch · 1.65–2.85 lap · 2.85–3.05 land · 3.05–3.8 settle.
+    const rampEnd = 1.5
+    const lapStart = 1.65
+    const lapEnd = 2.85
+    const landEnd = 3.05
+
+    let lap = 0
+    let θ = 0
+    if (local >= lapStart && local <= lapEnd) {
+      const u = (local - lapStart) / (lapEnd - lapStart)
+      lap = 1
+      θ = u * TAU
+    } else if (local > lapEnd && local < landEnd) {
+      lap = 1 - smooth((local - lapEnd) / (landEnd - lapEnd))
+      θ = TAU
+    } else if (local > rampEnd && local < lapStart) {
+      lap = smooth((local - rampEnd) / (lapStart - rampEnd))
+      θ = 0
+    }
+
+    let ramp = 0
+    if (local <= rampEnd) ramp = smooth(local / rampEnd)
+    else if (local < lapStart) ramp = 1
+    else if (local >= landEnd) ramp = smooth((local - landEnd) / (period - landEnd)) * 0.4
+
+    const shakeHz = 14 + ramp * 22
+    const j = (k: number) => noise(floor(t * shakeHz) + k) * (0.035 + ramp * 0.09) * (1 - lap)
+    const surge = beat(t, 2.1, 0.35) * (0.45 + ramp * 0.55) * (1 - lap)
+    const tap = (t * (10 + ramp * 8)) % 1
+    const tapLift = !lap && tap < 0.4 ? sin((tap / 0.4) * PI) : 0
+
+    // Circle to +X so start/end face +Z (yaw 0) on the pad.
+    const R = 0.4
+    const pump = sin(θ * 8 + t * 28)
+    const crouch = 1 - lap
+    // Hold yaw only while orbiting — land at θ≡TAU so we don't rewind a full turn.
+    const yaw = local >= lapStart && local <= lapEnd ? θ : 0
+
     return P({
-      hipY: -0.28 - surge * 0.02,
-      root: [j(0) * 0.2, 0, 0.04],
-      hips: [0.15, 0.35, 0.08],
-      lFoot: [0.1, 0, 0.22],
-      rFoot: [0.14, tapLift * 0.03, -0.18],
-      lToe: 0.15,
-      rToe: 0.35 + tapLift * 0.2,
-      spine: [0.45 + j(1), -0.25 + j(2), 0.1],
-      chest: [0.12, -0.1, 0],
-      head: [-0.35 + j(3), 0.35 + j(4) * 1.5, 0.1],
-      // Right hand plants on the ground.
-      rArm: [0.55 + j(5), 0.2, 0.15],
-      rElbow: [-0.35, 0, 0],
-      rHand: [0.9, 0, j(6) * 2],
-      // Left arm cocked back, ready to launch.
-      lArm: [-1.35 + j(7), -0.4, 0.55 + surge * 0.25],
-      lElbow: [-0.55 - surge * 0.2, 0, 0],
-      lHand: [-0.3, 0, 0.4],
+      hipY: (-0.28 - surge * 0.03 - ramp * 0.04) * crouch + (-0.06 - abs(pump) * 0.04) * lap,
+      root: [
+        j(0) * 0.25 + R * (1 - cos(θ)) * lap,
+        ramp * 0.015 * crouch + 0.03 * lap,
+        0.04 * crouch + R * sin(θ) * lap,
+      ],
+      rootRot: [0.22 * lap, yaw, 0],
+      hips: [0.15 * crouch + 0.08 * lap, 0.35 * crouch + pump * 0.2 * lap, 0.08 * crouch],
+      lFoot: [
+        0.1 * crouch + 0.02 * lap,
+        tapLift * 0.01 + max(0, -pump) * 0.14 * lap,
+        0.22 * crouch + (-0.02 + max(0, -pump) * 0.06) * lap,
+      ],
+      rFoot: [
+        0.14 * crouch + 0.02 * lap,
+        tapLift * 0.03 + max(0, pump) * 0.14 * lap,
+        -0.18 * crouch + (-0.01 + max(0, pump) * 0.06) * lap,
+      ],
+      lToe: 0.15 * crouch + max(0, -pump) * 0.7 * lap,
+      rToe: (0.35 + tapLift * 0.2) * crouch + max(0, pump) * 0.7 * lap,
+      spine: [0.45 * crouch + 0.35 * lap + j(1), -0.25 * crouch + j(2), 0.1 * crouch],
+      chest: [0.12 * crouch + 0.1 * lap, -0.1 * crouch, 0],
+      head: [-0.35 * crouch - 0.2 * lap + j(3), 0.35 * crouch + j(4) * 1.5, 0.1 * crouch],
+      // Planted right hand → pumping sprint arms once he bolts.
+      rArm: [0.55 * crouch - pump * 1.05 * lap + j(5), 0.2 * crouch, 0.15 * crouch + 0.12 * lap],
+      rElbow: [-0.35 * crouch - 1.45 * lap, 0, 0],
+      rHand: [0.9 * crouch - 0.25 * lap, 0, j(6) * 2],
+      lArm: [-1.35 * crouch + pump * 1.05 * lap + j(7), -0.4 * crouch, 0.55 * crouch + surge * 0.25 + 0.12 * lap],
+      lElbow: [(-0.55 - surge * 0.2) * crouch - 1.45 * lap, 0, 0],
+      lHand: [-0.3 * crouch, 0, 0.4 * crouch],
+      // Drive Speed Force trail + shrink body into the streak.
+      prop: lap,
+      vis: 1 - lap * 0.78,
     })
   },
   slouch: (t) => {

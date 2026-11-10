@@ -24,9 +24,11 @@ export const ANIM_MODES: AnimMode[] = ['cycle', 'idle', 'run', 'attack', 'death'
 /** Damage types the self-death preview cycles through. */
 export const DAMAGE_TYPES: DamageType[] = ['beam', 'slash', 'pierce', 'blunt', 'burn', 'shock']
 
-/** Local-units/sec so in-place run cadence matches board travel feel. */
+/** Local-units/sec so run cadence matches board travel feel. */
 const RUN_DIST_RATE = 2.5
 const RUN_LOOP = 1.2
+/** One-way shuttle length so the Characters run preview travels A→B instead of in place. */
+const RUN_PATH = 1.35
 /** Sparring partner distance in front of the fighter (+Z): board melee stop / one square for ranged. */
 const MELEE_Z = 0.66
 const RANGED_Z = 1.6
@@ -39,27 +41,87 @@ function locoOf(d: HeroDesign): MoveStyle {
   return d.locomotion ?? 'run'
 }
 
-function runAnim(d: HeroDesign, t: number): AnimInput {
+type RunPreview = {
+  anim: AnimInput
+  x: number
+  y: number
+  z: number
+  yaw: number
+}
+
+/** Seconds for one A→B leg at this hero's locomotion. */
+function runOneWay(d: HeroDesign): number {
   const style = locoOf(d)
-  if (style === 'leap') {
-    const lt = t % RUN_LOOP
-    return { kind: 'move', style, t: lt, p: lt / RUN_LOOP, dist: 0 }
-  }
-  if (style === 'vector') {
-    // Loop plant → coast → settle so the air-shove reads in place.
-    const loop = 1.15
-    const lt = t % loop
-    return { kind: 'move', style, t, p: lt / loop, dist: 0 }
-  }
+  if (style === 'leap') return RUN_LOOP
+  if (style === 'vector') return 1.15
+  if (style === 'teleport') return 0.95
+  if (style === 'fly') return Math.max(0.55, RUN_PATH / (RUN_DIST_RATE * (d.moveSpeedMul ?? 1)))
+  return Math.max(0.35, RUN_PATH / (RUN_DIST_RATE * (d.moveSpeedMul ?? 1)))
+}
+
+/**
+ * Characters-page run preview: gait/clip plus world shuttle A→B→A along +Z
+ * so footfall and facing read correctly (board travel does the same).
+ */
+function runPreview(d: HeroDesign, t: number): RunPreview {
+  const style = locoOf(d)
+  const oneWay = runOneWay(d)
+  const cycle = oneWay * 2
+  const u = ((t % cycle) + cycle) % cycle
+  const going = u < oneWay
+  const local = going ? u : u - oneWay
+  const p = oneWay > 1e-6 ? Math.min(1, local / oneWay) : 1
+  const from = going ? -RUN_PATH * 0.5 : RUN_PATH * 0.5
+  const to = going ? RUN_PATH * 0.5 : -RUN_PATH * 0.5
+  const yaw = going ? 0 : Math.PI
+
+  let along = p
+  let y = 0
   if (style === 'teleport') {
-    // Loop crouch → vanish → rematerialize for the Characters preview.
-    const loop = 0.95
-    const lt = t % loop
-    return { kind: 'move', style, t, p: lt / loop, dist: 0 }
+    // Hold on the departure pad, then snap onto arrival while invisible.
+    along = p < 0.5 ? 0 : 1
+  } else if (style === 'leap') {
+    along = p
+    y = Math.sin(p * Math.PI) * (0.5 + RUN_PATH * 0.12)
+  } else if (style === 'fly') {
+    along = THREE.MathUtils.smootherstep(p, 0, 1) * 0.15 + p * 0.85
+    const lift = 0.42
+    y =
+      lift *
+      (p < 0.12
+        ? THREE.MathUtils.smootherstep(p / 0.12, 0, 1)
+        : p > 0.88
+          ? 1 - THREE.MathUtils.smootherstep((p - 0.88) / 0.12, 0, 1)
+          : 1)
+  } else {
+    // Match board easing so gait isn't perfectly linear with world motion.
+    along = THREE.MathUtils.smootherstep(p, 0, 1) * 0.15 + p * 0.85
   }
-  // Match board feel: faster heroes cover more local-units/sec → higher gait cadence.
-  const rate = RUN_DIST_RATE * (d.moveSpeedMul ?? 1)
-  return { kind: 'move', style, t, p: 0, dist: t * rate }
+
+  const z = from + (to - from) * along
+  const traveled = Math.abs(z - from)
+
+  let anim: AnimInput
+  if (style === 'leap' || style === 'vector' || style === 'teleport' || style === 'fly') {
+    anim = { kind: 'move', style, t: style === 'vector' || style === 'fly' ? t : local, p, dist: traveled }
+  } else {
+    // Gait cycle keyed off distance covered so stride matches translation.
+    const rate = RUN_DIST_RATE * (d.moveSpeedMul ?? 1)
+    anim = { kind: 'move', style, t, p: 0, dist: t * rate }
+  }
+
+  return { anim, x: 0, y, z, yaw }
+}
+
+function applyMover(g: THREE.Group | null, preview: RunPreview | null) {
+  if (!g) return
+  if (!preview) {
+    g.position.set(0, 0, 0)
+    g.rotation.y = 0
+    return
+  }
+  g.position.set(preview.x, preview.y, preview.z)
+  g.rotation.y = preview.yaw
 }
 
 function fxColors(d: HeroDesign) {
@@ -95,12 +157,22 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
   const rasengan = atk.fx === 'rasengan'
   const sakura = atk.fx === 'sakura'
   const babylon = atk.fx === 'babylon'
+  const portal = atk.fx === 'portal'
   const inferno = atk.fx === 'inferno'
   out.push({
     id: fxSeq++,
     kind: atk.fx,
-    start: attackAbsStart + (atk.ranged || babylon ? atk.release : rasengan ? atk.fxAt - 0.16 : atk.fxAt),
-    travel: atk.ranged || babylon ? Math.max(0, atk.hit - atk.release) : rasengan ? 0.16 : 0,
+    start:
+      attackAbsStart +
+      (atk.ranged || babylon || portal ? atk.release : rasengan ? atk.fxAt - 0.16 : atk.fxAt),
+    travel:
+      atk.ranged || babylon
+        ? Math.max(0, atk.hit - atk.release)
+        : portal
+          ? Math.max(0, atk.fxAt - atk.release)
+          : rasengan
+            ? 0.16
+            : 0,
     dur:
       atk.fx === 'beam' || atk.fx === 'darkBeam' || atk.fx === 'murasaki' || atk.fx === 'percentBlast'
         ? atk.fx === 'murasaki' || atk.fx === 'percentBlast'
@@ -112,9 +184,11 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
             ? 0.75
             : inferno
               ? 1.35
-              : sakura || babylon
-                ? 0.95
-                : 0.6,
+              : portal
+                ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
+                : sakura || babylon
+                  ? 0.95
+                  : 0.6,
     from: rasengan ? new THREE.Vector3(0, up * 1.85, vz) : from,
     to: rasengan
       ? new THREE.Vector3(0, up * 0.85, vz)
@@ -197,6 +271,7 @@ function Unit({
 }) {
   const api = useRef<FighterApi | null>(null)
   const foe = useRef<FighterApi | null>(null)
+  const mover = useRef<THREE.Group>(null)
   const clock = useRef({ t: 0 })
   const fired = useRef(-1)
   const [fx, setFx] = useState<FxEvent[]>([])
@@ -209,9 +284,10 @@ function Unit({
     fired.current = -1
     setFx([])
     clock.current.t = 0
+    applyMover(mover.current, null)
   }, [mode, id, damage, awakened])
 
-  const queueFx = (design: HeroDesign, attackLocalT: number, key: number) => {
+  const fireFx = (design: HeroDesign, attackLocalT: number, key: number) => {
     if (freeze !== null || fired.current === key) return
     fired.current = key
     const events = makeAttackFx(design, now() - attackLocalT)
@@ -231,22 +307,12 @@ function Unit({
     const selfDmg = (k: number) => damage ?? DAMAGE_TYPES[k % DAMAGE_TYPES.length]
     if (freeze !== null && mode !== 'cycle') {
       if (mode === 'run') {
-        const style = locoOf(a.design)
-        a.update(
-          style === 'leap' || style === 'vector' || style === 'teleport'
-            ? { kind: 'move', style, t: freeze * RUN_LOOP, p: freeze, dist: 0 }
-            : {
-                kind: 'move',
-                style,
-                t: freeze * RUN_LOOP,
-                p: 0,
-                dist: freeze * RUN_DIST_RATE * (a.design.moveSpeedMul ?? 1) * RUN_LOOP,
-              },
-          0.1,
-          0.6,
-        )
+        const preview = runPreview(a.design, freeze * runOneWay(a.design) * 2)
+        applyMover(mover.current, preview)
+        a.update(preview.anim, 0.1, 0.6)
         return
       }
+      applyMover(mover.current, null)
       if (mode === 'death') {
         const dmg = damage ?? 'beam'
         a.update({ kind: 'death', t: freeze * die(dmg), dmg, zone: 'mid' }, 0.1, 0)
@@ -258,14 +324,17 @@ function Unit({
     }
     let anim: AnimInput
     let foeAnim: AnimInput = { kind: 'ready', t }
+    let preview: RunPreview | null = null
     if (mode === 'idle') anim = { kind: 'idle', t }
-    else if (mode === 'run') anim = runAnim(a.design, t)
-    else if (mode === 'attack') {
+    else if (mode === 'run') {
+      preview = runPreview(a.design, t)
+      anim = preview.anim
+    } else if (mode === 'attack') {
       const period = Math.max(atkDur, atk.hit + foeDie + 0.3) + 0.6
       const local = t % period
       anim = local < atkDur ? { kind: 'attack', t: local } : { kind: 'ready', t }
       foeAnim = victimAnim(atk, local, foeDie)
-      if (local < atkDur) queueFx(a.design, local, Math.floor(t / period))
+      if (local < atkDur) fireFx(a.design, local, Math.floor(t / period))
     } else if (mode === 'death') {
       const k = Math.floor(t / (die('shock') + 1.2))
       const dmg = selfDmg(k)
@@ -280,28 +349,33 @@ function Unit({
       const c = t % cycle
       if (c < 3) anim = { kind: 'idle', t }
       else if (c < 3.6) anim = { kind: 'ready', t }
-      else if (c < 3.6 + runSeg) anim = runAnim(a.design, c - 3.6)
-      else if (c < atkAt) anim = { kind: 'ready', t }
+      else if (c < 3.6 + runSeg) {
+        preview = runPreview(a.design, c - 3.6)
+        anim = preview.anim
+      } else if (c < atkAt) anim = { kind: 'ready', t }
       else if (c < atkAt + atkDur) {
         const local = c - atkAt
         anim = { kind: 'attack', t: local }
-        queueFx(a.design, local, k)
+        fireFx(a.design, local, k)
       } else if (c < selfAt) anim = { kind: 'ready', t }
       else anim = { kind: 'death', t: c - selfAt, dmg: selfDmg(k), zone: 'mid' }
       if (c >= atkAt) foeAnim = victimAnim(atk, c - atkAt, foeDie)
     }
+    applyMover(mover.current, preview)
     a.update(anim, dt, anim.kind === 'move' ? 1 : 0)
     v?.update(foeAnim, dt, 0)
   })
   return (
     <group position={[x, 0, z]}>
-      <HeroFighter
-        heroId={id}
-        color="w"
-        seed={seed}
-        apiRef={api}
-        awakened={awakened}
-      />
+      <group ref={mover}>
+        <HeroFighter
+          heroId={id}
+          color="w"
+          seed={seed}
+          apiRef={api}
+          awakened={awakened}
+        />
+      </group>
       {sparring ? (
         <group position={[0, 0, victimZ(atkDef)]} rotation={[0, Math.PI, 0]}>
           <HeroFighter
