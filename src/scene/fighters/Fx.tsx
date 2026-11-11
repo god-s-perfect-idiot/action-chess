@@ -7,7 +7,7 @@ import { celMaterial } from './materials'
 import { P } from './Part'
 import { aimY, S } from './shapes'
 
-export type FxType = FxKind | 'poof' | 'poofSparkle' | 'poofShards' | 'hit' | 'bloodPool'
+export type FxType = FxKind | 'poof' | 'poofSparkle' | 'poofShards' | 'hit' | 'bloodPool' | 'bodyFlicker'
 
 export interface FxEvent {
   id: number
@@ -115,7 +115,22 @@ function Burst({ e, spikes = 8, scale = 1, mat }: { e: FxEvent; spikes?: number;
   )
 }
 
-function Ring({ e, ground = false, radius = 1.2, delay = 0 }: { e: FxEvent; ground?: boolean; radius?: number; delay?: number }) {
+function Ring({
+  e,
+  ground = false,
+  /** Horizontal ripple kept at impact height (air shockwave). */
+  flat = false,
+  radius = 1.2,
+  delay = 0,
+  thick = 0.06,
+}: {
+  e: FxEvent
+  ground?: boolean
+  flat?: boolean
+  radius?: number
+  delay?: number
+  thick?: number
+}) {
   const M = useMats(e)
   const ref = useFx(e, (g, _tp, u0) => {
     const u = (u0 - delay) / (1 - delay)
@@ -127,12 +142,12 @@ function Ring({ e, ground = false, radius = 1.2, delay = 0 }: { e: FxEvent; grou
     if (ground) g.position.y = 0.06
     const r = (0.2 + ease(u) * radius) * e.size
     g.scale.set(r, r, Math.max(0.0001, (1 - u) * e.size))
-    if (!ground) g.lookAt(e.from.x, e.to.y, e.from.z)
+    if (!ground && !flat) g.lookAt(e.from.x, e.to.y, e.from.z)
   })
   return (
     <group ref={ref}>
-      <group rotation={ground ? [Math.PI / 2, 0, 0] : [0, 0, 0]}>
-        <P s={S.torus(1, 0.06, Math.PI * 2, 32)} m={M.a} shadow={false} />
+      <group rotation={ground || flat ? [Math.PI / 2, 0, 0] : [0, 0, 0]}>
+        <P s={S.torus(1, thick, Math.PI * 2, 32)} m={M.a} shadow={false} />
       </group>
     </group>
   )
@@ -740,6 +755,63 @@ function Gravity({ e }: { e: FxEvent }) {
   )
 }
 
+/** Gaara sand tomb — a pyramid that rises under / over the victim, then clamps shut. */
+function SandPyramid({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const grains = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => ({
+        a: (i / 14) * Math.PI * 2 + rand(e.id, i) * 0.4,
+        r: 0.35 + rand(e.id, i + 3) * 0.55,
+        y: 0.05 + rand(e.id, i + 7) * 0.9,
+        s: 0.04 + rand(e.id, i + 11) * 0.05,
+      })),
+    [e.id],
+  )
+  const ref = useFx(e, (g, tp, u) => {
+    g.position.copy(e.to)
+    // Travel: sand gathers into a mound. Impact: pyramid spikes up, then crushes flat.
+    let h = 0
+    let w = 0.2
+    if (u < 0) {
+      h = ease(tp) * 0.45
+      w = 0.35 + ease(tp) * 0.55
+    } else if (u < 0.35) {
+      const k = ease(u / 0.35)
+      h = 0.45 + k * 1.15
+      w = 0.9 - k * 0.25
+    } else if (u < 0.7) {
+      const k = (u - 0.35) / 0.35
+      h = 1.6 - k * 0.35
+      w = 0.65 + k * 0.15
+    } else {
+      const k = ease((u - 0.7) / 0.3)
+      h = 1.25 * (1 - k)
+      w = 0.8 * (1 - k * 0.4)
+    }
+    g.scale.set(Math.max(0.0001, w * e.size), Math.max(0.0001, h * e.size), Math.max(0.0001, w * e.size))
+    g.rotation.y = (now() - e.start) * 0.35
+    g.children.forEach((c, i) => {
+      if (i === 0) return
+      const grain = grains[i - 1]
+      if (!grain || !(c instanceof THREE.Object3D)) return
+      const spin = grain.a + (now() - e.start) * (1.2 + (i % 3) * 0.3)
+      const lift = u < 0 ? ease(tp) : u < 0.7 ? 1 : 1 - ease((u - 0.7) / 0.3)
+      c.position.set(Math.cos(spin) * grain.r * 0.55, grain.y * lift, Math.sin(spin) * grain.r * 0.45)
+      c.scale.setScalar(Math.max(0.0001, grain.s * (0.7 + lift)))
+      c.visible = lift > 0.05
+    })
+  })
+  return (
+    <group ref={ref}>
+      <P s={S.cone(0.55, 1.15, 4)} m={M.a} shadow={false} />
+      {grains.map((g, i) => (
+        <P key={i} s={S.sphere(g.s, 6, 5)} m={i % 2 ? M.a : M.b} line={false} shadow={false} />
+      ))}
+    </group>
+  )
+}
+
 /** Opaque spatial gate behind the target — opens, sucks, then snaps shut. */
 function PortalSnap({ e }: { e: FxEvent }) {
   const mats = useMemo(
@@ -1151,6 +1223,44 @@ function BarrageBolts({ e }: { e: FxEvent }) {
   )
 }
 
+/** Shunshin streaks — dense vertical lines at character height. */
+function BodyFlicker({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const lines = 18
+  const ref = useFx(e, (g, _tp, u) => {
+    if (u < 0) {
+      g.visible = false
+      return
+    }
+    // Anchor at the feet; `e.size` is the character height budget.
+    g.position.set(e.to.x, e.to.y, e.to.z)
+    const appear = u < 0.45
+    const p = appear ? u / 0.45 : (u - 0.45) / 0.55
+    const mid = Math.sin(Math.min(1, p) * Math.PI)
+    const h = e.size * (0.92 + mid * 0.2)
+    const spread = e.size * (0.16 + (1 - mid) * 0.08)
+    g.children.forEach((c, i) => {
+      const jitter = rand(e.id, i)
+      const x = (jitter - 0.5) * spread * 2
+      const z = (rand(e.id, i + 20) - 0.5) * spread * 0.9
+      const thick = (0.01 + rand(e.id, i + 40) * 0.016) * e.size * (0.45 + mid * 0.4)
+      const len = h * (0.85 + rand(e.id, i + 60) * 0.2)
+      c.position.set(x, len * 0.5, z)
+      c.scale.set(thick, len, thick)
+      c.visible = mid > 0.04
+    })
+  })
+  return (
+    <group ref={ref}>
+      {Array.from({ length: lines }, (_, i) => (
+        <group key={i}>
+          <P s={S.cyl(0.5, 0.35, 1, 5)} m={i % 3 === 0 ? M.white : i % 2 ? M.a : M.b} line={false} shadow={false} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
 /** Blood left on the tile after a corpse vanishes; `size` is the pool radius. */
 function BloodPool({ e }: { e: FxEvent }) {
   const mat = useMemo(
@@ -1260,6 +1370,37 @@ function FxView({ e }: { e: FxEvent }) {
           <Ring e={e} ground radius={1.6} delay={0.15} />
           <Debris e={e} count={10} kind="shard" />
           <Burst e={e} spikes={6} scale={0.8} />
+        </>
+      )
+    case 'airShockwave':
+      // Mid-air smash ripples — facing + flat rings, no ground quake / no electric shock.
+      return (
+        <>
+          <Ring e={e} radius={2.0} thick={0.08} />
+          <Ring e={e} radius={1.35} delay={0.1} thick={0.06} />
+          <Ring e={e} flat radius={1.7} thick={0.07} />
+          <Ring e={e} flat radius={1.05} delay={0.12} thick={0.05} />
+          <Burst e={e} spikes={8} scale={1.0} />
+          <SpeedLines e={e} />
+        </>
+      )
+    case 'megaShockwave':
+      // United / Full Cowl 100% — huge air ripples + billowing smoke.
+      return (
+        <>
+          <Ring e={e} radius={3.4} thick={0.12} />
+          <Ring e={e} radius={2.6} delay={0.08} thick={0.1} />
+          <Ring e={e} radius={1.8} delay={0.18} thick={0.08} />
+          <Ring e={e} flat radius={3.0} thick={0.11} />
+          <Ring e={e} flat radius={2.1} delay={0.1} thick={0.09} />
+          <Ring e={e} flat radius={1.3} delay={0.2} thick={0.07} />
+          <Ring e={e} ground radius={2.8} />
+          <Ring e={e} ground radius={1.8} delay={0.14} />
+          <Burst e={e} spikes={14} scale={1.9} />
+          <Burst e={e} spikes={10} scale={1.25} mat="b" />
+          <Debris e={e} count={24} kind="smoke" />
+          <Debris e={e} count={14} kind="shard" />
+          <SpeedLines e={e} />
         </>
       )
     case 'slash':
@@ -1626,7 +1767,7 @@ function FxView({ e }: { e: FxEvent }) {
         </>
       )
     case 'sand':
-      // Gaara / Shukaku — granular waves bury the pad, then crush.
+      // Shukaku — granular waves bury the pad, then crush.
       return (
         <>
           <Ring e={e} ground radius={2.0} />
@@ -1640,6 +1781,18 @@ function FxView({ e }: { e: FxEvent }) {
           <Debris e={e} count={8} kind="star" />
         </>
       )
+    case 'sandPyramid':
+      // Gaara — sand surges in, then a pyramid tomb clamps shut over them.
+      return (
+        <>
+          <Ring e={e} ground radius={1.8} />
+          <Ring e={e} ground radius={1.1} delay={0.08} />
+          <SandPyramid e={e} />
+          <Debris e={e} count={16} kind="shard" />
+          <Debris e={e} count={10} kind="smoke" />
+          <Burst e={e} spikes={8} scale={0.85} />
+        </>
+      )
     case 'hit':
       return (
         <>
@@ -1649,6 +1802,8 @@ function FxView({ e }: { e: FxEvent }) {
       )
     case 'bloodPool':
       return <BloodPool e={e} />
+    case 'bodyFlicker':
+      return <BodyFlicker e={e} />
     case 'poof':
       return <Debris e={e} count={9} kind="smoke" />
     case 'poofSparkle':

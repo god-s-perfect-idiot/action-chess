@@ -284,7 +284,7 @@ export const HEROES: HeroDef[] = [
     blurb:
       'Runs the file on wind magic — razor air cuts from the grimoire. Awakened Spirit Dive: fairy wings, green glow, flight, and crushing whirlwinds.',
     gimmick: 'Spirit Dive',
-    look: 'Golden Dawn cape, messy black cowlick, amber eyes; Spirit Dive flips green wings, crown, and mana glow',
+    look: 'Golden Dawn cape, messy black cowlick, amber eyes, floating wind grimoire; Spirit Dive flips the whole suit green with wings, crown, and mana glow',
     stats: { pwr: 4, spd: 5, sty: 5 },
   },
   {
@@ -295,7 +295,7 @@ export const HEROES: HeroDef[] = [
     color: 'b',
     startSquare: 'f7',
     blurb:
-      'Runs the file with a sheathed Nichirin draw-cut. Awakened Thunder Breathing: yellow lightning shell, Flash-pace sprint, and lightning-powered katana slashes.',
+      'Runs the file with a sheathed Nichirin draw-cut. Awakened Thunder Breathing: yellow lightning shell, Flash-pace sprint, and a single lightning-fast katana slice.',
     gimmick: 'Thunder Breathing',
     look: 'Yellow triangle haori, bowl-cut blond, dark gakuran; awaken encases him in yellow thunder',
     stats: { pwr: 4, spd: 5, sty: 4 },
@@ -321,7 +321,7 @@ export const HEROES: HeroDef[] = [
     color: 'b',
     startSquare: 'h7',
     blurb:
-      'Kazekage of the sand — he runs the file and hurls crushing sand from the gourd. Awakened Shukaku: teleports through sand and entombs foes in a sand coffin.',
+      'Kazekage of the sand — he floats the file on a sand cloud and buries foes under a sand pyramid. Awakened Shukaku: slides as a sand pile and entombs foes in a sand coffin.',
     gimmick: 'Sand Coffin',
     look: 'Red spikes, eye rings, forehead 愛, burgundy coat, gray flak, sand gourd — Shukaku flips to a sand tanuki shell with purple seals and one spiked tail',
     stats: { pwr: 5, spd: 3, sty: 4 },

@@ -2,8 +2,15 @@ import { useMemo, useState } from 'react'
 import { HEROES } from '../game/heroes'
 import { getHeroDesign } from '../game/heroDesigns'
 import { PIECE_CODENAME } from '../game/types'
-import { ANIM_MODES, CharacterStage, DAMAGE_TYPES, type AnimMode } from '../scene/CharacterStage'
+import {
+  ANIM_MODES,
+  CharacterStage,
+  DAMAGE_TYPES,
+  KING_ANIM_MODES,
+  type AnimMode,
+} from '../scene/CharacterStage'
 import type { DamageType } from '../scene/fighters/anims'
+import { protectorForKing } from '../game/protectors'
 
 function StatPips({ label, value }: { label: string; value: number }) {
   return (
@@ -30,10 +37,13 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
   )
 
   const canAwaken = hero?.piece === 'p'
+  const isKing = hero?.piece === 'k'
   const showAwakened = Boolean(canAwaken && awakened)
   const design = hero
     ? getHeroDesign(hero.id, hero.color, { awakened: showAwakened })
     : null
+  const protector = hero ? protectorForKing(hero.id) : null
+  const animModes = isKing && protector ? [...ANIM_MODES, ...KING_ANIM_MODES] : ANIM_MODES
 
   return (
     <div className="characters-page">
@@ -75,6 +85,9 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
                       onClick={() => {
                         setSelectedId(h.id)
                         if (h.piece !== 'p') setAwakened(false)
+                        if (h.piece !== 'k' && (mode === 'check' || mode === 'checkmate')) {
+                          setMode('idle')
+                        }
                       }}
                     >
                       <span className="chars-row-mark">{h.codename.slice(0, 1)}</span>
@@ -123,7 +136,7 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
               </div>
             ) : null}
             <div className="chars-anim-bar">
-              {ANIM_MODES.map((m) => (
+              {animModes.map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -134,6 +147,11 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
                 </button>
               ))}
             </div>
+            {protector && (mode === 'check' || mode === 'checkmate') ? (
+              <p className="chars-look">
+                Guarded by {protector.codename} — {protector.blurb}
+              </p>
+            ) : null}
             {mode === 'death' && (
               <div className="chars-anim-bar">
                 {([null, ...DAMAGE_TYPES] as const).map((d) => (

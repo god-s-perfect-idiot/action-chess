@@ -1,12 +1,16 @@
-import { useEffect, useMemo } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { CELL_SIZE, PERSON_HEIGHT, WORLD_TILE_MARGIN } from '../game/types'
+import { groundY } from './terrainHeight'
 import { getToonGradient, hash01, PALETTE } from './toon'
 
-/** Soft apron pads — earthier / greener than the battle grid. */
-const SECTOR_A = ['#8a8478', '#868074', '#827c70', '#888278'] as const
-const SECTOR_B = ['#6e7668', '#6a7264', '#666e60', '#6c7466'] as const
+/** Inner cliff rim radius — used for camera fade + entrance placement. */
+function cliffRimRadius(boardHalf = CELL_SIZE * 4) {
+  const wallR = boardHalf + CELL_SIZE * (WORLD_TILE_MARGIN * 0.72)
+  return wallR + CELL_SIZE * 1.85
+}
 
 function colored(
   geo: THREE.BufferGeometry,
@@ -47,142 +51,39 @@ function rotY(geo: THREE.BufferGeometry, yaw: number) {
   return geo
 }
 
-const PAD_GAP = 0.42
-
-/** Broken apron tiles past the 8×8 — mossy, incomplete, not a clean checker. */
-function buildWorldTiles() {
-  const tile = CELL_SIZE - PAD_GAP
-  const pads: THREE.BufferGeometry[] = []
-  const dress: THREE.BufferGeometry[] = []
-  const colorsA = SECTOR_A.map((h) => new THREE.Color(h))
-  const colorsB = SECTOR_B.map((h) => new THREE.Color(h))
-  const moss = new THREE.Color(PALETTE.moss)
-  const mossLite = new THREE.Color(PALETTE.mossLite)
-  const dirt = new THREE.Color(PALETTE.dirt)
-  const rubble = new THREE.Color('#8a8478')
-  const leaf = new THREE.Color(PALETTE.leaf)
-
-  const min = -WORLD_TILE_MARGIN
-  const max = 7 + WORLD_TILE_MARGIN
-
-  for (let rank = min; rank <= max; rank++) {
-    for (let file = min; file <= max; file++) {
-      if (file >= 0 && file <= 7 && rank >= 0 && rank <= 7) continue
-
-      const seed = file * 17 + rank * 31
-      const roll = hash01(seed)
-      // Outer apron thins out — missing tiles read as reclaimed ground
-      const dist = Math.max(
-        Math.abs(file - 3.5) - 3.5,
-        Math.abs(rank - 3.5) - 3.5,
-      )
-      if (dist > 2.5 && roll < 0.28) continue
-      if (dist > 4 && roll < 0.55) continue
-
-      const x = (file - 3.5) * CELL_SIZE
-      const z = (rank - 3.5) * CELL_SIZE
-      // Leave the mid river corridor clear so apron pads don't z-fight water
-      if (Math.abs(x) < CELL_SIZE * 0.75) continue
-      const light = (file + rank) % 2 === 1
-      const variant = Math.floor(hash01(seed + 11) * 4) % 4
-      const pad = light ? colorsA[variant]! : colorsB[variant]!
-
-      // Slightly irregular pad sizes so the apron isn't a perfect grid
-      const shrink = 0.85 + hash01(seed + 2) * 0.18
-      const tw = tile * shrink
-      const td = tile * (0.88 + hash01(seed + 4) * 0.16)
-      const ox = (hash01(seed + 6) - 0.5) * PAD_GAP * 0.35
-      const oz = (hash01(seed + 8) - 0.5) * PAD_GAP * 0.35
-
-      pads.push(colored(new THREE.BoxGeometry(tw, 0.18, td), x + ox, 0.01, z + oz, pad))
-
-      // Moss blotch
-      if (roll > 0.25) {
-        const r = 0.35 + hash01(seed + 15) * 0.55
-        dress.push(
-          colored(
-            new THREE.CircleGeometry(r, 8).rotateX(-Math.PI / 2),
-            x + (hash01(seed + 3) - 0.5) * tw * 0.5,
-            0.12,
-            z + (hash01(seed + 5) - 0.5) * td * 0.5,
-            hash01(seed + 7) > 0.5 ? mossLite : moss,
-          ),
-        )
-      }
-
-      // Corner rubble
-      if (hash01(seed + 19) > 0.62) {
-        const sx = (hash01(seed + 21) > 0.5 ? 1 : -1) * tw * 0.35
-        const sz = (hash01(seed + 23) > 0.5 ? 1 : -1) * td * 0.35
-        dress.push(
-          colored(
-            rotY(
-              new THREE.BoxGeometry(0.4 + hash01(seed) * 0.35, 0.16, 0.28),
-              hash01(seed + 25) * 2,
-            ),
-            x + sx,
-            0.16,
-            z + sz,
-            rubble,
-          ),
-        )
-      }
-
-      // Dirt smear on broken pads
-      if (hash01(seed + 27) > 0.7) {
-        dress.push(
-          colored(
-            new THREE.CircleGeometry(0.3 + hash01(seed + 29) * 0.3, 7).rotateX(-Math.PI / 2),
-            x,
-            0.115,
-            z,
-            dirt,
-          ),
-        )
-      }
-
-      // Leaf litter
-      if (hash01(seed + 31) > 0.55) {
-        for (let i = 0; i < 2; i++) {
-          dress.push(
-            colored(
-              new THREE.PlaneGeometry(0.2, 0.1).rotateX(-Math.PI / 2),
-              x + (hash01(seed + 33 + i) - 0.5) * tw * 0.6,
-              0.125,
-              z + (hash01(seed + 35 + i) - 0.5) * td * 0.6,
-              leaf,
-            ),
-          )
-        }
-      }
-    }
-  }
-
-  return {
-    pads: mergeAndDispose(pads),
-    dress: mergeAndDispose(dress),
-  }
-}
-
 /**
- * Overgrown ruin bowl: low broken walls, rubble piles, bush/tree clumps, and a
- * soft distant tree line — no skyscraper ring so the plaza reads larger.
+ * Overgrown ruin bowl: low broken walls near the plaza, a tight tree belt, and
+ * a tall cliff rim that hides the outer apron instead of a sparse forest ring.
  */
 function buildRuinBowl(boardHalf: number) {
   const solid: THREE.BufferGeometry[] = []
   const soft: THREE.BufferGeometry[] = []
+  const cliffSolid: THREE.BufferGeometry[] = []
+  const cliffSoft: THREE.BufferGeometry[] = []
+  const entranceSolid: THREE.BufferGeometry[] = []
+  const entranceSoft: THREE.BufferGeometry[] = []
+  const horizonSolid: THREE.BufferGeometry[] = []
+  const horizonSoft: THREE.BufferGeometry[] = []
 
   const stone = new THREE.Color('#8a8478')
   const stoneDark = new THREE.Color('#6a645c')
+  const cliff = new THREE.Color('#5e584e')
+  const cliffDark = new THREE.Color('#454038')
+  const cliffLite = new THREE.Color('#7a7368')
+  const cliffFar = new THREE.Color('#6a655c')
   const rubble = new THREE.Color('#7a7468')
   const moss = new THREE.Color(PALETTE.moss)
   const mossLite = new THREE.Color(PALETTE.mossLite)
   const leaf = new THREE.Color(PALETTE.leaf)
   const leafDark = new THREE.Color('#3a5834')
-  const trunk = new THREE.Color('#5a4a38')
   const dirt = new THREE.Color(PALETTE.dirt)
 
   const wallR = boardHalf + CELL_SIZE * (WORLD_TILE_MARGIN * 0.72)
+  /** Keep ruins / cliffs / forest off the mid river so water can run through the bowl. */
+  const riverClear = CELL_SIZE * 3.2
+  const onRiver = (x: number) => Math.abs(x) < riverClear
+  const at = (x: number, z: number, yOff: number) => groundY(x, z) + yOff
+  const cliffR = cliffRimRadius(boardHalf)
 
   // ── Broken perimeter wall (low, incomplete) ─────────────────────
   for (let i = 0; i < 36; i++) {
@@ -210,12 +111,14 @@ function buildRuinBowl(boardHalf: number) {
       z = -wallR + u * wallR * 2
       yaw = Math.PI / 2
     }
+    if (onRiver(x)) continue
 
     const h = PERSON_HEIGHT * (0.55 + hash01(i * 3) * 0.9)
     const w = CELL_SIZE * (0.55 + hash01(i * 5) * 0.45)
     const d = PERSON_HEIGHT * (0.28 + hash01(i * 7) * 0.2)
+    const base = groundY(x, z)
     solid.push(
-      colored(rotY(new THREE.BoxGeometry(w, h, d), yaw), x, h / 2, z, hash01(i) > 0.5 ? stone : stoneDark),
+      colored(rotY(new THREE.BoxGeometry(w, h, d), yaw), x, at(x, z, h / 2), z, hash01(i) > 0.5 ? stone : stoneDark),
     )
     // Moss cap / stain on wall top
     if (hash01(i * 9) > 0.35) {
@@ -223,7 +126,7 @@ function buildRuinBowl(boardHalf: number) {
         colored(
           rotY(new THREE.BoxGeometry(w * 0.9, PERSON_HEIGHT * 0.06, d * 1.05), yaw),
           x,
-          h + 0.02,
+          base + h + 0.02,
           z,
           moss,
         ),
@@ -235,7 +138,7 @@ function buildRuinBowl(boardHalf: number) {
         colored(
           rotY(new THREE.BoxGeometry(w * 0.35, h * 0.55, d * 0.15), yaw),
           x + Math.sin(yaw) * d * 0.4,
-          h * 0.35,
+          base + h * 0.35,
           z + Math.cos(yaw) * d * 0.4,
           leaf,
         ),
@@ -286,9 +189,10 @@ function buildRuinBowl(boardHalf: number) {
 
   const pushBush = (x: number, z: number, s: number, seed: number) => {
     const layers = 2 + Math.floor(hash01(seed) * 2)
+    const base = groundY(x, z)
     for (let i = 0; i < layers; i++) {
       const r = s * (0.45 + hash01(seed + i) * 0.5) * (1 - i * 0.1)
-      const y = s * (0.28 + i * 0.24)
+      const y = base + s * (0.28 + i * 0.24)
       soft.push(
         colored(
           new THREE.SphereGeometry(r, 6, 5),
@@ -307,14 +211,15 @@ function buildRuinBowl(boardHalf: number) {
     const trunkR = PERSON_HEIGHT * (0.1 + hash01(seed + 1) * 0.08) * scale
     const lean = (hash01(seed + 2) - 0.5) * 0.12
     const barkCol = hash01(seed + 3) > 0.66 ? barkLite : hash01(seed + 3) > 0.33 ? bark : barkDark
+    const base = groundY(x, z)
 
     const trunkGeo = new THREE.CylinderGeometry(trunkR * 0.65, trunkR * 1.15, trunkH, 6)
     trunkGeo.rotateZ(lean)
-    solid.push(colored(trunkGeo, x, trunkH / 2, z, barkCol))
+    solid.push(colored(trunkGeo, x, base + trunkH / 2, z, barkCol))
 
     // Short branch stubs so trunks feel woody, not poles
     if (hash01(seed + 4) > 0.4) {
-      const by = trunkH * (0.45 + hash01(seed + 5) * 0.25)
+      const by = base + trunkH * (0.45 + hash01(seed + 5) * 0.25)
       const yaw = hash01(seed + 6) * Math.PI * 2
       const bl = trunkR * (3.5 + hash01(seed + 7) * 3)
       const branch = new THREE.CylinderGeometry(trunkR * 0.25, trunkR * 0.4, bl, 4)
@@ -327,7 +232,7 @@ function buildRuinBowl(boardHalf: number) {
 
     // Canopy sits high on the trunk — gaps between trees stay readable
     const canopy = PERSON_HEIGHT * (0.9 + hash01(seed + 8) * 0.85) * scale
-    const cy = trunkH + canopy * 0.15
+    const cy = base + trunkH + canopy * 0.15
     const kind = hash01(seed + 9)
     if (kind > 0.55) {
       // Pine-ish stacked cones
@@ -383,72 +288,186 @@ function buildRuinBowl(boardHalf: number) {
     }
   }
 
-  // Near bushes — irregular clusters inside the wall
+  // Near bushes — kept close to the wall so the apron stays clean
   const bushClusters: [number, number, number][] = [
-    [0.35, boardHalf + CELL_SIZE * 1.6, 4],
-    [1.1, boardHalf + CELL_SIZE * 3.2, 3],
-    [1.85, boardHalf + CELL_SIZE * 2.0, 5],
-    [2.4, boardHalf + CELL_SIZE * 4.1, 2],
-    [3.05, boardHalf + CELL_SIZE * 1.8, 4],
-    [3.7, boardHalf + CELL_SIZE * 3.6, 3],
-    [4.55, boardHalf + CELL_SIZE * 2.4, 3],
-    [5.2, boardHalf + CELL_SIZE * 4.5, 2],
-    [5.85, boardHalf + CELL_SIZE * 1.5, 4],
+    [0.35, boardHalf + CELL_SIZE * 1.35, 3],
+    [1.2, boardHalf + CELL_SIZE * 1.9, 3],
+    [2.05, boardHalf + CELL_SIZE * 1.55, 4],
+    [2.9, boardHalf + CELL_SIZE * 2.1, 2],
+    [3.75, boardHalf + CELL_SIZE * 1.45, 3],
+    [4.6, boardHalf + CELL_SIZE * 1.85, 3],
+    [5.45, boardHalf + CELL_SIZE * 1.5, 3],
   ]
   bushClusters.forEach(([a, baseR, count], ci) => {
     for (let j = 0; j < count; j++) {
-      const jitterA = a + (hash01(ci * 17 + j * 3) - 0.5) * 0.55
-      const r = baseR + (hash01(ci * 19 + j * 5) - 0.35) * CELL_SIZE * 1.8
+      const jitterA = a + (hash01(ci * 17 + j * 3) - 0.5) * 0.35
+      const r = baseR + (hash01(ci * 19 + j * 5) - 0.5) * CELL_SIZE * 0.55
+      const bx = Math.cos(jitterA) * r
+      if (onRiver(bx)) continue
       pushBush(
-        Math.cos(jitterA) * r,
+        bx,
         Math.sin(jitterA) * r,
-        PERSON_HEIGHT * (0.35 + hash01(ci * 23 + j) * 0.5),
+        PERSON_HEIGHT * (0.35 + hash01(ci * 23 + j) * 0.45),
         ci * 40 + j * 7,
       )
     }
   })
 
-  // Low earth banks only — no solid green rim (trees own the silhouette)
-  for (let i = 0; i < 28; i++) {
-    if (hash01(i * 1.9) < 0.18) continue
-    const a = (i / 28) * Math.PI * 2 + (hash01(i * 2.1) - 0.5) * 0.25
-    const r = wallR + CELL_SIZE * (0.6 + hash01(i * 3.3) * 1.4)
-    const h = PERSON_HEIGHT * (0.55 + hash01(i * 4.1) * 0.7)
-    const w = CELL_SIZE * (0.9 + hash01(i * 1.7) * 1.1)
-    solid.push(
+  // Cliff rim — thin inner face only (no wide shelves; those ate the overview)
+  const cliffSegs = 48
+  const cliffBaseH = PERSON_HEIGHT * 8.5
+  for (let i = 0; i < cliffSegs; i++) {
+    const a = (i / cliffSegs) * Math.PI * 2
+    const x = Math.cos(a) * cliffR
+    const z = Math.sin(a) * cliffR
+    if (onRiver(x)) continue
+
+    const h = cliffBaseH * (0.9 + hash01(i * 2.3) * 0.18)
+    const w = ((Math.PI * 2 * cliffR) / cliffSegs) * 1.12
+    const d = CELL_SIZE * (0.7 + hash01(i * 1.7) * 0.35)
+    const faceCol = hash01(i * 4.1) > 0.55 ? cliff : hash01(i * 4.1) > 0.25 ? cliffDark : stoneDark
+    const base = groundY(x, z)
+
+    cliffSolid.push(colored(rotY(new THREE.BoxGeometry(w, h, d), a), x, base + h * 0.48, z, faceCol))
+
+    if (hash01(i * 7.3) > 0.4) {
+      cliffSolid.push(
+        colored(
+          rotY(new THREE.BoxGeometry(w * 0.35, h * (0.25 + hash01(i * 3) * 0.35), d * 0.15), a),
+          x - Math.cos(a) * d * 0.4,
+          base + h * (0.25 + hash01(i * 9) * 0.35),
+          z - Math.sin(a) * d * 0.4,
+          hash01(i * 11) > 0.5 ? moss : leafDark,
+        ),
+      )
+    }
+
+    cliffSoft.push(
       colored(
-        rotY(new THREE.BoxGeometry(w, h, CELL_SIZE * (0.9 + hash01(i) * 0.6)), a),
-        Math.cos(a) * r,
-        h * 0.4,
-        Math.sin(a) * r,
-        hash01(i) > 0.5 ? dirt : stoneDark,
+        new THREE.SphereGeometry(PERSON_HEIGHT * (1.2 + hash01(i * 8.1) * 0.6), 6, 5),
+        x - Math.cos(a) * CELL_SIZE * 0.08,
+        base + h * 0.95 + PERSON_HEIGHT * 0.35,
+        z - Math.sin(a) * CELL_SIZE * 0.08,
+        hash01(i) > 0.45 ? leafDark : leaf,
       ),
     )
   }
 
-  // Forest rings all around — spaced trunks with gaps, multiple depths
+  // Far entrance cliffs at river mouths — back in the BG for parallax / horizon cover
+  for (const sz of [1, -1] as const) {
+    for (let layer = 0; layer < 4; layer++) {
+      const depth = cliffR + CELL_SIZE * (4.2 + layer * 3.2)
+      const z = sz * depth
+      for (const sx of [-1, 1] as const) {
+        const seed = layer * 17 + (sx + 2) * 5 + (sz + 2) * 31
+        // Flank the gorge; stay out of the overview's near field
+        const x =
+          sx *
+          (riverClear * (0.85 + layer * 0.12) +
+            CELL_SIZE * (0.55 + layer * 0.7 + hash01(seed) * 0.5))
+        const h = PERSON_HEIGHT * (7.5 + layer * 3.4 + hash01(seed + 1) * 2.8)
+        const w = CELL_SIZE * (3.2 + layer * 1.1 + hash01(seed + 2) * 1.2)
+        const d = CELL_SIZE * (2.4 + layer * 0.8)
+        const yaw = (sx * sz > 0 ? 0.1 : -0.1) + (hash01(seed + 3) - 0.5) * 0.18
+        const base = groundY(x, z)
+        const col = layer === 0 ? cliff : layer === 1 ? cliffFar : cliffDark
+        entranceSolid.push(
+          colored(rotY(new THREE.BoxGeometry(w, h, d), yaw), x, base + h * 0.45, z, col),
+        )
+        entranceSolid.push(
+          colored(
+            rotY(new THREE.BoxGeometry(w * 1.15, h * 0.5, d * 0.75), yaw),
+            x + sx * CELL_SIZE * 0.4,
+            base + h * 0.72,
+            z + sz * CELL_SIZE * 0.45,
+            cliffLite,
+          ),
+        )
+        entranceSoft.push(
+          colored(
+            new THREE.SphereGeometry(PERSON_HEIGHT * (1.8 + layer * 0.35), 6, 5),
+            x,
+            base + h * 0.95 + PERSON_HEIGHT * 0.5,
+            z,
+            leafDark,
+          ),
+        )
+        if (hash01(seed + 4) > 0.3) {
+          entranceSoft.push(
+            colored(
+              new THREE.SphereGeometry(PERSON_HEIGHT * (1.2 + hash01(seed + 5) * 0.5), 5, 4),
+              x - sx * CELL_SIZE * 0.55,
+              base + h * 0.88 + PERSON_HEIGHT * 0.3,
+              z + sz * CELL_SIZE * 0.25,
+              leaf,
+            ),
+          )
+        }
+      }
+      // Back ridge closes the skyline through the gorge
+      if (layer >= 1) {
+        const cz = sz * (depth + CELL_SIZE * (1.4 + layer * 0.4))
+        const ch = PERSON_HEIGHT * (8 + layer * 2.2)
+        const cw = riverClear * (1.35 + layer * 0.4)
+        entranceSolid.push(
+          colored(
+            new THREE.BoxGeometry(cw, ch, CELL_SIZE * (1.8 + layer * 0.45)),
+            0,
+            groundY(0, cz) + ch * 0.42,
+            cz,
+            cliffDark,
+          ),
+        )
+        entranceSoft.push(
+          colored(
+            new THREE.SphereGeometry(PERSON_HEIGHT * (2.4 + layer * 0.45), 6, 5),
+            (hash01(layer + sz * 3) - 0.5) * CELL_SIZE * 1.2,
+            groundY(0, cz) + ch * 0.92,
+            cz,
+            leafDark,
+          ),
+        )
+      }
+    }
+  }
+
+  // Low talus / earth footing under the cliff — even, not scattered banks
+  for (let i = 0; i < 36; i++) {
+    const a = (i / 36) * Math.PI * 2 + 0.04
+    const r = cliffR - CELL_SIZE * (0.95 + hash01(i * 2.2) * 0.25)
+    const bx = Math.cos(a) * r
+    const bz = Math.sin(a) * r
+    if (onRiver(bx)) continue
+    const h = PERSON_HEIGHT * (0.7 + hash01(i * 3.1) * 0.45)
+    const w = CELL_SIZE * (1.05 + hash01(i * 1.4) * 0.35)
+    solid.push(
+      colored(
+        rotY(new THREE.BoxGeometry(w, h, CELL_SIZE * 0.85), a),
+        bx,
+        at(bx, bz, h * 0.38),
+        bz,
+        hash01(i) > 0.55 ? dirt : stoneDark,
+      ),
+    )
+  }
+
+  // Tight woodland belt between ruins and cliff — even spacing, little jitter
   const forestRings: [number, number, number][] = [
-    // [base radius, count, scale]
-    [wallR + CELL_SIZE * 1.0, 22, 0.85],
-    [wallR + CELL_SIZE * 2.6, 28, 1.0],
-    [wallR + CELL_SIZE * 4.4, 32, 1.15],
-    [wallR + CELL_SIZE * 6.4, 36, 1.3],
-    [wallR + CELL_SIZE * 8.6, 30, 1.45],
+    [wallR + CELL_SIZE * 0.55, 34, 0.95],
+    [wallR + CELL_SIZE * 1.45, 40, 1.1],
   ]
   forestRings.forEach(([baseR, count, scale], ring) => {
     for (let i = 0; i < count; i++) {
-      // Skip some slots so gaps open between trees
-      if (hash01(ring * 50 + i * 7) < 0.22) continue
+      if (hash01(ring * 50 + i * 7) < 0.08) continue
       const step = (Math.PI * 2) / count
-      const a =
-        i * step +
-        (hash01(ring * 11 + i * 3) - 0.5) * step * 0.85 +
-        ring * 0.17
-      const r = baseR + (hash01(ring * 13 + i * 5) - 0.5) * CELL_SIZE * 1.6
+      const a = i * step + ring * 0.09 + (hash01(ring * 11 + i * 3) - 0.5) * step * 0.22
+      const r = baseR + (hash01(ring * 13 + i * 5) - 0.5) * CELL_SIZE * 0.35
+      const tx = Math.cos(a) * r
+      if (onRiver(tx)) continue
       pushTree(
-        Math.cos(a) * r,
+        tx,
         Math.sin(a) * r,
-        scale * (0.85 + hash01(ring * 17 + i) * 0.35),
+        scale * (0.92 + hash01(ring * 17 + i) * 0.18),
         ring * 100 + i * 13,
       )
     }
@@ -490,10 +509,12 @@ function buildRuinBowl(boardHalf: number) {
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2
     const r = boardHalf + CELL_SIZE * (0.6 + hash01(i * 6) * 1.8)
+    const dx = Math.cos(a) * r
+    if (onRiver(dx)) continue
     soft.push(
       colored(
         new THREE.CircleGeometry(PERSON_HEIGHT * (0.6 + hash01(i) * 0.8), 8).rotateX(-Math.PI / 2),
-        Math.cos(a) * r,
+        dx,
         0.05,
         Math.sin(a) * r,
         dirt,
@@ -501,57 +522,159 @@ function buildRuinBowl(boardHalf: number) {
     )
   }
 
+  // Far horizon mountains — past the apron so zoom-out never shows a flat ground→sky edge
+  const horizonR = cliffR + CELL_SIZE * 7.5
+  const horizonSegs = 40
+  const horizonH = PERSON_HEIGHT * 22
+  for (let i = 0; i < horizonSegs; i++) {
+    const a = (i / horizonSegs) * Math.PI * 2 + 0.05
+    const x = Math.cos(a) * horizonR
+    const z = Math.sin(a) * horizonR
+    const h = horizonH * (0.75 + hash01(i * 3.1) * 0.45)
+    const w = ((Math.PI * 2 * horizonR) / horizonSegs) * 1.2
+    const d = CELL_SIZE * (3.2 + hash01(i * 2.2) * 2.4)
+    const col = hash01(i * 4) > 0.55 ? cliffDark : hash01(i * 4) > 0.25 ? cliff : stoneDark
+    horizonSolid.push(
+      colored(rotY(new THREE.BoxGeometry(w, h, d), a), x, h * 0.42, z, col),
+    )
+    // Second ridge slightly farther / lower for depth
+    const r2 = horizonR + CELL_SIZE * (1.8 + hash01(i * 5.5) * 1.4)
+    const h2 = h * (0.55 + hash01(i * 7.1) * 0.3)
+    horizonSolid.push(
+      colored(
+        rotY(new THREE.BoxGeometry(w * 1.15, h2, CELL_SIZE * 2.8), a),
+        Math.cos(a) * r2,
+        h2 * 0.4,
+        Math.sin(a) * r2,
+        cliffDark,
+      ),
+    )
+    // Tree-line silhouette on the near ridge
+    horizonSoft.push(
+      colored(
+        new THREE.SphereGeometry(PERSON_HEIGHT * (1.8 + hash01(i * 8) * 1.2), 6, 5),
+        x - Math.cos(a) * CELL_SIZE * 0.2,
+        h * 0.88 + PERSON_HEIGHT * 0.4,
+        z - Math.sin(a) * CELL_SIZE * 0.2,
+        leafDark,
+      ),
+    )
+    if (hash01(i * 6.3) > 0.35) {
+      horizonSoft.push(
+        colored(
+          new THREE.SphereGeometry(PERSON_HEIGHT * (1.2 + hash01(i * 9) * 0.7), 5, 4),
+          Math.cos(a + 0.04) * r2,
+          h2 * 0.9,
+          Math.sin(a + 0.04) * r2,
+          leaf,
+        ),
+      )
+    }
+  }
+
   return {
     solid: mergeAndDispose(solid),
     soft: mergeAndDispose(soft),
+    cliffSolid: mergeAndDispose(cliffSolid),
+    cliffSoft: mergeAndDispose(cliffSoft),
+    entranceSolid: mergeAndDispose(entranceSolid),
+    entranceSoft: mergeAndDispose(entranceSoft),
+    horizonSolid: mergeAndDispose(horizonSolid),
+    horizonSoft: mergeAndDispose(horizonSoft),
   }
+}
+
+/**
+ * Hide the cliff rim only when the camera pans into it — not at normal overview.
+ * Zoom-out used to cull the whole wall; keep it visible as the bowl edge.
+ */
+function CliffFade({
+  group,
+  cliffR,
+}: {
+  group: RefObject<THREE.Group | null>
+  cliffR: number
+}) {
+  const { camera } = useThree()
+  const last = useRef(1)
+
+  useFrame(() => {
+    const g = group.current
+    if (!g) return
+    const camR = Math.hypot(camera.position.x, camera.position.z)
+    // Only react when orbiting near the rim itself
+    const prox = THREE.MathUtils.smoothstep(cliffR * 0.62, cliffR * 0.92, camR)
+    const show = 1 - prox
+    if (Math.abs(show - last.current) < 0.01) return
+    last.current = show
+    g.visible = show > 0.12
+    g.scale.set(1, Math.max(0.25, show), 1)
+  })
+
+  return null
+}
+
+/** Soft-hide entrance cliffs only when the camera is right on top of them. */
+function EntranceFade({
+  group,
+  cliffR,
+}: {
+  group: RefObject<THREE.Group | null>
+  cliffR: number
+}) {
+  const { camera } = useThree()
+  const last = useRef(1)
+
+  useFrame(() => {
+    const g = group.current
+    if (!g) return
+    const camR = Math.hypot(camera.position.x, camera.position.z)
+    const prox = THREE.MathUtils.smoothstep(cliffR * 0.85, cliffR * 1.2, camR)
+    const show = 1 - prox
+    if (Math.abs(show - last.current) < 0.01) return
+    last.current = show
+    g.visible = show > 0.15
+    g.scale.set(1, Math.max(0.3, show) * 0.85, 1)
+  })
+
+  return null
 }
 
 export function Cityscape() {
   const gradientMap = useMemo(() => getToonGradient(), [])
   const groundMat = useMemo(
-    () => new THREE.MeshToonMaterial({ color: '#4a5840', gradientMap }),
+    () => new THREE.MeshToonMaterial({ color: '#4a5e3c', gradientMap }),
     [gradientMap],
-  )
-  const soilMat = useMemo(
-    () => new THREE.MeshToonMaterial({ color: '#3e4638', gradientMap }),
-    [gradientMap],
-  )
-  const hazeMat = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: PALETTE.fog,
-        side: THREE.BackSide,
-        fog: false,
-      }),
-    [],
   )
   const hazeFloorMat = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
-        color: '#6a7860',
-        fog: false,
+        color: '#5a7050',
+        fog: true,
       }),
     [],
   )
 
   const boardHalf = CELL_SIZE * 4
-  const deckSpan = CELL_SIZE * (8 + WORLD_TILE_MARGIN * 2)
-  // Ground + haze reach past the outer forest ring so woods don't clip at a circle
+  const cliffR = cliffRimRadius(boardHalf)
   const bowlR = boardHalf + CELL_SIZE * (WORLD_TILE_MARGIN + 10)
-  const hazeR = bowlR + CELL_SIZE * 3.5
+  const apronR = bowlR + CELL_SIZE * 4
+  const cliffRev = 13
 
-  const ruin = useMemo(() => buildRuinBowl(boardHalf), [boardHalf])
-  const worldTiles = useMemo(() => buildWorldTiles(), [])
+  const ruin = useMemo(() => buildRuinBowl(boardHalf), [boardHalf, cliffRev])
 
   useEffect(
     () => () => {
       ruin.solid.dispose()
       ruin.soft.dispose()
-      worldTiles.pads.dispose()
-      worldTiles.dress.dispose()
+      ruin.cliffSolid.dispose()
+      ruin.cliffSoft.dispose()
+      ruin.entranceSolid.dispose()
+      ruin.entranceSoft.dispose()
+      ruin.horizonSolid.dispose()
+      ruin.horizonSoft.dispose()
     },
-    [ruin, worldTiles],
+    [ruin],
   )
 
   const meshMat = useMemo(
@@ -562,48 +685,73 @@ export function Cityscape() {
     () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
     [gradientMap],
   )
-  const tileMat = useMemo(
+  const cliffMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+  const cliffSoftMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+  const entranceMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+  const entranceSoftMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+  const horizonMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+  const horizonSoftMat = useMemo(
     () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
     [gradientMap],
   )
 
+  const cliffGroup = useRef<THREE.Group>(null)
+  const entranceGroup = useRef<THREE.Group>(null)
+
   return (
     <group>
-      {/* Floor stops at the berm — no infinite plain stretching to a horizon */}
+      {/* Underfill below the valley so the river bed isn't capped by a flat disk */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.35, 0]}
+        position={[0, -4.2, 0]}
         material={groundMat}
         receiveShadow
       >
         <circleGeometry args={[bowlR, 48]} />
       </mesh>
 
-      {/* Soil slab under apron tiles */}
-      <mesh position={[0, -0.1, 0]} material={soilMat} receiveShadow>
-        <boxGeometry args={[deckSpan + CELL_SIZE * 1.2, 0.22, deckSpan + CELL_SIZE * 1.2]} />
-      </mesh>
-
-      <mesh geometry={worldTiles.pads} material={tileMat} receiveShadow castShadow />
-      <mesh geometry={worldTiles.dress} material={tileMat} receiveShadow />
-
       <mesh geometry={ruin.solid} material={meshMat} castShadow receiveShadow />
       <mesh geometry={ruin.soft} material={softMat} castShadow receiveShadow />
 
-      {/* Haze cup — walls + dome in fog color so ground never meets open sky */}
-      <mesh position={[0, PERSON_HEIGHT * 3.5, 0]} material={hazeMat}>
-        <cylinderGeometry args={[hazeR, hazeR * 1.08, PERSON_HEIGHT * 12, 32, 1, true]} />
-      </mesh>
-      <mesh material={hazeMat}>
-        <sphereGeometry args={[hazeR * 1.12, 28, 16]} />
-      </mesh>
-      {/* Outer apron under the berm so gaps don't flash empty */}
+      <group ref={cliffGroup}>
+        <mesh geometry={ruin.cliffSolid} material={cliffMat} castShadow receiveShadow />
+        <mesh geometry={ruin.cliffSoft} material={cliffSoftMat} castShadow receiveShadow />
+      </group>
+      <CliffFade group={cliffGroup} cliffR={cliffR} />
+
+      {/* Entrance cliffs — BG parallax; soft-hide if the camera walks into them */}
+      <group ref={entranceGroup} scale={[1, 0.85, 1]}>
+        <mesh geometry={ruin.entranceSolid} material={entranceMat} castShadow receiveShadow />
+        <mesh geometry={ruin.entranceSoft} material={entranceSoftMat} castShadow receiveShadow />
+      </group>
+      <EntranceFade group={entranceGroup} cliffR={cliffR} />
+
+      {/* Always-on far mountains — hide the ground→sky seam at full zoom-out */}
+      <mesh geometry={ruin.horizonSolid} material={horizonMat} receiveShadow />
+      <mesh geometry={ruin.horizonSoft} material={horizonSoftMat} receiveShadow />
+
+      {/* Soft ground apron under the outer cliffs */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.5, 0]}
+        position={[0, -2.6, 0]}
         material={hazeFloorMat}
       >
-        <ringGeometry args={[bowlR * 0.92, hazeR * 1.15, 48]} />
+        <ringGeometry args={[bowlR * 0.92, apronR, 48]} />
       </mesh>
     </group>
   )

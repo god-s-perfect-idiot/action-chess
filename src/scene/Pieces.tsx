@@ -12,11 +12,13 @@ import { getHeroDesign } from '../game/heroDesigns'
 import type { TrackedPiece } from '../game/pieceIds'
 import {
   CELL_SIZE,
+  PERSON_HEIGHT,
   squareToCoords,
   UNIT_SCALE,
   type PieceType,
   type Square,
 } from '../game/types'
+import { walkY } from './terrainHeight'
 import {
   attackFor,
   deathDuration,
@@ -28,15 +30,32 @@ import {
   type SeverSpec,
 } from './fighters/anims'
 import { now, TIME_SCALE } from './fighters/clock'
-import { FxLayer, type FxEvent, type FxType } from './fighters/Fx'
+import {
+  BodyRetrieval,
+  flickerScale,
+  RETRIEVAL_DUR,
+  RETRIEVAL_OUT_AT,
+  type RetrievalEvent,
+} from './fighters/BodyRetrieval'
+import { FxLayer, type FxEvent } from './fighters/Fx'
 import {
   buildLethalDuel,
+  buildProtectorDuel,
   sampleBeat,
   type BoutBeat,
 } from './fighters/bouts'
 import { HeroFighter, type FighterApi } from './fighters/HeroFighter'
+import {
+  FLICKER_IN,
+  FLICKER_OUT,
+  KingProtectorActor,
+  protectorFlickerFx,
+  protectorStand,
+  type ProtectorSpawn,
+} from './fighters/KingProtector'
 import { outlineUniforms } from './fighters/materials'
 import { isPointerDrag } from './isPointerDrag'
+import { protectorForKing } from '../game/protectors'
 
 interface Plan {
   start: number
@@ -74,7 +93,10 @@ interface Ghost {
   origin: THREE.Vector2
   attacker: THREE.Vector2
   hitAt: number
+  /** Jonin recovery team arrives; body flickers out shortly after. */
   vanishAt: number
+  /** Absolute time when corpse + jonin are fully gone. */
+  goneAt: number
   /** Exchange that plays after `carry`, before the killing signature. */
   beats: BoutBeat[]
   duelStart: number
@@ -88,8 +110,11 @@ interface Ghost {
   carry: Plan | null
 }
 
-/** Tile top in fighter-local units; fighters stand sunk into it at y = 0. */
-const BOARD_FLOOR = 0.1575 / UNIT_SCALE
+const _flicker = new THREE.Vector3()
+
+/** Feet sit on the terrain surface (group origin). Ragdolls settle there. */
+const BOARD_FLOOR = 0
+
 const ZONE_Y: Record<HitZone, number> = { high: 0.98, mid: 0.75, low: 0.4 }
 
 interface Director {
@@ -139,7 +164,10 @@ const SPEED: Record<MoveStyle, number> = {
 
 function travelTime(style: MoveStyle, dist: number, design?: ReturnType<typeof getHeroDesign>): number {
   if (dist < 1e-3) return 0
-  if (style === 'leap') return 0.45 + (dist / CELL_SIZE) * 0.12
+  if (style === 'leap') {
+    const mul = design?.moveSpeedMul ?? 1
+    return Math.max(0.18, (0.45 + (dist / CELL_SIZE) * 0.12) / mul)
+  }
   if (style === 'teleport') {
     // Finral needs a beat longer so the walk-in / walk-out reads.
     if (design?.extras.includes('finralSuit')) return 0.62 + (dist / CELL_SIZE) * 0.06
@@ -491,8 +519,13 @@ function BoardFighter({
           anim = { kind: 'ready', t: setKind('ready') }
         }
       }
-      const shrink = THREE.MathUtils.smoothstep(t, ghost.vanishAt, ghost.vanishAt + 0.22)
-      scale = UNIT_SCALE * Math.max(0.0001, 1 - shrink)
+      // Body-flicker out with the jonin recovery team (vertical streak vanish).
+      if (t >= ghost.vanishAt + RETRIEVAL_OUT_AT) {
+        const p = Math.min(1, (t - ghost.vanishAt - RETRIEVAL_OUT_AT) / (RETRIEVAL_DUR - RETRIEVAL_OUT_AT))
+        flickerScale(p, false, _flicker)
+      } else {
+        _flicker.set(1, 1, 1)
+      }
     } else if (defeatedAt !== null && t >= defeatedAt) {
       const home = coords(piece.square)
       if (st.pos.distanceToSquared(home) > 1e-4) st.pos.lerp(home, 1 - Math.exp(-10 * dt))
@@ -529,9 +562,17 @@ function BoardFighter({
     }
 
     st.yaw = dampAngle(st.yaw, yaw, yawRate, dt)
-    g.position.set(st.pos.x, y, st.pos.y)
-    g.rotation.y = st.yaw
-    g.scale.setScalar(scale)
+    // Upright only — height follows the ground, facing stays level.
+    const ground = walkY(st.pos.x, st.pos.y)
+    g.rotation.set(0, st.yaw, 0)
+    g.position.set(st.pos.x, y + ground, st.pos.y)
+    if (ghost && t >= ghost.vanishAt + RETRIEVAL_OUT_AT) {
+      g.scale.set(scale * _flicker.x, scale * _flicker.y, scale * _flicker.z)
+      if (_flicker.x < 0.02) g.visible = false
+    } else {
+      g.visible = true
+      g.scale.setScalar(scale)
+    }
     if (!ghost) director.pos.set(piece.id, st.pos)
     f.update(anim, dt, speed)
 
@@ -593,6 +634,8 @@ function BoardFighter({
 interface PiecesProps {
   pieces: TrackedPiece[]
   selected: Square | null
+  checkedKing?: Square | null
+  checkerSquare?: Square | null
   defeatedKing?: Square | null
   onPieceClick: (square: Square) => void
   /** Written each plan update so the game loop can wait out choreography. */
@@ -602,6 +645,8 @@ interface PiecesProps {
 export function Pieces({
   pieces,
   selected,
+  checkedKing = null,
+  checkerSquare = null,
   defeatedKing = null,
   onPieceClick,
   boardFreeAtRef,
@@ -614,9 +659,22 @@ export function Pieces({
   const prev = useRef<TrackedPiece[]>(pieces)
   const [ghosts, setGhosts] = useState<Ghost[]>([])
   const [fx, setFx] = useState<FxEvent[]>([])
+  const [retrievals, setRetrievals] = useState<RetrievalEvent[]>([])
+  const [protectors, setProtectors] = useState<ProtectorSpawn[]>([])
+  const protectorsRef = useRef<ProtectorSpawn[]>([])
   const [kingDeathAt, setKingDeathAt] = useState<number | null>(null)
+  const guardKey = useRef<string | null>(null)
+  const mateKey = useRef<string | null>(null)
   const { gl } = useThree()
   const showTeamGlow = selected !== null
+
+  const commitProtectors = (next: ProtectorSpawn[] | ((prev: ProtectorSpawn[]) => ProtectorSpawn[])) => {
+    setProtectors((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next
+      protectorsRef.current = resolved
+      return resolved
+    })
+  }
 
   const publishFreeAt = (t: number) => {
     director.freeAt = Math.max(director.freeAt, t)
@@ -630,23 +688,6 @@ export function Pieces({
     outlineUniforms.uMinPx.value = 1.05 * dpr
     outlineUniforms.uMaxPx.value = 2.6 * dpr
     if (boardFreeAtRef) boardFreeAtRef.current = director.freeAt
-    if (import.meta.env.DEV) {
-      const time = now()
-      let drifting = 0
-      for (const p of pieces) {
-        const home = coords(p.square)
-        const pos = director.pos.get(p.id)
-        const plan = director.plans.get(p.id)
-        const busy = !!plan && time < planEnd(plan)
-        if (!busy && pos && pos.distanceTo(home) > CELL_SIZE * 0.12) drifting++
-      }
-      ;(window as unknown as { __idle?: unknown }).__idle = {
-        drifting,
-        duels: [...director.plans.values()].filter(
-          (plan) => (plan.beats?.length ?? 0) > 0 && time < planEnd(plan),
-        ).length,
-      }
-    }
   })
 
   useLayoutEffect(() => {
@@ -670,6 +711,7 @@ export function Pieces({
       if (boardFreeAtRef) boardFreeAtRef.current = 0
       setGhosts([])
       setFx([])
+      setRetrievals([])
       setKingDeathAt(null)
       return
     }
@@ -776,7 +818,8 @@ export function Pieces({
         awakened: victim.awakened,
       })
       const vanishAt = hitAt + deathDuration(vDesign, atk.dmg) + 0.35
-      const waitUntil = Math.max(attackAt + atk.clip.dur, vanishAt + 0.15 - t0)
+      const goneAt = vanishAt + RETRIEVAL_DUR
+      const waitUntil = Math.max(attackAt + atk.clip.dur, goneAt + 0.05 - t0)
       const finishStyle: MoveStyle = style === 'fly' ? 'fly' : atk.ranged ? style : 'walk'
       const finish = travelTime(finishStyle, stop.distanceTo(to), moverDesign)
 
@@ -808,6 +851,7 @@ export function Pieces({
         attacker: stop,
         hitAt,
         vanishAt,
+        goneAt,
         hurts: atk.hits.slice(0, -1).map((h) => ({ at: t0 + attackAt + h.t, zone: h.zone, hold: h.hold })),
         dmg: atk.dmg,
         zone: lethal?.zone ?? 'mid',
@@ -820,6 +864,7 @@ export function Pieces({
 
       // Signature effect. Duel taps are the non-lethal exchanges before it.
       const { c1, c2 } = fxColor(mover.heroId, mover.color, mover.awakened)
+      const lifted = (x: number, z: number, y: number) => y + walkY(x, z)
       for (const tap of duel.taps) {
         newFx.push({
           id: fxId++,
@@ -827,8 +872,8 @@ export function Pieces({
           start: t0 + tap.t,
           travel: 0,
           dur: 0.32,
-          from: new THREE.Vector3(tap.from.x, ZONE_Y[tap.zone] * UNIT_SCALE * 0.9, tap.from.y),
-          to: new THREE.Vector3(tap.at.x, ZONE_Y[tap.zone] * UNIT_SCALE, tap.at.y),
+          from: new THREE.Vector3(tap.from.x, lifted(tap.from.x, tap.from.y, ZONE_Y[tap.zone] * UNIT_SCALE * 0.9), tap.from.y),
+          to: new THREE.Vector3(tap.at.x, lifted(tap.at.x, tap.at.y, ZONE_Y[tap.zone] * UNIT_SCALE), tap.at.y),
           color: '#fff1c4',
           color2: c1,
           size: UNIT_SCALE * 0.32,
@@ -836,8 +881,8 @@ export function Pieces({
       }
       const up = UNIT_SCALE * 0.78
       const fwd = new THREE.Vector3(dir.x, 0, dir.y)
-      const src = new THREE.Vector3(stop.x, up, stop.y).addScaledVector(fwd, UNIT_SCALE * 0.35)
-      const dst = new THREE.Vector3(vPos.x, up * 0.95, vPos.y)
+      const src = new THREE.Vector3(stop.x, lifted(stop.x, stop.y, up), stop.y).addScaledVector(fwd, UNIT_SCALE * 0.35)
+      const dst = new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.95), vPos.y)
       // Flash projectile (e.g. Minato kunai) before the signature lands.
       if (atk.throwFx) {
         newFx.push({
@@ -857,13 +902,15 @@ export function Pieces({
       const babylon = atk.fx === 'babylon'
       const portal = atk.fx === 'portal'
       const inferno = atk.fx === 'inferno'
+      const megaShock = atk.fx === 'megaShockwave'
+      const airShock = atk.fx === 'airShockwave'
       const fxFrom = rasengan
-        ? new THREE.Vector3(vPos.x, up * 1.85, vPos.y)
+        ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 1.85), vPos.y)
         : src
       const fxTo = rasengan
-        ? new THREE.Vector3(vPos.x, up * 0.85, vPos.y)
+        ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.85), vPos.y)
         : inferno
-          ? new THREE.Vector3(vPos.x, up * 0.35, vPos.y)
+          ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.35), vPos.y)
           : dst
       const sakura = atk.fx === 'sakura'
       newFx.push({
@@ -894,13 +941,15 @@ export function Pieces({
               ? 0.95
               : atk.fx === 'rasengan'
                 ? 0.75
-                : inferno
+                : inferno || megaShock
                   ? 1.35
                   : portal
                     ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
                     : sakura || babylon
                       ? 0.95
-                      : 0.6,
+                      : airShock
+                        ? 0.75
+                        : 0.6,
         from: fxFrom,
         to: fxTo,
         color: sakura ? '#ff8ec8' : babylon ? '#f0d050' : inferno ? '#ff6a18' : c1,
@@ -915,9 +964,13 @@ export function Pieces({
                 ? 0.62
                 : inferno
                   ? 1.35
-                  : sakura || babylon
-                    ? 0.68
-                    : 0.55),
+                  : megaShock
+                    ? 1.25
+                    : sakura || babylon
+                      ? 0.68
+                      : airShock
+                        ? 0.7
+                        : 0.55),
       })
 
       // Small impact for every punch/kick of the combo the signature fx doesn't cover.
@@ -932,7 +985,7 @@ export function Pieces({
             travel: 0,
             dur: 0.4,
             from: src,
-            to: new THREE.Vector3(at.x, ZONE_Y[h.zone] * UNIT_SCALE, at.y),
+            to: new THREE.Vector3(at.x, lifted(at.x, at.y, ZONE_Y[h.zone] * UNIT_SCALE), at.y),
             color: '#fff1c4',
             color2: c1,
             size: UNIT_SCALE * 0.4,
@@ -949,72 +1002,284 @@ export function Pieces({
     if (newFx.length) setFx((f) => [...f, ...newFx])
   }, [pieces, director, boardFreeAtRef])
 
-  // Checkmate death waits until the mating move/kill stage finishes.
+  // Check → bodyguard body-flickers in, sword drawn, facing the threat.
+  useLayoutEffect(() => {
+    if (!checkedKing) {
+      // Check cleared — flicker out any living guards that aren't mid-fight.
+      const t = Math.max(now(), director.freeAt)
+      const prev = protectorsRef.current
+      const leavingIds = new Set(
+        prev
+          .filter((p) => p.leaveAt === null && p.fightAt === null && p.deathAt === null)
+          .map((p) => p.id),
+      )
+      if (leavingIds.size) {
+        const leaving = prev.filter((p) => leavingIds.has(p.id))
+        commitProtectors(
+          prev.map((p) =>
+            leavingIds.has(p.id)
+              ? { ...p, leaveAt: t, goneAt: t + FLICKER_OUT + 0.05 }
+              : p,
+          ),
+        )
+        setFx((f) => [
+          ...f,
+          ...leaving.map((p) => protectorFlickerFx(p.at, t, false, fxId++)),
+        ])
+        publishFreeAt(t + FLICKER_OUT + 0.1)
+      }
+      guardKey.current = null
+      return
+    }
+
+    const king = pieces.find((p) => p.square === checkedKing && p.type === 'k')
+    if (!king) return
+    const prot = protectorForKing(king.heroId)
+    if (!prot) return
+
+    const key = `${king.id}:${checkedKing}:${checkerSquare ?? ''}`
+    if (guardKey.current === key) return
+    guardKey.current = key
+
+    const threatSq = checkerSquare ?? checkedKing
+    const kingPos = coords(checkedKing)
+    const threatPos = coords(threatSq)
+    const at = protectorStand(kingPos, threatPos)
+    const start = Math.max(now(), director.freeAt) + 0.06
+
+    const spawn: ProtectorSpawn = {
+      id: fxId++,
+      design: prot.design,
+      at: at.clone(),
+      face: threatPos.clone(),
+      start,
+      seed: hashBout(prot.id, king.id) % 1000,
+      leaveAt: null,
+      fightAt: null,
+      beats: [],
+      deathAt: null,
+      goneAt: start + 600,
+    }
+
+    commitProtectors((list) => {
+      const keepFighting = list.filter(
+        (p) => p.fightAt !== null && now() < p.goneAt,
+      )
+      return [...keepFighting, spawn]
+    })
+    setFx((f) => [...f, protectorFlickerFx(at, start, true, fxId++)])
+    publishFreeAt(start + FLICKER_IN + 0.05)
+  }, [checkedKing, checkerSquare, pieces, director, boardFreeAtRef])
+
+  // Checkmate: king + protector fight the mating piece; protector dies, then king.
   useLayoutEffect(() => {
     if (!defeatedKing) {
       setKingDeathAt(null)
+      mateKey.current = null
       return
     }
-    setKingDeathAt((prev) => {
-      if (prev !== null) return prev
-      const king = pieces.find((p) => p.square === defeatedKing && p.type === 'k')
-      if (!king) return null
-      const start = Math.max(now(), director.freeAt) + 0.08
+    const king = pieces.find((p) => p.square === defeatedKing && p.type === 'k')
+    if (!king) return
+    const key = `${king.id}:${defeatedKing}`
+    if (mateKey.current === key) return
+    mateKey.current = key
+
+    const protDef = protectorForKing(king.heroId)
+    const threatSq = checkerSquare ?? defeatedKing
+    const attacker = pieces.find((p) => p.square === threatSq) ?? null
+    const kingPos = coords(defeatedKing)
+    const threatPos = coords(threatSq)
+    const stand = protectorStand(kingPos, threatPos)
+    const fightStart = Math.max(now(), director.freeAt) + 0.12
+
+    if (!protDef) {
+      // No bodyguard — fall back to a plain king death.
       const dur = deathDuration(getHeroDesign(king.heroId, king.color))
-      publishFreeAt(start + dur + 0.35)
-      return start
+      setKingDeathAt(fightStart)
+      publishFreeAt(fightStart + dur + 0.35)
+      return
+    }
+
+    const duel = buildProtectorDuel({
+      attackerStart: threatPos.clone(),
+      protectorStart: new THREE.Vector2(stand.x, stand.z),
+      kingHome: kingPos.clone(),
+      seed: hashBout(king.id, threatSq, 'mate'),
     })
-  }, [defeatedKing, pieces, director, boardFreeAtRef])
+    const protDie = deathDuration(protDef.design, 'slash')
+    const kingDie = deathDuration(getHeroDesign(king.heroId, king.color))
+    const protDeathAt = fightStart + duel.protectorHitAt
+    const kingDeath = fightStart + duel.kingHitAt
+
+    commitProtectors((list) => {
+      const active = list.find((p) => p.deathAt === null && p.leaveAt === null)
+      if (active) {
+        return list.map((p) =>
+          p.id === active.id
+            ? {
+                ...p,
+                face: threatPos.clone(),
+                at: stand.clone(),
+                fightAt: fightStart,
+                beats: duel.protector,
+                deathAt: protDeathAt,
+                goneAt: protDeathAt + protDie + 0.45,
+                leaveAt: null,
+              }
+            : p,
+        )
+      }
+      return [
+        ...list,
+        {
+          id: fxId++,
+          design: protDef.design,
+          at: stand.clone(),
+          face: threatPos.clone(),
+          start: fightStart - FLICKER_IN,
+          seed: hashBout(protDef.id, king.id) % 1000,
+          leaveAt: null,
+          fightAt: fightStart,
+          beats: duel.protector,
+          deathAt: protDeathAt,
+          goneAt: protDeathAt + protDie + 0.45,
+        },
+      ]
+    })
+
+    // Inject skirmish beats onto the mating piece and the king.
+    if (attacker) {
+      const from = threatPos.clone()
+      director.plans.set(attacker.id, {
+        start: fightStart,
+        from,
+        stop: from.clone(),
+        to: from.clone(),
+        style: 'walk',
+        approach: 0,
+        attackAt: -1,
+        attackDur: 0,
+        victim: kingPos.clone(),
+        waitUntil: duel.kingHitAt + 0.05,
+        finish: 0,
+        finishStyle: 'walk',
+        beats: duel.attacker,
+        beatsEnd: duel.kingHitAt,
+      })
+    }
+    director.plans.set(king.id, {
+      start: fightStart,
+      from: kingPos.clone(),
+      stop: kingPos.clone(),
+      to: kingPos.clone(),
+      style: 'walk',
+      approach: 0,
+      attackAt: -1,
+      attackDur: 0,
+      victim: threatPos.clone(),
+      waitUntil: duel.kingHitAt,
+      finish: 0,
+      finishStyle: 'walk',
+      beats: duel.king,
+      beatsEnd: duel.kingHitAt,
+    })
+
+    // Hit sparks during the last stand.
+    const newFx: FxEvent[] = []
+    for (const tap of duel.taps) {
+      newFx.push({
+        id: fxId++,
+        kind: 'hit',
+        start: fightStart + tap.t,
+        travel: 0,
+        dur: 0.35,
+        from: new THREE.Vector3(tap.from.x, UNIT_SCALE * 0.7, tap.from.y),
+        to: new THREE.Vector3(tap.at.x, UNIT_SCALE * 0.7, tap.at.y),
+        color: '#fff1c4',
+        color2: '#ff4d6d',
+        size: UNIT_SCALE * 0.4,
+      })
+    }
+    if (newFx.length) setFx((f) => [...f, ...newFx])
+
+    setKingDeathAt(kingDeath)
+    publishFreeAt(kingDeath + kingDie + 0.4)
+  }, [defeatedKing, checkerSquare, pieces, director, boardFreeAtRef])
 
   const onCorpse = (g: Ghost, at: THREE.Vector3, bled: boolean) => {
-    const vDesign = getHeroDesign(g.piece.heroId, g.piece.color, {
-      awakened: g.piece.awakened,
-    })
-    const poofKind: FxType =
-      vDesign.death === 'dissolve' ? 'poofSparkle' : vDesign.death === 'shatter' ? 'poofShards' : 'poof'
-    const vc = fxColor(g.piece.heroId, g.piece.color, g.piece.awakened)
-    const t = now()
-    const evs: FxEvent[] = [
-      {
+    const t = Math.max(now(), g.vanishAt)
+    const floorY = walkY(at.x, at.z)
+    // Anchor flicker at the feet; size = standing character height.
+    const feet = new THREE.Vector3(at.x, floorY, at.z)
+    const charH = PERSON_HEIGHT
+    const seed = Math.floor(g.hitAt * 1000 + g.piece.id.length * 17) % 100000
+    const evs: FxEvent[] = []
+    // Arrival body-flicker streaks — one burst per jonin around the corpse.
+    for (let i = 0; i < 3; i++) {
+      const ang = (i / 3) * Math.PI * 2 + seed * 0.01
+      const rad = UNIT_SCALE * 0.42
+      const p = new THREE.Vector3(at.x + Math.sin(ang) * rad, floorY, at.z + Math.cos(ang) * rad)
+      evs.push({
         id: fxId++,
-        kind: poofKind,
-        start: t,
+        kind: 'bodyFlicker',
+        start: t + i * 0.05,
         travel: 0,
-        dur: 0.85,
-        from: new THREE.Vector3(at.x, 0.3, at.z),
-        to: new THREE.Vector3(at.x, UNIT_SCALE * 0.3, at.z),
-        color: vc.c1,
-        color2: vc.c2,
-        size: UNIT_SCALE * 0.6,
-      },
-    ]
+        dur: 0.28,
+        from: p,
+        to: p,
+        color: '#1a2848',
+        color2: '#6a7a3e',
+        size: charH,
+      })
+    }
+    // Exit flicker — corpse + team leave together.
+    evs.push({
+      id: fxId++,
+      kind: 'bodyFlicker',
+      start: t + RETRIEVAL_OUT_AT,
+      travel: 0,
+      dur: RETRIEVAL_DUR - RETRIEVAL_OUT_AT,
+      from: feet,
+      to: feet,
+      color: '#1a2848',
+      color2: '#8a0a14',
+      size: charH,
+    })
     // The ragdoll's own pools vanish with it; leave one on the tile for a while.
     if (bled) {
-      const floorY = BOARD_FLOOR * UNIT_SCALE + 0.002
       evs.push({
         id: fxId++,
         kind: 'bloodPool',
-        start: t + 0.05,
+        start: t + RETRIEVAL_OUT_AT + 0.1,
         travel: 0,
         dur: 6,
-        from: new THREE.Vector3(at.x, floorY, at.z),
-        to: new THREE.Vector3(at.x, floorY, at.z),
+        from: new THREE.Vector3(at.x, floorY + 0.02, at.z),
+        to: new THREE.Vector3(at.x, floorY + 0.02, at.z),
         color: '#4e030a',
         color2: '#4e030a',
         size: UNIT_SCALE * 0.15,
       })
     }
+    setRetrievals((r) => [...r, { id: fxId++, at: at.clone(), start: t, seed }])
     setFx((f) => [...f, ...evs])
   }
 
-  // Drop ghosts and fx once they have played out.
+  // Drop ghosts, retrievals, protectors, and fx once they have played out.
   useEffect(() => {
-    if (!ghosts.length && !fx.length) return
+    if (!ghosts.length && !fx.length && !retrievals.length && !protectors.length) return
     const id = window.setInterval(() => {
       const t = now()
       setGhosts((g) => {
-        const keep = g.filter((x) => t < x.vanishAt + 0.4)
+        const keep = g.filter((x) => t < x.goneAt + 0.15)
         return keep.length === g.length ? g : keep
+      })
+      setRetrievals((r) => {
+        const keep = r.filter((x) => t < x.start + RETRIEVAL_DUR + 0.2)
+        return keep.length === r.length ? r : keep
+      })
+      commitProtectors((p) => {
+        const keep = p.filter((x) => t < x.goneAt + 0.15)
+        return keep.length === p.length ? p : keep
       })
       setFx((f) => {
         const keep = f.filter((x) => t < x.start + x.travel + x.dur + 0.1)
@@ -1022,7 +1287,7 @@ export function Pieces({
       })
     }, 250)
     return () => window.clearInterval(id)
-  }, [ghosts.length, fx.length])
+  }, [ghosts.length, fx.length, retrievals.length, protectors.length])
 
   return (
     <group>
@@ -1052,6 +1317,12 @@ export function Pieces({
           onPieceClick={onPieceClick}
           onCorpse={onCorpse}
         />
+      ))}
+      {protectors.map((p) => (
+        <KingProtectorActor key={p.id} event={p} />
+      ))}
+      {retrievals.map((r) => (
+        <BodyRetrieval key={r.id} event={r} />
       ))}
       <FxLayer events={fx} />
     </group>

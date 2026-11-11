@@ -53,14 +53,14 @@ export interface DifficultyConfig {
 }
 
 /** World size of one battle sector (chess square). */
-export const CELL_SIZE = 7.8
+export const CELL_SIZE = 11.3
 
 /**
- * Fighters are authored at ~1.1 local units tall; ~0.365 of a cell keeps people
+ * Fighters are authored at ~1.1 local units tall; ~0.252 of a cell keeps people
  * the same absolute size while pads get roomier. City dressing should scale off
  * PERSON_HEIGHT / FLOOR_HEIGHT so ruins and foliage match the cast.
  */
-export const UNIT_SCALE = CELL_SIZE * 0.365
+export const UNIT_SCALE = CELL_SIZE * 0.252
 /** Approx athletic fighter standing height in world units. */
 export const PERSON_HEIGHT = UNIT_SCALE * 1.15
 /** Typical building floor-to-floor height (~3m for a ~1.8m person). */

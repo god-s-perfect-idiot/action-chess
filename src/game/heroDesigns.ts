@@ -184,12 +184,15 @@ export type Extra =
   | 'finralSuit'
   | 'todoKit'
   | 'minatoSuit'
+  | 'joninSuit'
   | 'byakuyaSuit'
   | 'deadshotSuit'
   | 'nanamiSuit'
   | 'gojoSuit'
   | 'gilgameshSuit'
   | 'overhaulSuit'
+  | 'komamuraSuit'
+  | 'chronostasisSuit'
   | 'yamamotoSuit'
   | 'escanorSuit'
   | 'escanorPride'
@@ -240,6 +243,7 @@ export type Weapon =
   | 'excalibur'
   | 'excaliburHuge'
   | 'zangetsu'
+  | 'book'
 
 export type IdleStyle =
   | 'warmup'
@@ -263,10 +267,12 @@ export type IdleStyle =
   | 'slouch'
   | 'jitter'
   | 'armsCrossed'
+  | 'sandFloat'
   | 'scalpelTwirl'
   | 'glitch'
   | 'perch'
   | 'pockets'
+  | 'pocketSit'
   | 'feral'
   | 'coolStand'
   | 'kungfu'
@@ -306,6 +312,16 @@ export type IdleStyle =
   | 'thunderReady'
   | 'ichigoReady'
   | 'mugetsuReady'
+  | 'bookRead'
+  | 'prideFlex'
+  | 'fistCheek'
+  | 'gojoStretch'
+  | 'joninSalute'
+  | 'joninKneel'
+  | 'joninReach'
+  | 'swordGuard'
+  | 'komamuraLean'
+  | 'chronoReach'
 
 export type AttackStyle =
   | 'flameKick'
@@ -461,8 +477,8 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     shoes: 'boots',
     hands: 'bare',
     extras: ['escanorSuit'],
-    weapon: 'none',
-    idle: 'shy',
+    weapon: 'book',
+    idle: 'bookRead',
     attack: 'emberFlick',
     death: 'crumple',
     tempo: 0.85,
@@ -491,7 +507,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     hands: 'gloves',
     extras: ['saitamaSuit'],
     weapon: 'none',
-    idle: 'armsCrossed',
+    idle: 'fistCheek',
     attack: 'powerPunch',
     death: 'launched',
     tempo: 0.92,
@@ -501,7 +517,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     // Normal Mob — stiff bowl-cut schoolboy, walk + awkward punch.
     body: 'petite',
     figure: 'm',
-    tweak: { height: 0.94, bulk: 0.9, shoulders: 0.92, head: 1.08 },
+    tweak: { height: 0.94, bulk: 1.02, shoulders: 0.98, head: 1.08 },
     palette: {
       skin: '#f0c8a8',
       hair: '#1a1820',
@@ -565,7 +581,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     moveSpeedMul: 1.85,
   },
   'dawn-chord': {
-    // Deku — Gamma suit. Runs in, Full Cowl punches that explode on impact.
+    // Deku — Gamma suit. Leaps in, Full Cowl punches that explode on impact.
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.0, bulk: 1.02, shoulders: 1.04, head: 1.04 },
@@ -593,7 +609,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     attack: 'ofaPunch',
     death: 'launched',
     tempo: 1.05,
-    locomotion: 'run',
+    locomotion: 'leap',
     stride: 0.5,
     moveSpeedMul: 1.4,
   },
@@ -688,7 +704,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     hands: 'bare',
     extras: ['hakariSuit'],
     weapon: 'none',
-    idle: 'pockets',
+    idle: 'pocketSit',
     attack: 'jackpotRush',
     death: 'launched',
     tempo: 1.1,
@@ -812,7 +828,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     hands: 'bare',
     extras: ['gojoSuit'],
     weapon: 'none',
-    idle: 'pockets',
+    idle: 'gojoStretch',
     attack: 'murasaki',
     death: 'launched',
     tempo: 0.95,
@@ -1035,7 +1051,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     hands: 'bare',
     extras: ['moriSuit', 'goggles'],
     weapon: 'none',
-    idle: 'moriReady',
+    idle: 'gohanReady',
     attack: 'leafCombo',
     death: 'launched',
     tempo: 1.15,
@@ -1113,7 +1129,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     // Zenitsu — yellow triangle haori, dark gakuran, sheathed katana draw-cut.
     body: 'lean',
     figure: 'm',
-    tweak: { height: 1.0, bulk: 0.94, shoulders: 0.98, head: 1.04 },
+    tweak: { height: 0.88, bulk: 0.94, shoulders: 0.98, head: 1.1 },
     palette: {
       skin: '#f0c8a4',
       hair: '#f5d84a',
@@ -1176,7 +1192,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     moveSpeedMul: 1.15,
   },
   'night-fang': {
-    // Gaara — red spikes, eye rings, 愛 mark, burgundy coat, sand gourd; runs + sand attacks.
+    // Gaara — red spikes, eye rings, 愛 mark, burgundy coat, sand gourd; floats on a sand cloud.
     body: 'lean',
     figure: 'm',
     tweak: { height: 1.0, bulk: 0.96, shoulders: 1.0, head: 1.02 },
@@ -1200,13 +1216,12 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     hands: 'bare',
     extras: ['gaaraSuit'],
     weapon: 'none',
-    idle: 'armsCrossed',
+    idle: 'sandFloat',
     attack: 'sandBarrage',
     death: 'launched',
     tempo: 1.0,
-    locomotion: 'run',
-    stride: 0.52,
-    moveSpeedMul: 0.95,
+    locomotion: 'fly',
+    moveSpeedMul: 1.05,
   },
   'night-sonic': {
     // Kirishima — Gaara-height but fit/athletic, not lanky.
@@ -1499,7 +1514,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     hands: 'bare',
     extras: ['escanorPride'],
     weapon: 'rhitta',
-    idle: 'sunshineStance',
+    idle: 'prideFlex',
     attack: 'cruelSun',
     death: 'launched',
     tempo: 0.72,
@@ -1531,7 +1546,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     hands: 'gloves',
     extras: ['saitamaSuit'],
     weapon: 'none',
-    idle: 'focused',
+    idle: 'fistCheek',
     attack: 'seriousPunch',
     death: 'launched',
     tempo: 1.05,
@@ -1563,7 +1578,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     hands: 'bare',
     extras: ['eightGates'],
     weapon: 'none',
-    idle: 'focused',
+    idle: 'speedCrouch',
     attack: 'gatesBurn',
     death: 'launched',
     tempo: 1.35,
@@ -1607,7 +1622,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     attackSpeedMul: 2.4,
   },
   'dawn-chord': {
-    // Full Cowl 100% — battle-torn Gamma suit, cyan OFA aura; teleports in, punch→kick detonations.
+    // Full Cowl 100% — battle-torn Gamma suit, cyan OFA aura; leaps in fast with trails, punch→kick detonations.
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.02, bulk: 1.1, shoulders: 1.1, head: 1.02 },
@@ -1635,8 +1650,8 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     attack: 'ofaSmash',
     death: 'launched',
     tempo: 1.2,
-    locomotion: 'teleport',
-    moveSpeedMul: 2.5,
+    locomotion: 'leap',
+    moveSpeedMul: 2.8,
     attackSpeedMul: 1.25,
   },
   'dawn-grit': {
@@ -1874,7 +1889,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     attackSpeedMul: 1.15,
   },
   'night-null': {
-    // Spirit Dive — fairy wings, green mana glow, flight, whirlwind assault.
+    // Spirit Dive — fairy wings, entire suit one green, flight, whirlwind assault.
     body: 'lean',
     figure: 'm',
     tweak: { height: 1.06, bulk: 0.96, shoulders: 1.04, head: 1.0 },
@@ -1882,11 +1897,12 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
       skin: '#f0c8a8',
       hair: '#1a1820',
       hairAlt: '#0c0c10',
-      primary: '#e8f4e0',
-      secondary: '#143828',
+      // One solid Spirit Dive green across tunic / cape / belt / boots.
+      primary: '#40ff88',
+      secondary: '#40ff88',
       accent: '#40ff88',
-      trim: '#0c1810',
-      metal: '#a8ffd0',
+      trim: '#40ff88',
+      metal: '#40ff88',
       eye: '#60ff98',
       glow: '#40ff88',
     },
@@ -1907,10 +1923,10 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     attackSpeedMul: 1.15,
   },
   'night-fang': {
-    // Shukaku — sand tanuki shell, purple seal veins, spiked tail; teleports in sand, entombs foes.
+    // Shukaku — sand tanuki shell, purple seal veins, spiked tail; slides as a sand pile, entombs foes.
     body: 'titan',
     figure: 'm',
-    tweak: { height: 1.12, bulk: 1.32, shoulders: 1.4, head: 1.08 },
+    tweak: { height: 1.12, bulk: 1.32, shoulders: 1.4, head: 1.22 },
     palette: {
       skin: '#f0c8a8',
       hair: '#c02828',
@@ -1935,15 +1951,16 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     attack: 'sandCoffin',
     death: 'dissolve',
     tempo: 1.1,
-    locomotion: 'teleport',
-    moveSpeedMul: 2.2,
+    locomotion: 'dash',
+    stride: 0.7,
+    moveSpeedMul: 1.65,
     attackSpeedMul: 1.1,
   },
   'night-crow': {
     // Thunder Breathing awaken — asleep eyes, yellow thunder shell, Flash-pace sprint, lightning katana.
     body: 'lean',
     figure: 'm',
-    tweak: { height: 1.0, bulk: 0.96, shoulders: 1.0, head: 1.04 },
+    tweak: { height: 0.88, bulk: 0.96, shoulders: 1.0, head: 1.1 },
     palette: {
       skin: '#f0c8a4',
       hair: '#ffe848',
@@ -1971,7 +1988,8 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     locomotion: 'sprint',
     stride: 0.48,
     moveSpeedMul: 5,
-    attackSpeedMul: 1.35,
+    /** Thunderclap and Flash — one cut, played blisteringly fast. */
+    attackSpeedMul: 2.8,
   },
   'night-oil': {
     // Final Getsuga Tenshō — long black hair, grey seals, void cloak; fast dash + dark-dimension slash.

@@ -159,6 +159,41 @@ function PhaseTrail({
   )
 }
 
+/** Yuno — live flip leaves over the baked floating grimoire (idle page turns). */
+function GrimoireFlip({
+  pagesRef,
+  pageColor = '#f2efe8',
+  inkColor = '#12141a',
+}: {
+  pagesRef: (g: THREE.Group | null) => void
+  pageColor?: string
+  inkColor?: string
+}) {
+  const mats = useMemo(
+    () => ({
+      page: new THREE.MeshToonMaterial({ color: pageColor }),
+      ink: new THREE.MeshBasicMaterial({ color: inkColor }),
+    }),
+    [pageColor, inkColor],
+  )
+  // Children 0–1 are hinge groups; each holds a cream leaf that sweeps across the spine.
+  return (
+    <group ref={pagesRef}>
+      <group>
+        <P s={S.box(0.078, 0.105, 0.003, 0.001)} m={mats.page} line={false} p={[0.04, 0, 0]} />
+        <P s={S.box(0.05, 0.004, 0.002, 0.001)} m={mats.ink} line={false} shadow={false} p={[0.04, 0.02, 0.003]} />
+        <P s={S.box(0.045, 0.004, 0.002, 0.001)} m={mats.ink} line={false} shadow={false} p={[0.04, 0.0, 0.003]} />
+        <P s={S.box(0.04, 0.004, 0.002, 0.001)} m={mats.ink} line={false} shadow={false} p={[0.04, -0.02, 0.003]} />
+      </group>
+      <group>
+        <P s={S.box(0.072, 0.1, 0.0025, 0.001)} m={mats.page} line={false} p={[0.037, 0, 0.002]} />
+        <P s={S.box(0.042, 0.003, 0.0015, 0.001)} m={mats.ink} line={false} shadow={false} p={[0.037, 0.015, 0.004]} />
+        <P s={S.box(0.038, 0.003, 0.0015, 0.001)} m={mats.ink} line={false} shadow={false} p={[0.037, -0.01, 0.004]} />
+      </group>
+    </group>
+  )
+}
+
 /** Silver spatial gates for Finral — entry/exit rings (children 0–2 entry, 3–5 exit). */
 function PortalTrail({
   streakRef,
@@ -349,6 +384,84 @@ function FullCowlAura({
   )
 }
 
+/** Eighth Gate — crimson flame tongues that swirl and rise around the body. */
+function GatesFlameAura({
+  formRef,
+  color,
+  color2,
+}: {
+  formRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      hot: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, depthWrite: false }),
+      ember: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.8, depthWrite: false }),
+      core: new THREE.MeshBasicMaterial({ color: '#ffd0a0', transparent: true, opacity: 0.5, depthWrite: false }),
+    }),
+    [color, color2],
+  )
+  const flames = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => {
+        const a = (i / 14) * Math.PI * 2
+        return {
+          a,
+          elev: 0.12 + (i % 5) * 0.18,
+          len: 0.16 + (i % 4) * 0.07,
+          rad: 0.014 + (i % 3) * 0.006,
+          orbit: 0.2 + (i % 4) * 0.045,
+          spin: 1.1 + (i % 5) * 0.25,
+        }
+      }),
+    [],
+  )
+  const sparks = useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2 + 0.3
+        return {
+          a,
+          elev: 0.3 + (i % 4) * 0.2,
+          orbit: 0.26 + (i % 3) * 0.05,
+          size: 0.022 + (i % 2) * 0.01,
+          spin: 1.6 + (i % 4) * 0.35,
+        }
+      }),
+    [],
+  )
+  return (
+    <group ref={formRef} visible={false}>
+      <P s={S.torus(0.24, 0.018, Math.PI * 1.85, 20)} m={mats.hot} line={false} shadow={false} p={[0, 0.42, -0.02]} r={[Math.PI / 2 + 0.22, 0, 0]} />
+      <P s={S.torus(0.18, 0.012, Math.PI * 1.55, 16)} m={mats.ember} line={false} shadow={false} p={[0, 0.72, -0.01]} r={[Math.PI / 2 + 0.16, 0, 0]} />
+      <P s={S.torus(0.13, 0.01, Math.PI * 1.35, 14)} m={mats.core} line={false} shadow={false} p={[0, 0.98, 0]} r={[Math.PI / 2 + 0.1, 0, 0]} />
+      {flames.map((f, i) => (
+        <P
+          key={`f${i}`}
+          s={S.shard(f.rad, f.len, f.rad * 0.55)}
+          m={i % 2 ? mats.hot : mats.ember}
+          line={false}
+          shadow={false}
+          p={[Math.cos(f.a) * f.orbit, f.elev, Math.sin(f.a) * f.orbit * 0.7]}
+          r={[0.15, -f.a, Math.PI * 0.08 + (i % 3) * 0.1]}
+        />
+      ))}
+      {sparks.map((s, i) => (
+        <P
+          key={`e${i}`}
+          s={S.shard(s.size * 0.4, s.size, s.size * 0.25)}
+          m={i % 2 ? mats.core : mats.hot}
+          line={false}
+          shadow={false}
+          p={[Math.cos(s.a) * s.orbit, s.elev, Math.sin(s.a) * s.orbit * 0.65]}
+          r={[0.35, s.a, 0.4]}
+        />
+      ))}
+    </group>
+  )
+}
+
 /** Idle Death Gamble Jackpot — golden-green aura shell + star glints (near-invincible look). */
 function JackpotAura({
   formRef,
@@ -463,7 +576,27 @@ function mobFormDesign(base: HeroDesign, form: 'purple' | 'black'): HeroDesign {
   }
 }
 
-/** Long Speed Force trail streaming straight back while he sprints. */
+/** Path samples / parallel strands for speedster motion trails. */
+const TRAIL_SAMPLES = 28
+const TRAIL_STRANDS = 3
+const TRAIL_SEGS = TRAIL_SAMPLES - 1
+/** World-space spacing — keeps ~1 cell of trail at walk, longer at sprint. */
+const TRAIL_MIN_STEP = 0.28
+/** Base cylinder length — update scales Z so each bolt spans its path segment. */
+const TRAIL_BOLT_LEN = 0.32
+
+const _trailWorld = new THREE.Vector3()
+const _trailLocalA = new THREE.Vector3()
+const _trailLocalB = new THREE.Vector3()
+const _trailDir = new THREE.Vector3()
+const _trailMid = new THREE.Vector3()
+const _trailSide = new THREE.Vector3()
+const _trailUp = new THREE.Vector3(0, 1, 0)
+const _trailAxis = new THREE.Vector3(0, 0, -1)
+const _trailInv = new THREE.Matrix4()
+const _trailQuat = new THREE.Quaternion()
+
+/** Speed Force trail that traces the body path instead of a fixed rear streak. */
 function ElectricTrail({
   streakRef,
   color,
@@ -481,12 +614,11 @@ function ElectricTrail({
     }),
     [color, color2],
   )
-  // Long cylinders aimed −Z; live update stretches them into a rear streak.
+  // Short −Z bolts; live update lays them along recorded world samples.
   const bolts = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => ({
-        len: 0.9 + (i % 5) * 0.35 + (i % 3) * 0.2,
-        thick: 0.01 + (i % 4) * 0.006,
+      Array.from({ length: TRAIL_SEGS * TRAIL_STRANDS }, (_, i) => ({
+        thick: 0.009 + (i % 4) * 0.005,
       })),
     [],
   )
@@ -494,13 +626,12 @@ function ElectricTrail({
     <group ref={streakRef} visible={false}>
       {bolts.map((b, i) => (
         <group key={i}>
-          {/* Cylinder along −Z, rooted at the body and stretching straight back. */}
           <P
-            s={S.cyl(b.thick, b.thick * 0.12, b.len, 5)}
+            s={S.cyl(b.thick, b.thick * 0.14, TRAIL_BOLT_LEN, 5)}
             m={i % 3 === 0 ? mats.core : i % 2 ? mats.a : mats.b}
             line={false}
             shadow={false}
-            p={[0, 0, -b.len * 0.5]}
+            p={[0, 0, -TRAIL_BOLT_LEN * 0.5]}
             r={[Math.PI / 2, 0, 0]}
           />
         </group>
@@ -525,6 +656,40 @@ function thrustFor(anim: AnimInput, speed: number, t: number): number {
   }
   void t
   return 0
+}
+
+/** Gojo — Limitless Blue / Red bombs cupped in either palm. */
+function LimitlessBomb({
+  bombRef,
+  color,
+  color2,
+}: {
+  bombRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      shell: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false }),
+      glow: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.45, depthWrite: false }),
+      core: new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7, depthWrite: false }),
+      ring: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }),
+    }),
+    [color, color2],
+  )
+  return (
+    <group ref={bombRef} position={[0, -0.07, 0.06]} visible={false}>
+      <P s={S.sphere(0.09, 14, 12)} m={mats.shell} line={false} shadow={false} />
+      <P s={S.sphere(0.045, 10, 8)} m={mats.core} line={false} shadow={false} />
+      <P s={S.sphere(0.13, 12, 10)} m={mats.glow} line={false} shadow={false} />
+      <group rotation={[Math.PI / 2, 0, 0]}>
+        <P s={S.torus(0.11, 0.012, Math.PI * 2, 20)} m={mats.ring} line={false} shadow={false} />
+      </group>
+      <group rotation={[Math.PI / 2 + 0.6, 0.4, 0]}>
+        <P s={S.torus(0.14, 0.008, Math.PI * 2, 18)} m={mats.glow} line={false} shadow={false} />
+      </group>
+    </group>
+  )
 }
 
 /** Orbiting pebbles / dust around fortress boots — reads as micro-tremors. */
@@ -565,7 +730,174 @@ function TremorDebris({
   )
 }
 
-/** Denji → Chainsaw Man — orange saw-head + arm blades that snap on during attack. */
+/** Gaara idle/travel — fine sand grains orbiting the body and cloud. */
+function SandOrbitGrains({
+  fieldRef,
+  color,
+  color2,
+}: {
+  fieldRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      a: new THREE.MeshBasicMaterial({ color }),
+      b: new THREE.MeshBasicMaterial({ color: color2 }),
+    }),
+    [color, color2],
+  )
+  const specs = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i) => ({
+        a: (i / 16) * Math.PI * 2,
+        orbit: 0.16 + (i % 4) * 0.045,
+        elev: 0.08 + (i % 5) * 0.09,
+        size: 0.012 + (i % 3) * 0.006,
+        spin: 1.1 + (i % 5) * 0.25,
+      })),
+    [],
+  )
+  return (
+    <group ref={fieldRef} visible>
+      {specs.map((s, i) => (
+        <group key={i} position={[Math.cos(s.a) * s.orbit, s.elev, Math.sin(s.a) * s.orbit * 0.75]}>
+          <P s={S.sphere(s.size, 6, 5)} m={i % 2 ? mats.a : mats.b} line={false} shadow={false} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Shukaku travel form — lumpy sand mound that slides while the body is hidden. */
+function SandPileForm({
+  formRef,
+  color,
+  color2,
+}: {
+  formRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      sand: new THREE.MeshToonMaterial({ color }),
+      dark: new THREE.MeshToonMaterial({ color: color2 }),
+      grain: new THREE.MeshBasicMaterial({ color }),
+    }),
+    [color, color2],
+  )
+  const grains = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => ({
+        a: (i / 18) * Math.PI * 2,
+        r: 0.35 + (i % 5) * 0.12,
+        y: 0.08 + (i % 4) * 0.07,
+        size: 0.05 + (i % 4) * 0.025,
+      })),
+    [],
+  )
+  return (
+    <group ref={formRef} visible={false} position={[0, 0.04, 0]}>
+      {/* Wide flat puddle — reads as a pad-sized sand mass, not a speck. */}
+      <P s={S.sphere(0.55, 14, 10)} m={mats.sand} p={[0, 0.1, 0]} sc={[1.85, 0.45, 1.55]} />
+      <P s={S.sphere(0.42, 12, 10)} m={mats.sand} p={[0.28, 0.14, -0.12]} sc={[1.35, 0.5, 1.15]} />
+      <P s={S.sphere(0.4, 12, 10)} m={mats.dark} p={[-0.3, 0.12, 0.14]} sc={[1.3, 0.48, 1.1]} />
+      <P s={S.sphere(0.32, 10, 8)} m={mats.sand} p={[0.05, 0.22, 0.18]} sc={[1.25, 0.55, 1.05]} />
+      <P s={S.sphere(0.28, 10, 8)} m={mats.dark} p={[-0.08, 0.26, -0.16]} sc={[1.2, 0.5, 1.0]} />
+      <P s={S.sphere(0.2, 8, 6)} m={mats.sand} p={[0.02, 0.34, 0.02]} sc={[1.15, 0.55, 1.05]} />
+      {grains.map((g, i) => (
+        <P
+          key={i}
+          s={S.sphere(g.size, 6, 5)}
+          m={i % 2 ? mats.grain : mats.dark}
+          line={false}
+          shadow={false}
+          p={[Math.cos(g.a) * g.r, g.y, Math.sin(g.a) * g.r * 0.85]}
+        />
+      ))}
+    </group>
+  )
+}
+
+/** Ichigo hollow mask — bone-white half-face that grows from the jaw on idle, then dissolves. */
+function HollowMask({
+  shellRef,
+  headR = 0.08,
+}: {
+  shellRef: (g: THREE.Group | null) => void
+  headR?: number
+}) {
+  const mats = useMemo(
+    () => ({
+      bone: new THREE.MeshToonMaterial({ color: '#f4f0e6' }),
+      stripe: new THREE.MeshToonMaterial({ color: '#c01828' }),
+      socket: new THREE.MeshBasicMaterial({ color: '#121018' }),
+      eye: new THREE.MeshBasicMaterial({ color: '#f0c830' }),
+      gum: new THREE.MeshToonMaterial({ color: '#e8e2d4' }),
+    }),
+    [],
+  )
+  const r = headR
+  // Character left = +X (matches Outfit.sides). Jaw pivot so scale.y grows the mask up the face.
+  return (
+    <group ref={shellRef} visible={false} position={[r * 0.08, -r * 0.72, r * 0.12]}>
+      <group position={[0, r * 0.72, 0]}>
+        {/* Half-sphere shell over the left cheek / temple. */}
+        <P s={S.sphere(r * 0.95, 14, 12)} m={mats.bone} p={[r * 0.38, r * 0.02, r * 0.18]} sc={[0.72, 1.05, 0.82]} />
+        <P s={S.box(r * 0.55, r * 0.95, r * 0.55, r * 0.12)} m={mats.bone} p={[r * 0.42, -r * 0.05, r * 0.55]} />
+        {/* Nose bridge seam down the midline. */}
+        <P s={S.box(r * 0.08, r * 1.05, r * 0.18, r * 0.03)} m={mats.bone} p={[r * 0.04, r * 0.02, r * 0.78]} />
+        {/* Black eye socket + yellow hollow iris. */}
+        <P s={S.sphere(r * 0.22, 10, 8)} m={mats.socket} line={false} p={[r * 0.34, r * 0.1, r * 0.88]} sc={[1.15, 0.95, 0.55]} />
+        <P s={S.sphere(r * 0.1, 8, 6)} m={mats.eye} line={false} shadow={false} p={[r * 0.34, r * 0.1, r * 0.98]} sc={[1.1, 0.9, 0.45]} />
+        {/* Red vertical stripes over the socket. */}
+        {[-0.12, 0, 0.12].map((dy, i) => (
+          <P
+            key={i}
+            s={S.box(r * 0.07, r * 0.55, r * 0.04, r * 0.015)}
+            m={mats.stripe}
+            line={false}
+            p={[r * (0.22 + i * 0.1), r * (0.22 + dy * 0.15), r * 0.95]}
+            r={[0.15, -0.1, i === 1 ? 0 : i === 0 ? -0.12 : 0.12]}
+          />
+        ))}
+        {/* Jagged toothy grin along the jaw. */}
+        <P s={S.box(r * 0.7, r * 0.14, r * 0.22, r * 0.04)} m={mats.gum} p={[r * 0.28, -r * 0.55, r * 0.7]} />
+        {[-2, -1, 0, 1, 2].map((i) => (
+          <P
+            key={`tooth${i}`}
+            s={S.cone(r * 0.045, r * 0.12, 4)}
+            m={mats.bone}
+            line={false}
+            p={[r * (0.12 + Math.abs(i) * 0.08), -r * 0.62, r * (0.82 + (i > 0 ? 0.02 : 0))]}
+            r={[Math.PI * 0.92 + Math.abs(i) * 0.05, -i * 0.08, -i * 0.12]}
+          />
+        ))}
+        {/* Liquid growth splatters erupting into the hairline — toggled by idle grow amount. */}
+        <group name="hollowSplash">
+          {[
+            [0.55, 0.78, 0.35, 0.14, 0.22, 0.55],
+            [0.35, 0.92, 0.22, 0.1, 0.18, 0.35],
+            [0.7, 0.62, 0.45, 0.12, 0.16, -0.4],
+            [0.2, 0.85, 0.55, 0.09, 0.14, 0.7],
+            [0.48, 1.05, 0.15, 0.08, 0.12, -0.2],
+          ].map(([x, y, z, w, h, tilt], i) => (
+            <P
+              key={`splash${i}`}
+              s={S.shard(r * w, r * h, r * 0.06)}
+              m={mats.bone}
+              p={[x * r, y * r, z * r]}
+              r={[tilt * 0.4, -0.2, tilt]}
+            />
+          ))}
+        </group>
+      </group>
+    </group>
+  )
+}
+
+/** Denji → Chainsaw Man — orange saw-head + arm blades; idle flicker + attack snap-on. */
 function ChainsawForm({
   shellRef,
   kind,
@@ -597,8 +929,9 @@ function ChainsawForm({
 
   if (kind === 'head') {
     const r = headR
+    // Head bone sits at the neck joint — lift to skull center like bake `slotOffset('head')`.
     return (
-      <group ref={shellRef} visible={false}>
+      <group ref={shellRef} visible={false} position={[0, r * 0.95, 0]}>
         {/* Orange chainsaw housing that swallows the human face. */}
         <P s={S.sphere(r * 1.15, 14, 12)} m={mats.orange} p={[0, r * 0.08, r * 0.05]} sc={[1.15, 1.05, 1.25]} />
         <P s={S.sphere(r * 0.95, 12, 10)} m={mats.orangeDark} p={[0, r * 0.05, -r * 0.35]} sc={[1.1, 0.9, 0.85]} />
@@ -837,6 +1170,7 @@ export function HeroFighter({
   apiRef,
   floor = 0,
   awakened = false,
+  design: designProp,
 }: {
   heroId: string | null
   color: PieceColor
@@ -846,8 +1180,10 @@ export function HeroFighter({
   floor?: number
   /** Promoted pawn — uses that hero's awakened design. */
   awakened?: boolean
+  /** Skip hero lookup — used for NPC extras like recovery jonin. */
+  design?: HeroDesign
 }) {
-  const design = getHeroDesign(heroId, color, { awakened })
+  const design = designProp ?? getHeroDesign(heroId, color, { awakened })
   /** Mob ???% — dual purple/black body bakes; the model itself flickers. */
   const mobDual = useMemo(() => {
     if (!design.extras.includes('mobAwaken')) return null
@@ -874,17 +1210,19 @@ export function HeroFighter({
   const hasPhaseForm = design.extras.includes('lemillionSuit')
   /** Finral — silver spatial gates while hopping the L. */
   const hasPortalForm = design.extras.includes('finralSuit')
+  /** Yuno — floating wind grimoire with idle page flips. */
+  const hasYunoGrimoire = design.extras.includes('yunoSuit')
   /** Minato — Flying Thunder God kunai marks while hopping the L. */
   const hasKunaiForm = design.extras.includes('minatoSuit')
   /** Todo — Boogie Woogie clap rings while hopping the L. */
   const hasClapForm = design.extras.includes('todoKit')
   /** Red Riot — Unbreakable rocky plates while running / attacking. */
   const hasRiotHarden = design.extras.includes('riotGear')
-  /** Denji — orange Chainsaw Man form while attacking. */
+  /** Denji — orange Chainsaw Man form (idle flicker + attack). */
   const hasChainsawForm = design.extras.includes('denjiSuit')
   /** Mob ???% — purple ↔ black psychic form flicker. */
   const hasMobForm = design.extras.includes('mobAwaken')
-  /** Deku awakened — cyan Full Cowl electricity crackle. */
+  /** Deku awakened — cyan Full Cowl crackle + leap motion trail. */
   const hasFullCowl = design.extras.includes('dekuAwaken')
   /** Gohan SSJ2 — blue lightning crackle around the body. */
   const hasSsj2 = design.extras.includes('gohanSsj2')
@@ -894,20 +1232,42 @@ export function HeroFighter({
   const hasZenitsuThunder = design.extras.includes('zenitsuAwaken')
   /** Ichigo Mugetsu — dark void pressure aura. */
   const hasMugetsu = design.extras.includes('ichigoMugetsu')
+  /** Ichigo Shikai — hollow mask grows / dissolves on idle. */
+  const hasHollowMask = design.extras.includes('ichigoSuit')
   /** Hakari Jackpot — golden-green invincible aura. */
   const hasJackpot = design.extras.includes('hakariJackpot')
+  /** Might Guy Eighth Gate — crimson flame aura swirling around the body. */
+  const hasEightGates = design.extras.includes('eightGates')
+  /** Gaara — sand cloud underfoot + orbiting grains. */
+  const hasGaaraSand = design.extras.includes('gaaraSuit')
+  /** Shukaku — collapses into a sand pile while sliding. */
+  const hasShukaku = design.extras.includes('shukakuAwaken')
   /** Monkey King — Yeoui pillar that grows / shrinks on the prop hand. */
   const hasYeoui = design.weapon === 'yeoui'
+  /** Gojo — Blue / Red Limitless bombs in either palm. */
+  const hasLimitless = design.extras.includes('gojoSuit')
 
   const bones = useRef<RigBones>({})
   const pose = useRef(restPose())
-  const drag = useRef({ cape: 0.1, tails: 0.04, hair: 0.05, t: 0, trail: 0, harden: 0, saw: 0, jackpot: 0, yeoui: 1, thunder: 0, mugetsu: 0 })
+  const drag = useRef({ cape: 0.1, tails: 0.04, hair: 0.05, t: 0, trail: 0, harden: 0, saw: 0, jackpot: 0, yeoui: 1, thunder: 0, mugetsu: 0, gates: 0, hollow: 0, sand: 0, limitless: 0 })
   const jets = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
+  const limitlessBombs = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
   const tremor = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
   const magField = useRef<THREE.Group | null>(null)
   const streaks = useRef<THREE.Group | null>(null)
+  const sandGrains = useRef<THREE.Group | null>(null)
+  const sandPile = useRef<THREE.Group | null>(null)
+  /** Ring buffer of world-space samples the speedster trail paints along. */
+  const trailPath = useRef({
+    pts: Array.from({ length: TRAIL_SAMPLES }, () => new THREE.Vector3()),
+    count: 0,
+    head: 0,
+    last: new THREE.Vector3(),
+    hasLast: false,
+  })
   const phaseGhosts = useRef<THREE.Group | null>(null)
   const portalGates = useRef<THREE.Group | null>(null)
+  const yunoPages = useRef<THREE.Group | null>(null)
   const kunaiMarks = useRef<THREE.Group | null>(null)
   const clapRings = useRef<THREE.Group | null>(null)
   const mobForms = useRef<{ purple: THREE.Mesh[]; black: THREE.Mesh[] } | null>(null)
@@ -917,8 +1277,10 @@ export function HeroFighter({
   const zenitsuAura = useRef<THREE.Group | null>(null)
   const mugetsuAura = useRef<THREE.Group | null>(null)
   const jackpotAura = useRef<THREE.Group | null>(null)
+  const gatesAura = useRef<THREE.Group | null>(null)
   const hardenShells = useRef<Record<string, THREE.Group | null>>({})
   const chainsawShells = useRef<Record<string, THREE.Group | null>>({})
+  const hollowMask = useRef<THREE.Group | null>(null)
   const frame = useRef<THREE.Group>(null)
   const meshes = useRef<THREE.Mesh[]>([])
   const death = useRef<DeathFx | null>(null)
@@ -1045,10 +1407,14 @@ export function HeroFighter({
             streaks.current,
             phaseGhosts.current,
             portalGates.current,
+            yunoPages.current,
             kunaiMarks.current,
             clapRings.current,
             jets.current.l,
             jets.current.r,
+            sandGrains.current,
+            sandPile.current,
+            hollowMask.current,
             ...Object.values(hardenShells.current),
             ...Object.values(chainsawShells.current),
           ]) {
@@ -1095,7 +1461,7 @@ export function HeroFighter({
           b.propHand.scale.setScalar(Math.max(0.2, dr.yeoui))
         }
 
-        if ((hasVoltForm || hasVectorForm || hasZenitsuTrail) && streaks.current) {
+        if ((hasVoltForm || hasVectorForm || hasZenitsuTrail || hasFullCowl) && streaks.current) {
           const trailing =
             (anim.kind === 'move' && speed > 0.12) ||
             (hasZenitsuTrail && anim.kind === 'attack' && anim.t > 0.05 && anim.t < 0.85) ||
@@ -1104,36 +1470,82 @@ export function HeroFighter({
           dr.trail += ((trailing ? 1 : 0) - dr.trail) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
           const body = b.body
           const g = streaks.current
-          if (body) {
-            g.position.copy(body.position)
-            g.rotation.copy(body.rotation)
-          }
-          const on = dr.trail > 0.05
-          g.visible = on
+          const path = trailPath.current
+          // Stay at frame origin — world samples convert into this space each frame.
+          g.position.set(0, 0, 0)
+          g.rotation.set(0, 0, 0)
           g.scale.setScalar(1)
-          if (on) {
-            // Long bolts stream straight behind (−Z), slight flicker / lane jitter only.
-            const tick = Math.floor(dr.t * (hasVectorForm ? 22 : hasZenitsuTrail ? 30 : 28))
-            g.children.forEach((c, i) => {
-              const snap = tick + i * 2
-              const n1 = Math.sin(snap * 12.9898 + seed * 7.1 + i * 17.3) * 43758.5453
-              const n2 = Math.sin(snap * 78.233 + seed * 3.7 + i * 9.1) * 43758.5453
-              const r1 = n1 - Math.floor(n1)
-              const r2 = n2 - Math.floor(n2)
-              const lane = ((i % 7) - 3) * 0.055 + (r1 - 0.5) * 0.035
-              const elev = 0.28 + (i % 5) * 0.1 + (r2 - 0.5) * 0.04
-              c.position.set(lane, elev, -0.08)
-              // Keep local −Z alignment; tiny roll flicker only.
-              c.rotation.set(0, 0, (r1 - 0.5) * 0.25)
-              const stretch =
-                (hasVectorForm
-                  ? 2.4 + (i % 5) * 0.45 + r2 * 0.7
-                  : hasZenitsuTrail
-                    ? 3.4 + (i % 5) * 0.75 + r2 * 1.2
-                    : 3.2 + (i % 5) * 0.7 + r2 * 1.1) * dr.trail
-              c.scale.set(0.65 + r1 * 0.3, 0.65 + r1 * 0.3, stretch)
-              c.visible = ((tick + i) % 6) !== 0 || r2 > 0.2
-            })
+
+          if (trailing && body) {
+            body.getWorldPosition(_trailWorld)
+            // Chest-height ribbon so the path reads above the board.
+            _trailWorld.y += 0.32
+            const step2 = TRAIL_MIN_STEP * TRAIL_MIN_STEP
+            if (!path.hasLast || path.last.distanceToSquared(_trailWorld) >= step2) {
+              path.head = (path.head + 1) % TRAIL_SAMPLES
+              path.pts[path.head].copy(_trailWorld)
+              if (path.count < TRAIL_SAMPLES) path.count++
+            } else {
+              path.pts[path.head].copy(_trailWorld)
+            }
+            path.last.copy(_trailWorld)
+            path.hasLast = true
+          } else if (dr.trail < 0.05) {
+            path.count = 0
+            path.hasLast = false
+          }
+
+          const on = dr.trail > 0.05 && path.count >= 2
+          g.visible = on
+          if (on && frame.current) {
+            frame.current.updateWorldMatrix(true, false)
+            _trailInv.copy(frame.current.matrixWorld).invert()
+            const tick = Math.floor(dr.t * (hasVectorForm ? 22 : hasZenitsuTrail || hasFullCowl ? 30 : 28))
+            const nSeg = Math.min(TRAIL_SEGS, path.count - 1)
+            const thickMul = hasVectorForm ? 0.85 : hasZenitsuTrail || hasFullCowl ? 1.15 : 1
+            for (let s = 0; s < TRAIL_STRANDS; s++) {
+              for (let k = 0; k < TRAIL_SEGS; k++) {
+                const c = g.children[s * TRAIL_SEGS + k]
+                if (!c) continue
+                if (k >= nSeg) {
+                  c.visible = false
+                  continue
+                }
+                const idxA = (path.head - k + TRAIL_SAMPLES) % TRAIL_SAMPLES
+                const idxB = (path.head - k - 1 + TRAIL_SAMPLES) % TRAIL_SAMPLES
+                _trailLocalA.copy(path.pts[idxA]).applyMatrix4(_trailInv)
+                _trailLocalB.copy(path.pts[idxB]).applyMatrix4(_trailInv)
+                _trailDir.subVectors(_trailLocalA, _trailLocalB)
+                const dist = _trailDir.length()
+                if (dist < 1e-4) {
+                  c.visible = false
+                  continue
+                }
+                _trailDir.multiplyScalar(1 / dist)
+                _trailMid.lerpVectors(_trailLocalA, _trailLocalB, 0.5)
+                _trailSide.crossVectors(_trailUp, _trailDir)
+                if (_trailSide.lengthSq() < 1e-6) _trailSide.set(1, 0, 0)
+                else _trailSide.normalize()
+
+                const snap = tick + k * 3 + s * 13
+                const n1 = Math.sin(snap * 12.9898 + seed * 7.1 + k * 17.3) * 43758.5453
+                const n2 = Math.sin(snap * 78.233 + seed * 3.7 + s * 9.1) * 43758.5453
+                const r1 = n1 - Math.floor(n1)
+                const r2 = n2 - Math.floor(n2)
+                const fade = Math.max(0.12, 1 - k / Math.max(1, nSeg)) * dr.trail
+                const lane = (s - 1) * 0.045 + (r1 - 0.5) * 0.03
+                c.position.copy(_trailMid).addScaledVector(_trailSide, lane)
+                c.position.y += (r2 - 0.5) * 0.04 + (k % 3) * 0.008
+                _trailQuat.setFromUnitVectors(_trailAxis, _trailDir)
+                c.quaternion.copy(_trailQuat)
+                // Tiny roll so strands don't read as a flat ribbon.
+                c.rotateZ((r1 - 0.5) * 0.55)
+                const stretch = (dist / TRAIL_BOLT_LEN) * (0.92 + r2 * 0.2) * fade
+                const rad = (0.55 + r1 * 0.4) * thickMul * (0.65 + fade * 0.45)
+                c.scale.set(rad, rad, Math.max(0.08, stretch))
+                c.visible = ((tick + k + s) % 7) !== 0 || r2 > 0.28
+              }
+            }
           }
         }
 
@@ -1208,6 +1620,42 @@ export function HeroFighter({
               c.scale.setScalar(fade * (1.05 + ring * 0.08) * (0.7 + gate * 0.45))
               c.visible = true
             })
+          }
+        }
+
+        if (hasYunoGrimoire && yunoPages.current) {
+          // Idle: continuous page flips. Elsewhere: gentle open-book bob.
+          const flipping = anim.kind === 'idle' || anim.kind === 'ready'
+          const spirit = hasSpiritDive
+          const gx = spirit ? 0.24 : 0.22
+          const gy = spirit ? pr.hipH * 0.7 : pr.hipH * 0.55
+          const gz = spirit ? 0.1 : 0.08
+          const g = yunoPages.current
+          g.visible = true
+          g.position.set(gx, gy, gz)
+          g.rotation.set(0.15, -0.55, 0.1)
+          // Soft float so the book feels wind-borne.
+          g.position.y += Math.sin(dr.t * 2.4 + seed) * 0.012
+          g.rotation.z += Math.sin(dr.t * 1.7 + seed) * 0.04
+          const period = 1.15
+          const local = (dr.t * (flipping ? 1 : 0.35) + seed) % period
+          // Ease a leaf from right → left across the spine, then reset.
+          const turn = local < 0.55 ? local / 0.55 : 1
+          const ease = turn * turn * (3 - 2 * turn)
+          const angle = -0.35 - ease * 1.05
+          const leaf0 = g.children[0]
+          const leaf1 = g.children[1]
+          if (leaf0) {
+            leaf0.rotation.set(0, angle, 0)
+            leaf0.visible = flipping || local < 0.7
+          }
+          if (leaf1) {
+            // Second leaf trails a beat behind for a ruffle.
+            const local2 = (local + 0.28) % period
+            const turn2 = local2 < 0.55 ? local2 / 0.55 : 1
+            const ease2 = turn2 * turn2 * (3 - 2 * turn2)
+            leaf1.rotation.set(0, -0.35 - ease2 * 1.05, 0)
+            leaf1.visible = flipping
           }
         }
 
@@ -1317,7 +1765,10 @@ export function HeroFighter({
 
         if (hasChainsawForm) {
           // Cord pull at attack start → full Chainsaw Man until recovery.
-          const ripping = anim.kind === 'attack' && anim.t > 0.08 && anim.t < 0.92
+          // Idle/ready: pose.prop flashes the helmet + arm saws every couple seconds.
+          const ripping =
+            (anim.kind === 'attack' && anim.t > 0.08 && anim.t < 0.92) ||
+            ((anim.kind === 'idle' || anim.kind === 'ready') && cur.prop > 0.2)
           dr.saw += ((ripping ? 1 : 0) - dr.saw) * (1 - Math.exp(-18 * Math.min(dt, 0.1)))
           const on = dr.saw > 0.08
           const rev = 1 + Math.sin(dr.t * 42 + seed) * 0.06 * dr.saw
@@ -1325,6 +1776,48 @@ export function HeroFighter({
             if (!g) continue
             g.visible = on
             if (on) g.scale.setScalar(0.9 + dr.saw * 0.15 * rev)
+          }
+        }
+
+        if (hasLimitless) {
+          // Idle/ready: Blue + Red swell in each palm. Attack: hold until they merge.
+          const charging =
+            anim.kind === 'idle' ||
+            anim.kind === 'ready' ||
+            (anim.kind === 'attack' && anim.t < 0.45 && cur.prop > 0.15)
+          dr.limitless += ((charging ? 1 : 0) - dr.limitless) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
+          const on = dr.limitless > 0.06
+          const pulse = 1 + Math.sin(dr.t * 8 + seed) * 0.08
+          const charge = Math.max(0.35, cur.prop || 0.65)
+          for (const g of [limitlessBombs.current.l, limitlessBombs.current.r]) {
+            if (!g) continue
+            g.visible = on
+            if (!on) continue
+            const s = (0.75 + dr.limitless * 0.55 * charge) * pulse
+            g.scale.setScalar(s)
+            g.rotation.y = dr.t * 2.4 + seed
+            g.rotation.x = Math.sin(dr.t * 3.2 + seed) * 0.35
+          }
+        }
+
+        if (hasHollowMask && hollowMask.current) {
+          // Idle/ready prop is the mask growth amount; hide while moving / fighting.
+          const target =
+            (anim.kind === 'idle' || anim.kind === 'ready') && cur.prop > 0.04 ? cur.prop : 0
+          dr.hollow += (target - dr.hollow) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
+          const g = hollowMask.current
+          const amount = dr.hollow
+          const on = amount > 0.04
+          g.visible = on
+          if (on) {
+            // Grow up from the jaw pivot; splatters bloom near full coverage.
+            g.scale.set(1, Math.max(0.12, amount), 1)
+            const splash = Math.max(0, (amount - 0.55) / 0.45)
+            const splashG = g.getObjectByName('hollowSplash')
+            if (splashG) {
+              splashG.visible = splash > 0.08
+              splashG.scale.setScalar(0.35 + splash * 0.9)
+            }
           }
         }
 
@@ -1552,6 +2045,68 @@ export function HeroFighter({
           }
         }
 
+        if (hasEightGates && gatesAura.current) {
+          // Eighth Gate steam stays lit — crimson flames keep swirling while he's on the board.
+          const burning =
+            anim.kind === 'idle' ||
+            anim.kind === 'ready' ||
+            anim.kind === 'move' ||
+            anim.kind === 'skirmish' ||
+            (anim.kind === 'attack' && anim.t < 0.98) ||
+            anim.kind === 'hurt'
+          dr.gates += ((burning ? 1 : 0) - dr.gates) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
+          const g = gatesAura.current
+          const body = b.body
+          if (body) {
+            g.position.copy(body.position)
+            g.rotation.copy(body.rotation)
+          }
+          const on = dr.gates > 0.05
+          g.visible = on
+          if (on) {
+            const pulse = 1 + Math.sin(dr.t * 24 + seed) * 0.1
+            g.scale.setScalar((0.94 + dr.gates * 0.26) * pulse)
+            const tick = Math.floor(dr.t * 20 + seed * 4)
+            g.children.forEach((c, i) => {
+              if (i < 3) {
+                // Steam rings spin and breathe.
+                c.visible = true
+                c.rotation.z = dr.t * (1.6 + i * 0.55)
+                c.position.y = [0.42, 0.72, 0.98][i]! + Math.sin(dr.t * 3.2 + i) * 0.02
+              } else if (i < 17) {
+                // Flame tongues orbit + rise, flickering like fire.
+                const fi = i - 3
+                const spin = 1.1 + (fi % 5) * 0.25
+                const baseA = (fi / 14) * Math.PI * 2
+                const a = baseA + dr.t * spin
+                const orbit = 0.2 + (fi % 4) * 0.045
+                const elev = 0.12 + (fi % 5) * 0.18 + ((dr.t * (1.4 + (fi % 3) * 0.3) + fi) % 1) * 0.22
+                c.visible = ((tick + fi) % 4) !== 0
+                c.position.set(Math.cos(a) * orbit, elev, Math.sin(a) * orbit * 0.7)
+                c.rotation.set(0.2 + Math.sin(dr.t * 8 + fi) * 0.25, -a, Math.PI * 0.08)
+                const lick = 0.85 + Math.abs(Math.sin(dr.t * 14 + fi)) * 0.45
+                c.scale.set(lick * 0.85, lick, lick * 0.75)
+              } else {
+                // Embers circle outward and drift up.
+                const ei = i - 17
+                const spin = 1.6 + (ei % 4) * 0.35
+                const baseA = (ei / 10) * Math.PI * 2 + 0.3
+                const a = baseA + dr.t * spin
+                const orbit = 0.26 + (ei % 3) * 0.05 + Math.sin(dr.t * 2.5 + ei) * 0.02
+                const elev = 0.3 + (ei % 4) * 0.2 + ((dr.t * 1.8 + ei * 0.4) % 1) * 0.35
+                c.visible = ((tick + ei) % 3) !== 0
+                c.position.set(Math.cos(a) * orbit, elev, Math.sin(a) * orbit * 0.65)
+                c.rotation.set(0.4, a + dr.t * 3, 0.5)
+                c.scale.setScalar(0.7 + Math.abs(Math.sin(dr.t * 11 + ei)) * 0.6)
+              }
+            })
+            if (anim.kind === 'move' || anim.kind === 'attack' || anim.kind === 'skirmish') {
+              g.position.x += Math.sin(dr.t * 48) * 0.028
+              g.position.y += Math.cos(dr.t * 36) * 0.022
+            }
+          }
+        }
+
         if (hasTremor) {
           const t = dr.t + seed * 3
           const hardenedMove = hasRiotHarden && anim.kind === 'move' && dr.harden > 0.2
@@ -1577,7 +2132,55 @@ export function HeroFighter({
           }
         }
 
-        if (hasMag && magField.current) {
+        if (hasGaaraSand && sandGrains.current) {
+          const swirling =
+            anim.kind === 'idle' ||
+            anim.kind === 'ready' ||
+            (anim.kind === 'move' && speed > 0.04) ||
+            (anim.kind === 'attack' && anim.t < 0.95)
+          dr.sand += ((swirling ? 1 : 0) - dr.sand) * (1 - Math.exp(-10 * Math.min(dt, 0.1)))
+          const g = sandGrains.current
+          const body = b.body
+          if (body) {
+            g.position.copy(body.position)
+            g.rotation.copy(body.rotation)
+          }
+          const on = dr.sand > 0.05
+          g.visible = on
+          if (on) {
+            g.children.forEach((c, i) => {
+              const a = dr.t * (1.2 + (i % 5) * 0.2) + i * 0.4
+              const orbit = 0.16 + (i % 4) * 0.045 + Math.sin(dr.t * 2.2 + i) * 0.015
+              const elev = 0.08 + (i % 5) * 0.09 + Math.sin(dr.t * 3.1 + i) * 0.02
+              c.position.set(Math.cos(a) * orbit, elev, Math.sin(a) * orbit * 0.75)
+              c.visible = ((Math.floor(dr.t * 10 + i) + i) % 5) !== 0
+            })
+          }
+        }
+
+        if (hasShukaku && sandPile.current) {
+          const piling = anim.kind === 'move' && (speed > 0.04 || cur.vis < 0.85)
+          const g = sandPile.current
+          const body = b.body
+          if (body) {
+            g.position.set(body.position.x, 0.02, body.position.z)
+            g.rotation.set(0, body.rotation.y, 0)
+          }
+          g.visible = piling
+          if (piling) {
+            const pulse = 1 + Math.sin(dr.t * 6 + seed) * 0.05
+            // Keep the puddle large while sliding — roughly fighter-width+.
+            const s = (1.55 + speed * 0.35) * pulse
+            g.scale.set(s, 0.95 + speed * 0.12, s)
+            g.children.forEach((c, i) => {
+              if (i < 6) return
+              c.position.y = 0.08 + ((i + Math.floor(dr.t * 5)) % 4) * 0.06
+              c.rotation.y = dr.t * 2.2 + i
+            })
+          }
+        }
+
+                if (hasMag && magField.current) {
           const t = dr.t + seed * 2.4
           const cycle = (t * 0.55) % 1
           // Assemble (0–0.45) → hold (0.45–0.7) → snap apart (0.7–1).
@@ -1609,7 +2212,7 @@ export function HeroFighter({
     return () => {
       apiRef.current = null
     }
-  }, [apiRef, design, pr, seed, hasEngines, hasTremor, hasMag, hasVoltForm, hasZenitsuTrail, hasVectorForm, hasPhaseForm, hasPortalForm, hasKunaiForm, hasClapForm, hasRiotHarden, hasChainsawForm, hasMobForm, hasFullCowl, hasSsj2, hasSpiritDive, hasZenitsuThunder, hasMugetsu, hasJackpot, hasYeoui])
+  }, [apiRef, design, pr, seed, hasEngines, hasTremor, hasMag, hasVoltForm, hasZenitsuTrail, hasVectorForm, hasPhaseForm, hasPortalForm, hasYunoGrimoire, hasKunaiForm, hasClapForm, hasRiotHarden, hasChainsawForm, hasHollowMask, hasMobForm, hasFullCowl, hasSsj2, hasSpiritDive, hasZenitsuThunder, hasMugetsu, hasJackpot, hasEightGates, hasGaaraSand, hasShukaku, hasYeoui, hasLimitless])
 
   const limb = (side: 'l' | 'r') => {
     const s = side === 'l' ? 1 : -1
@@ -1663,6 +2266,15 @@ export function HeroFighter({
           )}
           <group ref={bone(`${side}Hand`)} position={[0, -pr.forearm, 0]}>
             {hasRiotHarden && <HardenArmor shellRef={setHarden(`${side}Hand`)} kind="hand" side={s} limb={pr.limb} />}
+            {hasLimitless && (
+              <LimitlessBomb
+                bombRef={(g) => {
+                  limitlessBombs.current[side] = g
+                }}
+                color={side === 'l' ? '#3ad8ff' : '#ff2a4a'}
+                color2={side === 'l' ? '#7ec8ff' : '#ff6b8a'}
+              />
+            )}
             {side === 'r' && <group ref={bone('propHand')} />}
           </group>
         </group>
@@ -1674,10 +2286,10 @@ export function HeroFighter({
   // Trail is a sibling of `body` so it isn't affected by pose scale quirks.
   return (
     <group ref={frame}>
-      {(hasVoltForm || hasVectorForm || hasZenitsuTrail) && (
+      {(hasVoltForm || hasVectorForm || hasZenitsuTrail || hasFullCowl) && (
         <ElectricTrail
           color={design.palette.glow ?? design.palette.accent}
-          color2={design.palette.accent}
+          color2={hasFullCowl ? (design.palette.hairAlt ?? design.palette.accent) : design.palette.accent}
           streakRef={(g) => {
             streaks.current = g
           }}
@@ -1773,10 +2385,44 @@ export function HeroFighter({
           }}
         />
       )}
+      {hasEightGates && (
+        <GatesFlameAura
+          color={design.palette.glow ?? '#ff4820'}
+          color2={design.palette.accent ?? '#ff2020'}
+          formRef={(g) => {
+            gatesAura.current = g
+          }}
+        />
+      )}
+      {hasGaaraSand && (
+        <SandOrbitGrains
+          color={design.palette.glow ?? '#d4a868'}
+          color2={design.palette.metal ?? '#5a6058'}
+          fieldRef={(g) => {
+            sandGrains.current = g
+          }}
+        />
+      )}
+      {hasShukaku && (
+        <SandPileForm
+          color={design.palette.primary}
+          color2={design.palette.accent}
+          formRef={(g) => {
+            sandPile.current = g
+          }}
+        />
+      )}
       <group ref={bone('body')}>
         <group ref={bone('pelvis')} position={[0, pr.hipH, 0]}>
           <group ref={bone('propStow')} />
           <group ref={bone('tails')} position={[0, 0.03, -pr.pelvisD * 0.42]} />
+          {hasYunoGrimoire && (
+            <GrimoireFlip
+              pagesRef={(g) => {
+                yunoPages.current = g
+              }}
+            />
+          )}
           {hasMag && (
             <MagFilings
               color={design.palette.glow ?? design.palette.accent}
@@ -1809,7 +2455,16 @@ export function HeroFighter({
                 <group ref={bone('head')} position={[0, pr.neck, 0]}>
                   {hasRiotHarden && <HardenArmor shellRef={setHarden('head')} kind="head" headR={pr.headR} />}
                   {hasChainsawForm && <ChainsawForm shellRef={setSaw('head')} kind="head" headR={pr.headR} />}
+                  {/* Head mesh is baked with slotOffset y = headR*0.95 — face overlays live here. */}
                   <group position={[0, pr.headR * 0.95, 0]}>
+                    {hasHollowMask && (
+                      <HollowMask
+                        shellRef={(g) => {
+                          hollowMask.current = g
+                        }}
+                        headR={pr.headR}
+                      />
+                    )}
                     <group ref={bone('eyes')} position={[0, -pr.headR * 0.1, 0]} />
                     <group ref={bone('hairBack')} position={[0, pr.headR * 0.3, -pr.headR * 0.6]} />
                   </group>

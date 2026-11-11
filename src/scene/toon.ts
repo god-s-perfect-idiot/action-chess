@@ -30,9 +30,9 @@ export function getToonGradient(): THREE.CanvasTexture {
 }
 
 export const PALETTE = {
-  /** Haze cup — sky/fog/ground share one family so no hard horizon line */
-  sky: '#9eb8a0',
-  fog: '#a8c0a0',
+  /** Clear day sky — fog is a soft horizon haze, not a gray wash */
+  sky: '#6eb6ea',
+  fog: '#a9d4f0',
   asphalt: '#5a5850',
   asphaltDark: '#3e3c36',
   concrete: '#b8b0a4',

@@ -382,15 +382,15 @@ function buildHair(c: Ctx) {
       lock(-30, 45, -30, -60, 0.45, 0.1, alt, 'head', 1.01, 0.5)
       break
     case 'bowl':
-      // Mob — rounded mop that covers the forehead and ears.
-      cap(1.16, 0.06, -0.06, hair, [1.08, 0.92, 1.05])
-      add('head', <P s={S.sphere(r * 1.12, 16, 12)} m={hair} p={[0, -r * 0.02, -r * 0.18]} sc={[1.12, 0.88, 1.0]} />)
-      bangs([-48, -28, -10, 10, 28, 48], 0.58, 0.22, hair, -78)
+      // Mob — flatter mop/bowl; covers forehead and ears without afro bulk.
+      cap(1.08, 0.08, -0.08, hair, [1.0, 0.86, 1.0])
+      add('head', <P s={S.sphere(r * 0.94, 16, 12)} m={hair} p={[0, -r * 0.05, -r * 0.2]} sc={[1.02, 0.8, 0.94]} />)
+      bangs([-42, -22, -6, 6, 22, 42], 0.5, 0.17, hair, -78)
       sides((s) => {
-        lock(s * 78, 8, s * 88, -88, 0.85, 0.34, hair, 'head', 1.02, 0.7)
-        lock(s * 95, 20, s * 100, -70, 0.55, 0.22, alt, 'head', 1.0, 0.55)
+        lock(s * 78, 8, s * 88, -88, 0.68, 0.22, hair, 'head', 1.0, 0.6)
+        lock(s * 95, 16, s * 100, -70, 0.4, 0.14, alt, 'head', 0.98, 0.48)
       })
-      for (let i = -2; i <= 2; i++) lock(i * 28 + 180, 18, i * 28 + 180, -55, 0.55, 0.22, hair, 'hairBack', 0.95, 0.65)
+      for (let i = -2; i <= 2; i++) lock(i * 28 + 180, 14, i * 28 + 180, -48, 0.4, 0.14, hair, 'hairBack', 0.92, 0.5)
       break
     case 'coverEye':
       cap(1.12, 0.1, -0.08)

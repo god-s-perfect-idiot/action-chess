@@ -1,15 +1,10 @@
-import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import {
-  CELL_SIZE,
-  FILES,
-  RANKS,
-  squareToCoords,
-  type Square,
-} from '../game/types'
+import { CELL_SIZE, coordsToSquare, squareToCoords, type Square } from '../game/types'
+import { buildBoardForest } from './boardForest'
 import { isPointerDrag } from './isPointerDrag'
-import { getToonGradient, hash01, PALETTE } from './toon'
+import { GROUND_RADIUS, TERRAIN_REV, WATER_Y, groundY, walkY } from './terrainHeight'
+import { getToonGradient, PALETTE } from './toon'
 
 interface BoardProps {
   selected: Square | null
@@ -19,887 +14,487 @@ interface BoardProps {
   onSquareClick: (square: Square) => void
 }
 
-const PAD_GAP = 0.55
+/** Tight spacing on the hills; the flat outer bowl stays coarse. */
+const FINE_HALF = CELL_SIZE * 5.2
+const FINE_STEP = 0.32
+const COARSE_STEP = 4.2
 
-type Terrain = 'water' | 'bank' | 'ruin' | 'mud' | 'stone' | 'moss'
+function axisSamples(limit: number, fine: number, fineStep: number, coarseStep: number) {
+  const xs: number[] = []
+  const push = (v: number) => {
+    const x = Math.max(-limit, Math.min(limit, v))
+    if (xs.length === 0 || x - xs[xs.length - 1]! > 1e-3) xs.push(x)
+  }
+  push(-limit)
+  for (let x = -limit + coarseStep; x < -fine; x += coarseStep) push(x)
+  for (let x = -fine; x <= fine; x += fineStep) push(x)
+  push(fine)
+  for (let x = fine + coarseStep; x < limit; x += coarseStep) push(x)
+  push(limit)
+  return xs
+}
+
+function hash2(ix: number, iz: number) {
+  const n = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453
+  return n - Math.floor(n)
+}
+
+function valueNoise(x: number, z: number) {
+  const x0 = Math.floor(x)
+  const z0 = Math.floor(z)
+  const fx = x - x0
+  const fz = z - z0
+  const sx = fx * fx * (3 - 2 * fx)
+  const sz = fz * fz * (3 - 2 * fz)
+  const a = hash2(x0, z0)
+  const b = hash2(x0 + 1, z0)
+  const c = hash2(x0, z0 + 1)
+  const d = hash2(x0 + 1, z0 + 1)
+  return a + (b - a) * sx + (c - a) * sz + (a - b - c + d) * sx * sz
+}
+
+function fbm(x: number, z: number) {
+  let v = 0
+  let a = 0.5
+  let f = 1
+  for (let i = 0; i < 4; i++) {
+    v += a * valueNoise(x * f, z * f)
+    f *= 2
+    a *= 0.5
+  }
+  return v
+}
+
+/** Repeating grass mottling so plateaus aren't one flat green. */
+function grassDetailMap() {
+  const size = 512
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Could not create grass detail canvas')
+  const img = ctx.createImageData(size, size)
+  const data = img.data
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size
+      const v = y / size
+      const blot = fbm(u * 3.2, v * 3.2)
+      const mid = fbm(u * 7.5 + 2.2, v * 7.5 + 0.8)
+      const shade = 0.58 + blot * 0.34 + (mid - 0.5) * 0.16
+      const g = Math.max(0, Math.min(255, Math.round(shade * 255)))
+      const i = (y * size + x) * 4
+      data[i] = g
+      data[i + 1] = g
+      data[i + 2] = g
+      data[i + 3] = 255
+    }
+  }
+  ctx.putImageData(img, 0, 0)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.LinearSRGBColorSpace
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  tex.anisotropy = 8
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearMipmapLinearFilter
+  tex.needsUpdate = true
+  return tex
+}
+
+const MOSS = new THREE.Color('#5a7a48')
+const MOSS_DEEP = new THREE.Color('#456338')
+const GRASS = new THREE.Color('#6a864e')
+const GRASS_FLAT = new THREE.Color('#62824a')
+const MUD = new THREE.Color('#5e5340')
+const BANK = new THREE.Color('#6a7058')
+const WET = new THREE.Color('#4a6558')
+
+function tintAt(x: number, z: number, y: number, out: THREE.Color) {
+  const alongRiver = Math.abs(x) < CELL_SIZE * 2.4 && y < WATER_Y + 0.45
+  const patch = fbm(x * 0.11, z * 0.11)
+
+  if (alongRiver) {
+    out.copy(WET)
+  } else if (y >= 0.35) {
+    // Hills / plateaus — richer green
+    const t = Math.min(1, (y - 0.35) / 1.2)
+    out.copy(GRASS).lerp(MOSS, t)
+    out.lerp(MOSS_DEEP, patch * 0.65 * t)
+  } else if (y < -0.35) {
+    // Only the submerged / steep bank stays muddy
+    const t = Math.min(1, (-0.35 - y) / 0.7)
+    out.copy(BANK).lerp(MUD, t)
+  } else {
+    // Flat apron + mid board — grassy everywhere off the river
+    out.copy(GRASS_FLAT).lerp(MOSS, patch * 0.4)
+    out.lerp(GRASS, 0.2 + patch * 0.25)
+  }
+  return out
+}
+
+function buildTerrain() {
+  const xs = axisSamples(GROUND_RADIUS, FINE_HALF, FINE_STEP, COARSE_STEP)
+  const zs = axisSamples(GROUND_RADIUS, FINE_HALF, FINE_STEP, COARSE_STEP)
+  const nx = xs.length
+  const nz = zs.length
+  const positions = new Float32Array(nx * nz * 3)
+  const uvs = new Float32Array(nx * nz * 2)
+  const colors = new Float32Array(nx * nz * 3)
+  const color = new THREE.Color()
+  const uvScale = 1 / 14
+
+  for (let iz = 0; iz < nz; iz++) {
+    for (let ix = 0; ix < nx; ix++) {
+      const x = xs[ix]!
+      const z = zs[iz]!
+      const y = groundY(x, z)
+      const i = iz * nx + ix
+      positions[i * 3] = x
+      positions[i * 3 + 1] = y
+      positions[i * 3 + 2] = z
+      uvs[i * 2] = x * uvScale
+      uvs[i * 2 + 1] = z * uvScale
+      tintAt(x, z, y, color)
+      colors[i * 3] = color.r
+      colors[i * 3 + 1] = color.g
+      colors[i * 3 + 2] = color.b
+    }
+  }
+
+  const indices = new Uint32Array((nx - 1) * (nz - 1) * 6)
+  let k = 0
+  for (let iz = 0; iz < nz - 1; iz++) {
+    for (let ix = 0; ix < nx - 1; ix++) {
+      const a = iz * nx + ix
+      const b = a + 1
+      const c = a + nx
+      const d = c + 1
+      indices[k++] = a
+      indices[k++] = c
+      indices[k++] = b
+      indices[k++] = b
+      indices[k++] = c
+      indices[k++] = d
+    }
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2))
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  geo.setIndex(new THREE.BufferAttribute(indices, 1))
+  geo.computeVertexNormals()
+  return geo
+}
 
 /**
- * Straight mid-board river runs along +Z (rank direction), slight bank wobble only.
- * Center sits between the d/e files so water splits the plaza.
+ * Water surface that only fills where the bed dips under WATER_Y — so banks
+ * (including off-board apron) clip the river instead of a hard rectangle.
  */
-/** Straight center line — no wobble (wobble caused overlapping segment z-fight). */
-const RIVER_X = 0
+function buildWater() {
+  const halfX = CELL_SIZE * 3.4
+  const halfZ = GROUND_RADIUS * 1.05
+  const stepX = 0.55
+  const stepZ = 1.1
+  const waterY = WATER_Y + 0.08
+  const wet = WATER_Y + 0.02
 
-function streamDist(x: number, _z: number) {
-  return Math.abs(x - RIVER_X)
+  const xs: number[] = []
+  for (let x = -halfX; x <= halfX + 1e-6; x += stepX) xs.push(x)
+  const zs: number[] = []
+  for (let z = -halfZ; z <= halfZ + 1e-6; z += stepZ) zs.push(z)
+
+  const nx = xs.length
+  const nz = zs.length
+  const submerged = new Uint8Array(nx * nz)
+  for (let iz = 0; iz < nz; iz++) {
+    for (let ix = 0; ix < nx; ix++) {
+      submerged[iz * nx + ix] = groundY(xs[ix]!, zs[iz]!) < wet ? 1 : 0
+    }
+  }
+
+  const positions: number[] = []
+  const indices: number[] = []
+  const vertIndex = new Int32Array(nx * nz).fill(-1)
+
+  const ensureVert = (ix: number, iz: number) => {
+    const id = iz * nx + ix
+    if (vertIndex[id]! >= 0) return vertIndex[id]!
+    const vi = positions.length / 3
+    positions.push(xs[ix]!, waterY, zs[iz]!)
+    vertIndex[id] = vi
+    return vi
+  }
+
+  for (let iz = 0; iz < nz - 1; iz++) {
+    for (let ix = 0; ix < nx - 1; ix++) {
+      const a = iz * nx + ix
+      const b = a + 1
+      const c = a + nx
+      const d = c + 1
+      // Keep a cell if any corner is wet — soft shoreline against the banks
+      if (!(submerged[a]! | submerged[b]! | submerged[c]! | submerged[d]!)) continue
+      const ia = ensureVert(ix, iz)
+      const ib = ensureVert(ix + 1, iz)
+      const ic = ensureVert(ix, iz + 1)
+      const idv = ensureVert(ix + 1, iz + 1)
+      indices.push(ia, ic, ib, ib, ic, idv)
+    }
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+  return geo
 }
 
-/** Secondary dry scar / rubble tear across the opposite diagonal. */
-function scarDist(x: number, z: number) {
-  const line = -x * 0.55 + Math.sin(x * 0.08) * CELL_SIZE * 0.6
-  return Math.abs(z - line)
-}
-
-function terrainAt(file: number, rank: number): Terrain {
-  const [x, z] = squareToCoords(`${FILES[file]}${RANKS[rank]}` as Square)
-  const sd = streamDist(x, z)
-  if (sd < CELL_SIZE * 0.38) return 'water'
-  if (sd < CELL_SIZE * 0.72) return 'bank'
-  if (scarDist(x, z) < CELL_SIZE * 0.42) return 'ruin'
-  // Corner biomes
-  if (file <= 2 && rank >= 5) return 'moss'
-  if (file >= 5 && rank <= 2) return 'mud'
-  if (file <= 1 || rank <= 1) return 'ruin'
-  return 'stone'
+/** Cell marker draped on the surface — only shown once a piece is selected. */
+function cellPatch(square: Square) {
+  const [cx, cz] = squareToCoords(square)
+  const n = 6
+  const span = CELL_SIZE * 0.9
+  const geo = new THREE.PlaneGeometry(span, span, n, n)
+  geo.rotateX(-Math.PI / 2)
+  const pos = geo.attributes.position
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) + cx
+    const z = pos.getZ(i) + cz
+    pos.setXYZ(i, x, walkY(x, z) + 0.07, z)
+  }
+  geo.computeVertexNormals()
+  return geo
 }
 
 /**
- * Soft regional height — a few lifted shelves and shallow sinks across the 8×8.
- * Water cells stay at river level.
+ * Full 8×8 cell outline grid, draped on the terrain so the board reads clearly
+ * once a fighter is selected.
  */
-function elevAt(file: number, rank: number, terrain: Terrain): number {
-  if (terrain === 'water') return 0
-  // Low-frequency blobs so neighboring cells share a terrace / dip
-  const a = Math.sin(file * 0.85 + 0.4) * Math.cos(rank * 0.55 + 0.2)
-  const b = Math.sin(file * 0.35 + rank * 0.4 + 1.2)
-  const c = Math.cos((file - 3.5) * 0.5) * Math.sin((rank - 3.5) * 0.55)
-  let e = a * 0.14 + b * 0.1 + c * 0.12
-  // Push clear raised / sunken pockets
-  if (file >= 5 && rank >= 5) e += 0.12
-  if (file <= 2 && rank <= 2) e -= 0.1
-  if (file >= 6 && rank <= 3) e += 0.08
-  if (file <= 3 && rank >= 5) e -= 0.06
-  if (terrain === 'bank') e *= 0.35
-  return Math.max(-0.16, Math.min(0.2, e))
-}
+function buildBoardBorders() {
+  const half = CELL_SIZE * 4
+  const ribbon = CELL_SIZE * 0.028
+  const lift = 0.1
+  const samples = 14
+  const positions: number[] = []
+  const indices: number[] = []
 
-const STONE_VARIANTS = ['#9e9688', '#949084', '#8e887c', '#a0988c'] as const
-const MOSS_VARIANTS = ['#6a7860', '#627058', '#5e6c54', '#68765c'] as const
-const MUD_VARIANTS = ['#6a5848', '#645244', '#5e4c40', '#705c4c'] as const
-const BANK_VARIANTS = ['#7a6e58', '#746852', '#6e624c', '#80745c'] as const
-const RUIN_VARIANTS = ['#8a8478', '#848074', '#7e7a6e', '#908c80'] as const
-const WATER_BED = '#3a5048'
-
-function WeedClump({
-  x,
-  z,
-  y = 0.12,
-  scale,
-  leafMat,
-  stemMat,
-  seed,
-}: {
-  x: number
-  z: number
-  y?: number
-  scale: number
-  leafMat: THREE.MeshToonMaterial
-  stemMat: THREE.MeshToonMaterial
-  seed: number
-}) {
-  const blades = useMemo(() => {
-    const n = 3 + Math.floor(hash01(seed) * 3)
-    const out: { ox: number; oz: number; h: number; lean: number; yaw: number }[] = []
-    for (let i = 0; i < n; i++) {
-      out.push({
-        ox: (hash01(seed + i * 3) - 0.5) * 0.28 * scale,
-        oz: (hash01(seed + i * 5) - 0.5) * 0.28 * scale,
-        h: (0.22 + hash01(seed + i * 7) * 0.35) * scale,
-        lean: (hash01(seed + i * 11) - 0.5) * 0.45,
-        yaw: hash01(seed + i * 13) * Math.PI,
-      })
-    }
-    return out
-  }, [seed, scale])
-
-  return (
-    <group position={[x, y, z]}>
-      {blades.map((b, i) => (
-        <mesh
-          key={i}
-          position={[b.ox, b.h * 0.5, b.oz]}
-          rotation={[b.lean, b.yaw, b.lean * 0.4]}
-          material={i % 2 ? leafMat : stemMat}
-          castShadow
-        >
-          <boxGeometry args={[0.045 * scale, b.h, 0.03 * scale]} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-function BlockDressing({
-  file,
-  rank,
-  terrain,
-  surfaceY,
-  mossMat,
-  mossLiteMat,
-  dirtMat,
-  leafMat,
-  stemMat,
-  rubbleMat,
-  crackMat,
-  brickMat,
-  barkMat,
-}: {
-  file: number
-  rank: number
-  terrain: Terrain
-  /** Absolute Y of the pad top — all props sit clearly above this. */
-  surfaceY: number
-  mossMat: THREE.MeshToonMaterial
-  mossLiteMat: THREE.MeshToonMaterial
-  dirtMat: THREE.MeshToonMaterial
-  leafMat: THREE.MeshToonMaterial
-  stemMat: THREE.MeshToonMaterial
-  rubbleMat: THREE.MeshToonMaterial
-  crackMat: THREE.MeshToonMaterial
-  brickMat: THREE.MeshToonMaterial
-  barkMat: THREE.MeshToonMaterial
-}) {
-  const seed = file * 17 + rank * 31
-  const props = useMemo(() => {
-    if (terrain === 'water') return [] as ReactNode[]
-
-    const items: ReactNode[] = []
-    const kind = hash01(seed)
-    const kind2 = hash01(seed + 9)
-    const kind3 = hash01(seed + 21)
-    const half = CELL_SIZE * 0.38
-    // Lift decals off the pad face to kill z-fight
-    const decalY = surfaceY + 0.035
-    const propY = surfaceY + 0.02
-
-    // Keep walkable centers mostly clear; push dressing to edges
-    if (terrain === 'bank' || terrain === 'moss') {
-      items.push(
-        <mesh
-          key="moss"
-          position={[(kind2 - 0.5) * half * 1.3, decalY, (kind3 > 0.5 ? 1 : -1) * half * 0.75]}
-          rotation={[-Math.PI / 2, 0, kind * 2]}
-          material={mossLiteMat}
-          renderOrder={1}
-        >
-          <circleGeometry args={[0.45 + kind * 0.4, 10]} />
-        </mesh>,
-      )
-      items.push(
-        <WeedClump
-          key="reed"
-          x={(kind2 > 0.5 ? 1 : -1) * half * 0.85}
-          z={(kind3 - 0.5) * half}
-          y={propY}
-          scale={1.1 + kind * 0.4}
-          leafMat={leafMat}
-          stemMat={stemMat}
-          seed={seed + 3}
-        />,
-      )
-    }
-
-    if (terrain === 'mud') {
-      items.push(
-        <mesh
-          key="puddle"
-          position={[(kind - 0.5) * half * 0.5, decalY, (kind2 - 0.5) * half * 0.5]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          material={dirtMat}
-          renderOrder={1}
-        >
-          <circleGeometry args={[0.5 + kind3 * 0.45, 10]} />
-        </mesh>,
-      )
-    }
-
-    if (terrain === 'stone' && kind > 0.45) {
-      items.push(
-        <mesh
-          key="crack"
-          position={[0, decalY, (kind2 - 0.5) * 0.4]}
-          rotation={[0, kind3 * 0.5, 0]}
-          material={crackMat}
-        >
-          <boxGeometry args={[half * 1.4, 0.03, 0.07]} />
-        </mesh>,
-      )
-    }
-
-    // Sparse edge weeds
-    if (terrain !== 'ruin' && kind3 > 0.4) {
-      items.push(
-        <WeedClump
-          key="w0"
-          x={(kind > 0.5 ? 1 : -1) * half * 0.9}
-          z={(kind2 - 0.5) * half * 1.2}
-          y={propY}
-          scale={0.8 + kind * 0.35}
-          leafMat={leafMat}
-          stemMat={stemMat}
-          seed={seed + 20}
-        />,
-      )
-    }
-
-    // ── Personality props (corners / edges only) ─────────────────
-    const sx = kind2 > 0.5 ? 1 : -1
-    const sz = kind3 > 0.5 ? 1 : -1
-    const cornerX = sx * half * 0.82
-    const cornerZ = sz * half * 0.82
-
-    // Debris stacks — ~30% of dry tiles
-    if (hash01(seed + 40) > 0.7) {
-      const n = 2 + Math.floor(hash01(seed + 41) * 3)
-      for (let i = 0; i < n; i++) {
-        const bw = 0.22 + hash01(seed + 42 + i) * 0.28
-        const bh = 0.08 + hash01(seed + 43 + i) * 0.1
-        const bd = 0.18 + hash01(seed + 44 + i) * 0.22
-        items.push(
-          <mesh
-            key={`debris-${i}`}
-            position={[
-              cornerX + (hash01(seed + 45 + i) - 0.5) * 0.35,
-              propY + bh * 0.5 + i * 0.07,
-              cornerZ + (hash01(seed + 46 + i) - 0.5) * 0.35,
-            ]}
-            rotation={[
-              hash01(seed + 47 + i) * 0.2,
-              hash01(seed + 48 + i) * Math.PI,
-              hash01(seed + 49 + i) * 0.15,
-            ]}
-            material={i % 2 ? rubbleMat : brickMat}
-            castShadow
-          >
-            <boxGeometry args={[bw, bh, bd]} />
-          </mesh>,
-        )
+  // Offset is chosen so D × P points +Y — otherwise rank lines face down and
+  // disappear under FrontSide culling (leaving only file columns).
+  const pushRibbon = (ax: number, az: number, bx: number, bz: number) => {
+    const dx = bx - ax
+    const dz = bz - az
+    const len = Math.hypot(dx, dz) || 1
+    const px = (dz / len) * ribbon
+    const pz = (-dx / len) * ribbon
+    let base = positions.length / 3
+    for (let i = 0; i <= samples; i++) {
+      const t = i / samples
+      const x = ax + dx * t
+      const z = az + dz * t
+      const y = walkY(x, z) + lift
+      positions.push(x - px, y, z - pz, x + px, y, z + pz)
+      if (i > 0) {
+        const a = base
+        const b = base + 1
+        const c = base + 2
+        const d = base + 3
+        indices.push(a, c, b, b, c, d)
+        base += 2
       }
     }
+  }
 
-    // Rare short chubby stump
-    if (hash01(seed + 55) > 0.93) {
-      const stumpH = 0.16 + hash01(seed + 56) * 0.06
-      const stumpR = 0.26 + hash01(seed + 57) * 0.08
-      const ox = -sx * half * 0.72
-      const oz = sz * half * 0.68
-      items.push(
-        <mesh
-          key="stump"
-          position={[ox, propY + stumpH * 0.5, oz]}
-          material={barkMat}
-          castShadow
-        >
-          <cylinderGeometry args={[stumpR * 0.92, stumpR * 1.08, stumpH, 8]} />
-        </mesh>,
-        <mesh
-          key="stump-top"
-          position={[ox, propY + stumpH + 0.015, oz]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          material={mossMat}
-          renderOrder={1}
-        >
-          <circleGeometry args={[stumpR * 0.78, 8]} />
-        </mesh>,
-      )
-    }
+  // Vertical edges (constant x) — shared borders between files
+  for (let i = 0; i <= 8; i++) {
+    const x = -half + i * CELL_SIZE
+    pushRibbon(x, -half, x, half)
+  }
+  // Horizontal edges (constant z) — shared borders between ranks
+  for (let i = 0; i <= 8; i++) {
+    const z = -half + i * CELL_SIZE
+    pushRibbon(-half, z, half, z)
+  }
 
-    // Corner L-wall — tallest at the corner, steps down as arms run out (~45%)
-    if (hash01(seed + 60) > 0.55) {
-      const brickH = 0.125
-      const brickW = 0.34
-      const brickD = 0.17
-      const cx = sx * half * 0.9
-      const cz = sz * half * 0.9
-      // How far each arm travels from the corner (in brick slots)
-      const armA = 2 + Math.floor(hash01(seed + 61) * 3) // along ±X
-      const armB = 2 + Math.floor(hash01(seed + 62) * 3) // along ±Z
-      // Peak height at corner (3–5), then taper
-      const peak = 3 + Math.floor(hash01(seed + 63) * 3)
-
-      const placeBrick = (
-        key: string,
-        px: number,
-        pz: number,
-        course: number,
-        alongX: boolean,
-      ) => {
-        const bond = (course % 2) * brickW * 0.12
-        items.push(
-          <mesh
-            key={key}
-            position={[
-              px + (alongX ? bond : 0),
-              propY + brickH * (course + 0.5),
-              pz + (alongX ? 0 : bond),
-            ]}
-            material={course % 2 ? brickMat : rubbleMat}
-            castShadow
-          >
-            <boxGeometry
-              args={
-                alongX
-                  ? [brickW * 0.92, brickH * 0.88, brickD]
-                  : [brickD, brickH * 0.88, brickW * 0.92]
-              }
-            />
-          </mesh>,
-        )
-      }
-
-      // Corner column — full peak
-      for (let c = 0; c < peak; c++) {
-        placeBrick(`corner-${c}`, cx, cz, c, true)
-      }
-      // Tiny moss cap on the corner peak
-      if (hash01(seed + 64) > 0.35) {
-        items.push(
-          <mesh
-            key="corner-moss"
-            position={[cx, propY + brickH * peak + 0.02, cz]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            material={mossLiteMat}
-            renderOrder={1}
-          >
-            <planeGeometry args={[brickW * 0.7, brickD * 0.9]} />
-          </mesh>,
-        )
-      }
-
-      // Arm along X (away from corner toward cell center-ish / edge)
-      for (let i = 1; i <= armA; i++) {
-        // Height falls off: peak → … → 1 (sometimes skip a slot for ruin gaps)
-        const h = Math.max(1, peak - i - (hash01(seed + 70 + i) > 0.75 ? 1 : 0))
-        if (hash01(seed + 80 + i) < 0.12) continue // missing brick gap
-        const px = cx - sx * i * brickW * 0.95
-        const pz = cz
-        for (let c = 0; c < h; c++) {
-          placeBrick(`armA-${i}-${c}`, px, pz, c, true)
-        }
-      }
-
-      // Arm along Z
-      for (let i = 1; i <= armB; i++) {
-        const h = Math.max(1, peak - i - (hash01(seed + 90 + i) > 0.7 ? 1 : 0))
-        if (hash01(seed + 100 + i) < 0.12) continue
-        const px = cx
-        const pz = cz - sz * i * brickW * 0.95
-        for (let c = 0; c < h; c++) {
-          placeBrick(`armB-${i}-${c}`, px, pz, c, false)
-        }
-      }
-
-      // Occasional lone bottom course further along one arm (ruin scatter)
-      if (hash01(seed + 110) > 0.55) {
-        const extra = armA + 1
-        placeBrick(
-          'lone-a',
-          cx - sx * extra * brickW * 0.95,
-          cz + (hash01(seed + 111) - 0.5) * 0.08,
-          0,
-          true,
-        )
-      }
-      if (hash01(seed + 112) > 0.6) {
-        const extra = armB + 1
-        placeBrick(
-          'lone-b',
-          cx + (hash01(seed + 113) - 0.5) * 0.08,
-          cz - sz * extra * brickW * 0.95,
-          0,
-          false,
-        )
-      }
-    }
-
-    return items
-  }, [
-    terrain,
-    surfaceY,
-    seed,
-    mossMat,
-    mossLiteMat,
-    dirtMat,
-    leafMat,
-    stemMat,
-    rubbleMat,
-    crackMat,
-    brickMat,
-    barkMat,
-  ])
-
-  return <group>{props}</group>
-}
-
-/** Features that ignore the grid — stream, scar, collapsed structures. */
-function TerrainScars({
-  waterMat,
-  waterDeepMat,
-  foamMat,
-  stoneMat,
-  rubbleMat,
-  mossMat,
-}: {
-  waterMat: THREE.MeshToonMaterial
-  waterDeepMat: THREE.MeshToonMaterial
-  foamMat: THREE.MeshBasicMaterial
-  stoneMat: THREE.MeshToonMaterial
-  rubbleMat: THREE.MeshToonMaterial
-  mossMat: THREE.MeshToonMaterial
-}) {
-  const streakRefs = useRef<(THREE.Mesh | null)[]>([])
-  /** River runs past board + apron so it reads endless into the woods. */
-  const riverHalfLen = CELL_SIZE * (4 + 14)
-  const riverLen = riverHalfLen * 2
-  const riverW = CELL_SIZE * 1.15
-
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime
-    streakRefs.current.forEach((m, i) => {
-      if (!m) return
-      const base = -riverHalfLen + (i / Math.max(streakRefs.current.length - 1, 1)) * riverLen
-      const drift = (t * 3.2 + i * 1.7) % riverLen
-      m.position.z = ((base + drift + riverHalfLen) % riverLen) - riverHalfLen
-      m.position.x = RIVER_X + (i % 2 === 0 ? -1 : 1) * riverW * 0.2
-    })
-  })
-
-  const scarRubble = useMemo(() => {
-    const bits: { x: number; z: number; yaw: number; s: number }[] = []
-    for (let i = 0; i < 28; i++) {
-      const t = i / 27
-      const x = -CELL_SIZE * 3.6 + t * CELL_SIZE * 7.2
-      const z = -x * 0.55 + Math.sin(x * 0.08) * CELL_SIZE * 0.6
-      bits.push({
-        x: x + (hash01(i * 4) - 0.5) * CELL_SIZE * 0.85,
-        z: z + (hash01(i * 6) - 0.5) * CELL_SIZE * 0.65,
-        yaw: hash01(i) * Math.PI,
-        s: 0.22 + hash01(i * 3) * 0.28,
-      })
-    }
-    for (let i = 0; i < 16; i++) {
-      const z = -CELL_SIZE * 4.5 + (i / 15) * CELL_SIZE * 9
-      const side = hash01(i * 9) > 0.5 ? 1 : -1
-      bits.push({
-        x: RIVER_X + side * CELL_SIZE * (0.75 + hash01(i) * 0.35),
-        z: z + (hash01(i * 2) - 0.5) * CELL_SIZE * 0.3,
-        yaw: hash01(i * 5) * Math.PI,
-        s: 0.18 + hash01(i * 7) * 0.22,
-      })
-    }
-    return bits
-  }, [])
-
-  const noHit = () => null
-
-  return (
-    <group>
-      {/* One bed + one surface — no overlapping segments */}
-      <mesh
-        position={[RIVER_X, -0.16, 0]}
-        material={waterDeepMat}
-        receiveShadow
-        raycast={noHit}
-      >
-        <boxGeometry args={[riverW * 1.25, 0.28, riverLen]} />
-      </mesh>
-      <mesh
-        position={[RIVER_X, 0.05, 0]}
-        material={waterMat}
-        receiveShadow
-        raycast={noHit}
-      >
-        <boxGeometry args={[riverW, 0.08, riverLen]} />
-      </mesh>
-
-      {/* Flow streaks above the surface */}
-      {Array.from({ length: 12 }, (_, i) => (
-        <mesh
-          key={`streak-${i}`}
-          ref={(el) => {
-            streakRefs.current[i] = el
-          }}
-          position={[0, 0.14, 0]}
-          material={foamMat}
-          raycast={noHit}
-          renderOrder={2}
-        >
-          <boxGeometry args={[riverW * 0.1, 0.015, CELL_SIZE * 0.5]} />
-        </mesh>
-      ))}
-
-      {/* Bank moss as long strips beside the channel — raised above pads */}
-      <mesh
-        position={[RIVER_X + riverW * 0.62, 0.18, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        material={mossMat}
-        raycast={noHit}
-        renderOrder={1}
-      >
-        <planeGeometry args={[riverW * 0.3, riverLen]} />
-      </mesh>
-      <mesh
-        position={[RIVER_X - riverW * 0.62, 0.18, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        material={mossMat}
-        raycast={noHit}
-        renderOrder={1}
-      >
-        <planeGeometry args={[riverW * 0.26, riverLen]} />
-      </mesh>
-
-      {/* Low debris */}
-      {scarRubble.map((b, i) => (
-        <mesh
-          key={`scar-${i}`}
-          position={[b.x, CELL_SIZE * 0.06 * b.s, b.z]}
-          rotation={[hash01(i) * 0.25, b.yaw, hash01(i + 1) * 0.15]}
-          material={i % 3 === 0 ? stoneMat : rubbleMat}
-          castShadow
-          raycast={noHit}
-        >
-          <boxGeometry
-            args={[
-              CELL_SIZE * 0.28 * b.s,
-              CELL_SIZE * 0.08 * b.s,
-              CELL_SIZE * 0.22 * b.s,
-            ]}
-          />
-        </mesh>
-      ))}
-    </group>
-  )
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+  return geo
 }
 
 export function Board({
   selected,
   legalTargets,
-  lastMove,
-  checkedKing,
   onSquareClick,
 }: BoardProps) {
   const pointerDown = useRef({ x: 0, y: 0 })
   const gradientMap = useMemo(() => getToonGradient(), [])
 
-  const mats = useMemo(() => {
-    const make = (hex: string) => new THREE.MeshToonMaterial({ color: hex, gradientMap })
-    return {
-      stone: STONE_VARIANTS.map(make),
-      moss: MOSS_VARIANTS.map(make),
-      mud: MUD_VARIANTS.map(make),
-      bank: BANK_VARIANTS.map(make),
-      ruin: RUIN_VARIANTS.map(make),
-      waterBed: make(WATER_BED),
-      water: (() => {
-        const m = make('#4a8a78')
-        m.polygonOffset = true
-        m.polygonOffsetFactor = -1
-        m.polygonOffsetUnits = -1
-        return m
-      })(),
-      waterDeep: make('#2a4840'),
-      curb: make(PALETTE.curb),
-      soil: make('#4a5240'),
-      mossAccent: make(PALETTE.moss),
-      mossLite: (() => {
-        const m = make(PALETTE.mossLite)
-        m.polygonOffset = true
-        m.polygonOffsetFactor = -2
-        m.polygonOffsetUnits = -2
-        return m
-      })(),
-      dirt: (() => {
-        const m = make(PALETTE.dirt)
-        m.polygonOffset = true
-        m.polygonOffsetFactor = -2
-        m.polygonOffsetUnits = -2
-        return m
-      })(),
-      leaf: make(PALETTE.leaf),
-      stem: make('#3a5838'),
-      rubble: make('#8a8478'),
-      crack: make('#4a4840'),
-      brick: make('#9a7a62'),
-      bark: make('#5c4330'),
-      stoneAccent: make('#9a9488'),
-      foam: new THREE.MeshBasicMaterial({
-        color: '#d8ece4',
-        transparent: true,
-        opacity: 0.3,
-        depthWrite: false,
-      }),
-    }
-  }, [gradientMap])
+  // Rebuild when the valley profile changes (empty deps would keep a stale mesh across HMR).
+  const terrain = useMemo(() => buildTerrain(), [TERRAIN_REV])
+  const water = useMemo(() => buildWater(), [TERRAIN_REV])
+  const grassMap = useMemo(() => grassDetailMap(), [])
+  const forest = useMemo(() => buildBoardForest(), [TERRAIN_REV])
+  useEffect(
+    () => () => {
+      terrain.dispose()
+      water.dispose()
+      grassMap.dispose()
+      forest.solid.dispose()
+      forest.soft.dispose()
+    },
+    [terrain, water, grassMap, forest],
+  )
 
-  const squares = useMemo(() => {
-    const list: {
-      square: Square
-      x: number
-      z: number
-      file: number
-      rank: number
-      variant: number
-      terrain: Terrain
-      elev: number
-      padScale: number
-      yaw: number
-    }[] = []
-    for (let rank = 0; rank < 8; rank++) {
-      for (let file = 0; file < 8; file++) {
-        const square = `${FILES[file]}${RANKS[rank]}` as Square
-        const [x, z] = squareToCoords(square)
-        const seed = file * 17 + rank * 31
-        const terrain = terrainAt(file, rank)
-        list.push({
-          square,
-          x,
-          z,
-          file,
-          rank,
-          variant: Math.floor(hash01(seed + 11) * 4) % 4,
-          terrain,
-          elev: elevAt(file, rank, terrain),
-          // Keep footprints inside the cell so neighbors don't z-fight
-          padScale: 0.86 + hash01(seed + 5) * 0.1,
-          yaw: (hash01(seed + 8) - 0.5) * 0.05,
-        })
-      }
+  const forestMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+  const forestSoftMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }),
+    [gradientMap],
+  )
+
+  const marks = useMemo(() => {
+    if (!selected) return []
+    const list: { square: Square; geo: THREE.BufferGeometry; color: string }[] = [
+      { square: selected, geo: cellPatch(selected), color: PALETTE.select },
+    ]
+    for (const square of legalTargets) {
+      list.push({ square, geo: cellPatch(square), color: PALETTE.move })
     }
     return list
-  }, [])
+  }, [selected, legalTargets])
 
-  const boardSpan = CELL_SIZE * 8
+  const borderGeo = useMemo(() => (selected ? buildBoardBorders() : null), [selected])
 
-  const padMatFor = (terrain: Terrain, variant: number) => {
-    switch (terrain) {
-      case 'water':
-        return mats.waterBed
-      case 'bank':
-        return mats.bank[variant]!
-      case 'ruin':
-        return mats.ruin[variant]!
-      case 'mud':
-        return mats.mud[variant]!
-      case 'moss':
-        return mats.moss[variant]!
-      default:
-        return mats.stone[variant]!
-    }
+  useEffect(
+    () => () => {
+      marks.forEach((m) => m.geo.dispose())
+    },
+    [marks],
+  )
+
+  useEffect(
+    () => () => {
+      borderGeo?.dispose()
+    },
+    [borderGeo],
+  )
+
+  const terrainMat = useMemo(
+    () => new THREE.MeshToonMaterial({ vertexColors: true, map: grassMap, gradientMap }),
+    [gradientMap, grassMap],
+  )
+  const waterMat = useMemo(() => {
+    const m = new THREE.MeshToonMaterial({
+      color: '#3d7a6c',
+      gradientMap,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    })
+    return m
+  }, [gradientMap])
+
+  const pick = (clientX: number, clientY: number, point: THREE.Vector3) => {
+    if (isPointerDrag(pointerDown.current, { clientX, clientY })) return
+    const square = coordsToSquare(point.x, point.z)
+    if (square) onSquareClick(square)
   }
 
   return (
     <group>
-      <mesh position={[0, -0.22, 0]} material={mats.soil} receiveShadow>
-        <boxGeometry args={[boardSpan + 2.2, 0.45, boardSpan + 2.2]} />
-      </mesh>
-      <mesh position={[0, -0.48, 0]} material={mats.curb} receiveShadow>
-        <boxGeometry args={[boardSpan + 3.6, 0.35, boardSpan + 3.6]} />
-      </mesh>
+      <mesh
+        geometry={terrain}
+        material={terrainMat}
+        receiveShadow
+        onPointerDown={(e) => {
+          pointerDown.current = { x: e.clientX, y: e.clientY }
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          pick(e.clientX, e.clientY, e.point)
+        }}
+        onPointerOver={() => {
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'default'
+        }}
+      />
 
-      <mesh position={[0, -0.08, 0]} receiveShadow>
-        <boxGeometry args={[boardSpan + 1.5, 0.12, boardSpan + 1.5]} />
-        <meshToonMaterial color="#4a5840" gradientMap={gradientMap} />
-      </mesh>
-      {/* N/S curb split so the mid river can leave the board; E/W stay solid */}
-      {(
-        [
-          [-(boardSpan * 0.28 + 0.2), boardSpan * 0.5 + 0.38, boardSpan * 0.42, 0.48],
-          [boardSpan * 0.28 + 0.2, boardSpan * 0.5 + 0.38, boardSpan * 0.42, 0.48],
-          [-(boardSpan * 0.28 + 0.2), -(boardSpan * 0.5 + 0.38), boardSpan * 0.42, 0.48],
-          [boardSpan * 0.28 + 0.2, -(boardSpan * 0.5 + 0.38), boardSpan * 0.42, 0.48],
-          [boardSpan * 0.5 + 0.38, 0, 0.48, boardSpan + 1.05],
-          [-(boardSpan * 0.5 + 0.38), 0, 0.48, boardSpan + 1.05],
-        ] as const
-      ).map(([x, z, w, d], i) => (
-        <mesh
-          key={`moss-border-${i}`}
-          position={[x, 0.22, z]}
-          material={mats.mossAccent}
-          receiveShadow
-          castShadow
-        >
-          <boxGeometry args={[w, 0.18, d]} />
+      {/* Valley water — clipped to submerged bed so banks frame the shoreline */}
+      <mesh
+        geometry={water}
+        material={waterMat}
+        renderOrder={2}
+        receiveShadow
+        onPointerDown={(e) => {
+          pointerDown.current = { x: e.clientX, y: e.clientY }
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          pick(e.clientX, e.clientY, e.point)
+        }}
+      />
+
+      {/* Forest clutter in cell corners — rocks, stumps, shrubs, small trees */}
+      <mesh
+        geometry={forest.solid}
+        material={forestMat}
+        castShadow
+        receiveShadow
+        raycast={() => {}}
+      />
+      <mesh
+        geometry={forest.soft}
+        material={forestSoftMat}
+        castShadow
+        receiveShadow
+        raycast={() => {}}
+      />
+
+      {borderGeo && (
+        <mesh geometry={borderGeo} renderOrder={1} raycast={() => {}}>
+          <meshBasicMaterial
+            color="#f2efe4"
+            transparent
+            opacity={0.72}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
+          />
         </mesh>
-      ))}
-
-      {squares.map(
-        ({ square, x, z, file, rank, variant, terrain, elev, padScale, yaw }) => {
-          const isSelected = selected === square
-          const isTarget = legalTargets.includes(square)
-          const isLast =
-            lastMove?.from === square || lastMove?.to === square
-          const isCheck = checkedKing === square
-          const pad = padMatFor(terrain, variant)
-          const wet = terrain === 'water'
-          const tw = (CELL_SIZE - PAD_GAP) * padScale
-          const td = (CELL_SIZE - PAD_GAP) * (0.9 + hash01(file * 3 + rank) * 0.08)
-          // Raised shelves get thicker pads; sinks sit lower into the soil
-          const padH = 0.24 + Math.max(0, elev) * 0.5
-          const padY = (terrain === 'bank' ? 0.0 : 0.02) + elev
-          const surfaceY = padY + padH * 0.5
-          const markY = surfaceY + 0.04
-
-          return (
-            <group key={square} position={[x, 0, z]} rotation={[0, yaw, 0]}>
-              {/* Water cells: no pad mesh — river surface owns that strip (avoids z-fight) */}
-              {!wet && (
-                <mesh
-                  material={pad}
-                  position={[0, padY, 0]}
-                  receiveShadow
-                  castShadow
-                  onPointerDown={(e) => {
-                    pointerDown.current = { x: e.clientX, y: e.clientY }
-                  }}
-                  onClick={(e) => {
-                    if (isPointerDrag(pointerDown.current, e)) return
-                    e.stopPropagation()
-                    onSquareClick(square)
-                  }}
-                  onPointerOver={(e) => {
-                    e.stopPropagation()
-                    document.body.style.cursor = 'pointer'
-                  }}
-                  onPointerOut={() => {
-                    document.body.style.cursor = 'default'
-                  }}
-                >
-                  <boxGeometry args={[tw, padH, td]} />
-                </mesh>
-              )}
-
-              {/* Tall invisible hit volume so scars/water don't steal clicks */}
-              <mesh
-                position={[0, 0.9 + elev, 0]}
-                onPointerDown={(e) => {
-                  pointerDown.current = { x: e.clientX, y: e.clientY }
-                }}
-                onClick={(e) => {
-                  if (isPointerDrag(pointerDown.current, e)) return
-                  e.stopPropagation()
-                  onSquareClick(square)
-                }}
-                onPointerOver={(e) => {
-                  e.stopPropagation()
-                  document.body.style.cursor = 'pointer'
-                }}
-                onPointerOut={() => {
-                  document.body.style.cursor = 'default'
-                }}
-              >
-                <boxGeometry args={[CELL_SIZE * 0.85, 1.6, CELL_SIZE * 0.85]} />
-                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-              </mesh>
-
-              <BlockDressing
-                file={file}
-                rank={rank}
-                terrain={terrain}
-                surfaceY={surfaceY}
-                mossMat={mats.mossAccent}
-                mossLiteMat={mats.mossLite}
-                dirtMat={mats.dirt}
-                leafMat={mats.leaf}
-                stemMat={mats.stem}
-                rubbleMat={mats.rubble}
-                crackMat={mats.crack}
-                brickMat={mats.brick}
-                barkMat={mats.bark}
-              />
-
-              {isLast && (
-                <mesh position={[0, markY, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                  <planeGeometry args={[tw * 0.85, td * 0.85]} />
-                  <meshBasicMaterial
-                    color={PALETTE.last}
-                    transparent
-                    opacity={0.24}
-                  />
-                </mesh>
-              )}
-              {isSelected && (
-                <>
-                  <mesh position={[0, markY + 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <ringGeometry args={[tw * 0.24, tw * 0.32, 4]} />
-                    <meshBasicMaterial
-                      color={PALETTE.select}
-                      transparent
-                      opacity={0.9}
-                      side={THREE.DoubleSide}
-                    />
-                  </mesh>
-                  <mesh position={[0, markY + 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <planeGeometry args={[tw * 0.82, td * 0.82]} />
-                    <meshBasicMaterial
-                      color={PALETTE.select}
-                      transparent
-                      opacity={0.14}
-                    />
-                  </mesh>
-                </>
-              )}
-              {isTarget && (
-                <group
-                  onPointerDown={(e) => {
-                    pointerDown.current = { x: e.clientX, y: e.clientY }
-                  }}
-                  onClick={(e) => {
-                    if (isPointerDrag(pointerDown.current, e)) return
-                    e.stopPropagation()
-                    onSquareClick(square)
-                  }}
-                >
-                  <mesh position={[0, markY + 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <planeGeometry args={[tw * 0.85, td * 0.85]} />
-                    <meshBasicMaterial
-                      color={PALETTE.move}
-                      transparent
-                      opacity={0.2}
-                    />
-                  </mesh>
-                  <mesh position={[0, markY + 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <ringGeometry args={[tw * 0.26, tw * 0.34, 24]} />
-                    <meshBasicMaterial
-                      color={PALETTE.move}
-                      transparent
-                      opacity={0.9}
-                      side={THREE.DoubleSide}
-                    />
-                  </mesh>
-                  <mesh position={[0, markY + 0.14, 0]}>
-                    <cylinderGeometry args={[tw * 0.12, tw * 0.12, 0.12, 20]} />
-                    <meshBasicMaterial
-                      color={PALETTE.move}
-                      transparent
-                      opacity={0.95}
-                    />
-                  </mesh>
-                </group>
-              )}
-              {isCheck && (
-                <mesh position={[0, markY + 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                  <ringGeometry args={[tw * 0.3, tw * 0.4, 24]} />
-                  <meshBasicMaterial
-                    color={PALETTE.check}
-                    transparent
-                    opacity={0.85}
-                    side={THREE.DoubleSide}
-                  />
-                </mesh>
-              )}
-            </group>
-          )
-        },
       )}
 
-      <TerrainScars
-        waterMat={mats.water}
-        waterDeepMat={mats.waterDeep}
-        foamMat={mats.foam}
-        stoneMat={mats.stoneAccent}
-        rubbleMat={mats.rubble}
-        mossMat={mats.mossAccent}
-      />
+      {marks.map(({ square, geo, color }) => (
+        <mesh
+          key={square}
+          geometry={geo}
+          renderOrder={2}
+          onPointerDown={(e) => {
+            pointerDown.current = { x: e.clientX, y: e.clientY }
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isPointerDrag(pointerDown.current, e)) return
+            onSquareClick(square)
+          }}
+        >
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={square === selected ? 0.38 : 0.28}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
+        </mesh>
+      ))}
     </group>
   )
 }

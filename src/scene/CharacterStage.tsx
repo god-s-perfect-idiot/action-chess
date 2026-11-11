@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { getHeroDesign, HERO_DESIGNS, type HeroDesign } from '../game/heroDesigns'
+import { protectorForKing } from '../game/protectors'
 import {
   attackFor,
   deathDuration,
@@ -12,14 +13,17 @@ import {
   type HitZone,
   type MoveStyle,
 } from './fighters/anims'
+import { buildProtectorDuel, sampleBeat } from './fighters/bouts'
 import { now } from './fighters/clock'
 import { FxLayer, type FxEvent } from './fighters/Fx'
 import { HeroFighter, type FighterApi } from './fighters/HeroFighter'
 import { outlineUniforms } from './fighters/materials'
 
-export type AnimMode = 'cycle' | 'idle' | 'run' | 'attack' | 'death'
+export type AnimMode = 'cycle' | 'idle' | 'run' | 'attack' | 'death' | 'check' | 'checkmate'
 
 export const ANIM_MODES: AnimMode[] = ['cycle', 'idle', 'run', 'attack', 'death']
+/** Extra preview modes shown on king character cards. */
+export const KING_ANIM_MODES: AnimMode[] = ['check', 'checkmate']
 
 /** Damage types the self-death preview cycles through. */
 export const DAMAGE_TYPES: DamageType[] = ['beam', 'slash', 'pierce', 'blunt', 'burn', 'shock']
@@ -159,6 +163,8 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
   const babylon = atk.fx === 'babylon'
   const portal = atk.fx === 'portal'
   const inferno = atk.fx === 'inferno'
+  const megaShock = atk.fx === 'megaShockwave'
+  const airShock = atk.fx === 'airShockwave'
   out.push({
     id: fxSeq++,
     kind: atk.fx,
@@ -182,13 +188,15 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
           ? 0.95
           : atk.fx === 'rasengan'
             ? 0.75
-            : inferno
+            : inferno || megaShock
               ? 1.35
               : portal
                 ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
                 : sakura || babylon
                   ? 0.95
-                  : 0.6,
+                  : airShock
+                    ? 0.75
+                    : 0.6,
     from: rasengan ? new THREE.Vector3(0, up * 1.85, vz) : from,
     to: rasengan
       ? new THREE.Vector3(0, up * 0.85, vz)
@@ -208,9 +216,13 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
               ? FX_SIZE * 1.12
               : inferno
                 ? FX_SIZE * 2.15
-                : sakura || babylon
-                  ? FX_SIZE * 1.2
-                  : FX_SIZE,
+                : megaShock
+                  ? FX_SIZE * 2.0
+                  : sakura || babylon
+                    ? FX_SIZE * 1.2
+                    : airShock
+                      ? FX_SIZE * 1.25
+                      : FX_SIZE,
   })
   if (!atk.ranged) {
     for (const h of atk.hits) {
@@ -250,6 +262,11 @@ function victimAnim(atk: AttackDef, local: number, die: number): AnimInput {
   return { kind: 'ready', t: local }
 }
 
+const _protPos = new THREE.Vector2()
+const PROT_Z = 0.58
+const PROT_X = 0.38
+const THREAT_Z = 1.15
+
 function Unit({
   id,
   x,
@@ -271,21 +288,43 @@ function Unit({
 }) {
   const api = useRef<FighterApi | null>(null)
   const foe = useRef<FighterApi | null>(null)
+  const guard = useRef<FighterApi | null>(null)
   const mover = useRef<THREE.Group>(null)
+  const guardRoot = useRef<THREE.Group>(null)
   const clock = useRef({ t: 0 })
   const fired = useRef(-1)
   const [fx, setFx] = useState<FxEvent[]>([])
-  const sparring = mode === 'attack' || mode === 'cycle'
+  const protector = protectorForKing(id)
+  const guardStage = (mode === 'check' || mode === 'checkmate') && Boolean(protector)
+  const sparring = mode === 'attack' || mode === 'cycle' || guardStage
   const atkDef = attackFor(getHeroDesign(id, 'w', { awakened }))
   const foeDesign = getHeroDesign(id, 'b', { awakened })
   const foeDie = deathDuration(foeDesign, atkDef.dmg)
+  const duel = useRef(
+    protector
+      ? buildProtectorDuel({
+          attackerStart: new THREE.Vector2(0, THREAT_Z),
+          protectorStart: new THREE.Vector2(PROT_X, PROT_Z),
+          kingHome: new THREE.Vector2(0, 0),
+          seed: Math.floor(seed * 9973),
+        })
+      : null,
+  )
 
   useEffect(() => {
     fired.current = -1
     setFx([])
     clock.current.t = 0
     applyMover(mover.current, null)
-  }, [mode, id, damage, awakened])
+    duel.current = protector
+      ? buildProtectorDuel({
+          attackerStart: new THREE.Vector2(0, THREAT_Z),
+          protectorStart: new THREE.Vector2(PROT_X, PROT_Z),
+          kingHome: new THREE.Vector2(0, 0),
+          seed: Math.floor(seed * 9973),
+        })
+      : null
+  }, [mode, id, damage, awakened, protector, seed])
 
   const fireFx = (design: HeroDesign, attackLocalT: number, key: number) => {
     if (freeze !== null || fired.current === key) return
@@ -299,12 +338,93 @@ function Unit({
     const a = api.current
     if (!a) return
     const v = foe.current
+    const g = guard.current
     clock.current.t += dt
     const t = clock.current.t
     const atk = attackFor(a.design)
     const atkDur = atk.clip.dur
     const die = (dmg: DamageType) => deathDuration(a.design, dmg)
     const selfDmg = (k: number) => damage ?? DAMAGE_TYPES[k % DAMAGE_TYPES.length]
+
+    if (mode === 'check' && protector) {
+      a.update({ kind: 'ready', t }, dt, 0)
+      v?.update({ kind: 'ready', t }, dt, 0)
+      g?.update({ kind: 'idle', t }, dt, 0)
+      if (guardRoot.current) {
+        guardRoot.current.position.set(PROT_X, 0, PROT_Z)
+        guardRoot.current.rotation.y = 0
+        guardRoot.current.visible = true
+      }
+      return
+    }
+
+    if (mode === 'checkmate' && protector && duel.current) {
+      const d = duel.current
+      const protDie = deathDuration(protector.design, 'slash')
+      const kingDie = die('slash')
+      const period = d.kingHitAt + kingDie + 1.4
+      const local = t % period
+      const loop = Math.floor(t / period)
+
+      if (local < d.protectorHitAt) {
+        const ks = sampleBeat(d.king, local, _protPos)
+        a.update(ks.anim.kind === 'ready' ? { kind: 'ready', t: local } : ks.anim, dt, 0)
+        const as = sampleBeat(d.attacker, local, _protPos)
+        v?.update(as.anim.kind === 'ready' ? { kind: 'ready', t: local } : as.anim, dt, 0)
+        const ps = sampleBeat(d.protector, local, _protPos)
+        if (guardRoot.current) {
+          guardRoot.current.position.set(_protPos.x, 0, _protPos.y)
+          guardRoot.current.rotation.y = ps.yaw
+          guardRoot.current.visible = true
+        }
+        g?.update(ps.anim.kind === 'ready' ? { kind: 'idle', t: local } : ps.anim, dt, 0)
+      } else if (local < d.kingHitAt) {
+        // Guardian is down — king keeps trading with the attacker, then falls.
+        const ks = sampleBeat(d.king, local, _protPos)
+        a.update(ks.anim.kind === 'ready' ? { kind: 'ready', t: local } : ks.anim, dt, 0)
+        const as = sampleBeat(d.attacker, local, _protPos)
+        v?.update(as.anim.kind === 'ready' ? { kind: 'ready', t: local } : as.anim, dt, 0)
+        if (guardRoot.current) {
+          guardRoot.current.visible = local - d.protectorHitAt < protDie + 0.35
+        }
+        g?.update(
+          { kind: 'death', t: local - d.protectorHitAt, dmg: 'slash', zone: 'mid' },
+          dt,
+          0,
+        )
+      } else {
+        a.update({ kind: 'death', t: local - d.kingHitAt, dmg: 'slash', zone: 'mid' }, dt, 0)
+        v?.update({ kind: 'ready', t: local }, dt, 0)
+        if (guardRoot.current) {
+          guardRoot.current.visible = local - d.protectorHitAt < protDie + 0.5
+        }
+        g?.update(
+          { kind: 'death', t: local - d.protectorHitAt, dmg: 'slash', zone: 'mid' },
+          dt,
+          0,
+        )
+      }
+
+      if (fired.current !== loop) {
+        fired.current = loop
+        const tNow = now()
+        const hits: FxEvent[] = d.taps.map((tap) => ({
+          id: fxSeq++,
+          kind: 'hit' as const,
+          start: tNow + tap.t,
+          travel: 0,
+          dur: 0.35,
+          from: new THREE.Vector3(tap.from.x, 0.7, tap.from.y),
+          to: new THREE.Vector3(tap.at.x, 0.7, tap.at.y),
+          color: '#fff1c4',
+          color2: '#ff4d6d',
+          size: 0.4,
+        }))
+        setFx((prev) => [...prev.filter((e) => tNow < e.start + e.travel + e.dur + 0.1), ...hits])
+      }
+      return
+    }
+
     if (freeze !== null && mode !== 'cycle') {
       if (mode === 'run') {
         const preview = runPreview(a.design, freeze * runOneWay(a.design) * 2)
@@ -319,6 +439,8 @@ function Unit({
       } else if (mode === 'attack') {
         a.update({ kind: 'attack', t: freeze * atkDur }, 0.1, 0)
         v?.update(victimAnim(atk, freeze * atkDur, foeDie), 0.1, 0)
+      } else if (mode === 'check' || mode === 'checkmate') {
+        a.update({ kind: 'ready', t: freeze * 4 }, 0.1, 0)
       } else a.update({ kind: mode, t: freeze * 4 }, 0.1, 0)
       return
     }
@@ -377,13 +499,27 @@ function Unit({
         />
       </group>
       {sparring ? (
-        <group position={[0, 0, victimZ(atkDef)]} rotation={[0, Math.PI, 0]}>
+        <group
+          position={[0, 0, guardStage ? THREAT_Z : victimZ(atkDef)]}
+          rotation={[0, Math.PI, 0]}
+        >
           <HeroFighter
             heroId={id}
             color="b"
             seed={(seed + 0.41) % 1}
             apiRef={foe}
             awakened={awakened}
+          />
+        </group>
+      ) : null}
+      {guardStage && protector ? (
+        <group ref={guardRoot} position={[PROT_X, 0, PROT_Z]}>
+          <HeroFighter
+            heroId={null}
+            color="w"
+            seed={(seed + 0.73) % 1}
+            apiRef={guard}
+            design={protector.design}
           />
         </group>
       ) : null}

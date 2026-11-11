@@ -120,6 +120,14 @@ export default function App() {
     return (king?.square ?? null) as Square | null
   }, [game.pieces, game.status, game.turn])
 
+  const primaryChecker = useMemo(() => {
+    if (!game.checkers.length) return null
+    if (game.lastMove && game.checkers.includes(game.lastMove.to)) {
+      return game.lastMove.to
+    }
+    return game.checkers[0] ?? null
+  }, [game.checkers, game.lastMove])
+
   const selectedUnit = useMemo(() => {
     if (!game.selected) return null
     return game.pieces.find((p) => p.square === game.selected) ?? null
@@ -166,9 +174,11 @@ export default function App() {
           <ChessScene
             pieces={game.pieces}
             selected={game.selected}
+            selectedId={game.selectedId}
             legalTargets={game.legalTargets}
             lastMove={game.lastMove}
             checkedKing={checkedKing}
+            checkerSquare={primaryChecker}
             defeatedKing={game.status === 'checkmate' ? checkedKing : null}
             onSquareClick={game.selectSquare}
             boardFreeAtRef={game.boardFreeAtRef}
@@ -379,8 +389,8 @@ export default function App() {
               ) : (
                 <p className="lock-empty">
                   {auto
-                    ? 'Autopilot running — hands off the board.'
-                    : 'Tap one of your fighters to begin.'}
+                    ? 'Tap a fighter to inspect — autopilot handles moves.'
+                    : 'Tap a fighter to inspect — yours to move.'}
                 </p>
               )}
             </div>

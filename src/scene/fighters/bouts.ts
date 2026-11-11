@@ -224,7 +224,7 @@ export function sampleBeat(beats: BoutBeat[], pt: number, out: THREE.Vector2): B
   }
 }
 
-const UNIT_SCALE = CELL_SIZE * 0.365
+const UNIT_SCALE = CELL_SIZE * 0.252
 
 export function buildLethalDuel(opts: {
   start: THREE.Vector2
@@ -366,6 +366,111 @@ export function buildLethalDuel(opts: {
   }
 }
 
+/**
+ * Checkmate last stand: mating piece vs king bodyguard (+ king assists).
+ * Protector dies first; king death is scheduled after `kingHitAt`.
+ */
+export interface ProtectorDuel {
+  attacker: BoutBeat[]
+  protector: BoutBeat[]
+  king: BoutBeat[]
+  /** Seconds from fight start when the protector's death begins. */
+  protectorHitAt: number
+  /** Seconds from fight start when the king's death begins. */
+  kingHitAt: number
+  taps: DuelTap[]
+}
+
+export function buildProtectorDuel(opts: {
+  attackerStart: THREE.Vector2
+  protectorStart: THREE.Vector2
+  kingHome: THREE.Vector2
+  seed: number
+}): ProtectorDuel {
+  const A = new Lane(opts.attackerStart)
+  const P = new Lane(opts.protectorStart)
+  const K = new Lane(opts.kingHome)
+  const taps: DuelTap[] = []
+  const clock: Clock = { t: 0 }
+
+  const rally = (lead: Lane, answer: Lane, i: number) => {
+    const name = phrase(opts.seed, i)
+    const st = exchangeStats(name)
+    lead.exchange(name, 'lead', st.dur, clock.t, answer.pos)
+    answer.exchange(name, 'answer', st.dur, clock.t, lead.pos)
+    for (const hit of st.contacts) {
+      const src = hit.who === 'lead' ? lead : answer
+      const dst = hit.who === 'lead' ? answer : lead
+      taps.push({
+        t: clock.t + hit.t,
+        zone: hit.zone,
+        at: dst.pos.clone(),
+        from: src.pos.clone(),
+      })
+    }
+    clock.t += st.dur
+  }
+
+  // Face off — king holds guard while the protector steps in.
+  stare([A, P, K], [P.pos, A.pos, A.pos], 0.22, clock)
+  {
+    // King stays on guard while protector and attacker trade (no timeline gaps).
+    const t0 = clock.t
+    rally(P, A, 1)
+    K.pose('guard', clock.t - t0, t0, A.pos, 'jab', 'mid', 1)
+  }
+  // King joins with a short answer exchange while the protector presses.
+  {
+    const name = phrase(opts.seed, 4)
+    const st = exchangeStats(name)
+    P.exchange(name, 'lead', st.dur, clock.t, A.pos)
+    A.exchange(name, 'answer', st.dur, clock.t, P.pos)
+    K.exchange(name, 'answer', st.dur, clock.t, A.pos)
+    for (const hit of st.contacts) {
+      const src = hit.who === 'lead' ? P : A
+      const dst = hit.who === 'lead' ? A : P
+      taps.push({
+        t: clock.t + hit.t,
+        zone: hit.zone,
+        at: dst.pos.clone(),
+        from: src.pos.clone(),
+      })
+    }
+    clock.t += st.dur
+  }
+  {
+    const t0 = clock.t
+    rally(A, P, 7)
+    K.pose('guard', clock.t - t0, t0, A.pos, 'jab', 'mid', 1)
+  }
+
+  const protectorHitAt = clock.t
+  // Finishing blows on the bodyguard — king still holding while they fall.
+  A.pose('skirmish', 0.55, clock.t, P.pos, 'cross', 'high', 1)
+  P.pose('hurt', 0.55, clock.t, A.pos, 'jab', 'mid', 2)
+  K.pose('guard', 0.55, clock.t, A.pos, 'jab', 'mid', 1)
+  clock.t += 0.55
+
+  // After the guardian drops, the king presses the fight alone — then falls.
+  stare([A, K], [K.pos, A.pos], 0.2, clock)
+  rally(K, A, 11)
+  rally(A, K, 14)
+  stare([A, K], [K.pos, A.pos], 0.22, clock)
+  const kingHitAt = clock.t
+
+  assertCovered(A.beats, clock.t, 'prot-atk')
+  assertCovered(P.beats, protectorHitAt + 0.55, 'prot-guard')
+  assertCovered(K.beats, clock.t, 'prot-king')
+  return {
+    attacker: A.beats,
+    protector: P.beats,
+    king: K.beats,
+    protectorHitAt,
+    kingHitAt,
+    taps,
+  }
+}
+
 function selfCheckBouts() {
   const travel = (d: number) => (d < 1e-3 ? 0 : Math.max(0.28, d / (CELL_SIZE * 2.6)))
   const a = new THREE.Vector2(0, 0)
@@ -388,6 +493,17 @@ function selfCheckBouts() {
       sampleBeat(duel.attacker, duel.attackAt * 0.5, out)
       sampleBeat(duel.victim, Math.max(0, duel.attackAt - 0.05), out)
       if (duel.attackAt < 0.4) throw new Error('lethal duel collapsed')
+    }
+    const pd = buildProtectorDuel({
+      attackerStart: a,
+      protectorStart: b,
+      kingHome: new THREE.Vector2(CELL_SIZE * 0.4, -CELL_SIZE * 0.15),
+      seed,
+    })
+    sampleBeat(pd.protector, 0, out)
+    sampleBeat(pd.king, pd.kingHitAt * 0.5, out)
+    if (pd.protectorHitAt < 0.5 || pd.kingHitAt <= pd.protectorHitAt) {
+      throw new Error('protector duel timing collapsed')
     }
   }
 }
