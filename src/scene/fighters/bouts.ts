@@ -225,6 +225,11 @@ export function sampleBeat(beats: BoutBeat[], pt: number, out: THREE.Vector2): B
 }
 
 const UNIT_SCALE = CELL_SIZE * 0.252
+/**
+ * Center-to-center spacing for a physical exchange. Pose clips reach about
+ * 0.55–0.75 local units, so anything wider reads as a swing that never lands.
+ */
+const POCKET = UNIT_SCALE * 0.72
 
 export function buildLethalDuel(opts: {
   start: THREE.Vector2
@@ -272,7 +277,7 @@ export function buildLethalDuel(opts: {
     const d = new THREE.Vector2().subVectors(fromPos, target)
     if (d.lengthSq() < 1e-4) d.copy(aim).multiplyScalar(-1)
     else d.normalize()
-    return target.clone().addScaledVector(d, CELL_SIZE * 0.4)
+    return target.clone().addScaledVector(d, POCKET)
   }
 
   if (opts.ranged) {
@@ -312,8 +317,8 @@ export function buildLethalDuel(opts: {
   if (len > 1e-4) aim.multiplyScalar(1 / len)
   else aim.set(0, 1)
   const perp = new THREE.Vector2(-aim.y, aim.x).multiplyScalar(opts.seed % 2 === 0 ? 1 : -1)
-  const meetV = opts.vHome.clone().addScaledVector(aim, -CELL_SIZE * 0.08)
-  const meetA = opts.vHome.clone().addScaledVector(aim, -CELL_SIZE * 0.4)
+  const meetV = opts.vHome.clone().addScaledVector(aim, -CELL_SIZE * 0.035)
+  const meetA = meetV.clone().addScaledVector(aim, -POCKET)
   const distA = opts.start.distanceTo(meetA)
   const distV = opts.vStart.distanceTo(meetV)
   let opening = distA < 0.08 ? 0 : distA < CELL_SIZE * 0.22 ? 0.24 : opts.travel(distA)
@@ -411,6 +416,22 @@ export function buildProtectorDuel(opts: {
     clock.t += st.dur
   }
 
+  // Board fights start a square apart. Step in until a punch can land.
+  // The character stage already places them inside this range (local units).
+  {
+    const delta = new THREE.Vector2().subVectors(P.pos, A.pos)
+    const dist = delta.length()
+    if (dist > POCKET + 0.15) {
+      const dir = delta.multiplyScalar(1 / dist)
+      const dest = P.pos.clone().addScaledVector(dir, -POCKET)
+      const dur = Math.max(0.24, Math.min(0.62, (dist - POCKET) / (CELL_SIZE * 2.2)))
+      const t0 = clock.t
+      A.travel(dest, dur, t0, 'dash')
+      P.pose('guard', dur, t0, dest, 'jab', 'mid', 1)
+      K.pose('guard', dur, t0, dest, 'jab', 'mid', 1)
+      clock.t = t0 + dur
+    }
+  }
   // Face off — king holds guard while the protector steps in.
   stare([A, P, K], [P.pos, A.pos, A.pos], 0.22, clock)
   {
