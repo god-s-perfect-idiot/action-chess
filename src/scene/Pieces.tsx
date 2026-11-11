@@ -290,7 +290,7 @@ function TeamGlow({ color, focused }: { color: 'w' | 'b'; focused: boolean }) {
 
   return (
     <group ref={group} scale={[inv, inv, inv]} position={[0, yLocal, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={2} raycast={() => {}}>
         <circleGeometry args={[rSoft, 40]} />
         <meshBasicMaterial
           ref={softMat}
@@ -301,7 +301,12 @@ function TeamGlow({ color, focused }: { color: 'w' | 'b'; focused: boolean }) {
           depthTest={false}
         />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} renderOrder={3}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.002, 0]}
+        renderOrder={3}
+        raycast={() => {}}
+      >
         <circleGeometry args={[rCore, 36]} />
         <meshBasicMaterial
           ref={coreMat}
@@ -312,7 +317,12 @@ function TeamGlow({ color, focused }: { color: 'w' | 'b'; focused: boolean }) {
           depthTest={false}
         />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]} renderOrder={4}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.004, 0]}
+        renderOrder={4}
+        raycast={() => {}}
+      >
         <ringGeometry args={[rRimIn, rRimOut, 48]} />
         <meshBasicMaterial
           ref={rimMat}

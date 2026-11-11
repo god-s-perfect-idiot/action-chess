@@ -186,15 +186,47 @@ function CameraFocus({
   return null
 }
 
-/** Keep orbit pan from sliding off the board into empty fog. */
+/**
+ * Keep orbit pan from sliding off the board into empty fog.
+ * Clamp target AND camera by the same delta — clamping target alone corrupts
+ * the spherical offset and fights damping (edge stutter).
+ */
 function PanClamp({ limit }: { limit: number }) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   useFrame(() => {
     if (!controls) return
     const t = controls.target
-    t.x = THREE.MathUtils.clamp(t.x, -limit, limit)
-    t.z = THREE.MathUtils.clamp(t.z, -limit, limit)
+    const cx = THREE.MathUtils.clamp(t.x, -limit, limit)
+    const cz = THREE.MathUtils.clamp(t.z, -limit, limit)
+    const dx = cx - t.x
+    const dz = cz - t.z
+    if (dx === 0 && dz === 0) return
+    t.x = cx
+    t.z = cz
+    controls.object.position.x += dx
+    controls.object.position.z += dz
   })
+  return null
+}
+
+/** Skip R3F raycasts while the user is orbiting/panning/zooming. */
+function OrbitEventGate() {
+  const setEvents = useThree((s) => s.setEvents)
+  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+
+  useEffect(() => {
+    if (!controls) return
+    const onStart = () => setEvents({ enabled: false })
+    const onEnd = () => setEvents({ enabled: true })
+    controls.addEventListener('start', onStart)
+    controls.addEventListener('end', onEnd)
+    return () => {
+      controls.removeEventListener('start', onStart)
+      controls.removeEventListener('end', onEnd)
+      setEvents({ enabled: true })
+    }
+  }, [controls, setEvents])
+
   return null
 }
 
@@ -265,6 +297,7 @@ function SceneContent(props: ChessSceneProps) {
         selectedId={props.selectedId ?? null}
       />
       <PanClamp limit={PAN_BOUNDS} />
+      <OrbitEventGate />
     </>
   )
 }

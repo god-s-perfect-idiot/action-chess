@@ -404,26 +404,24 @@ export function Board({
     if (square) onSquareClick(square)
   }
 
+  // Visual terrain is dense (~100k+ tris). Raycasting it on every pointermove
+  // (including OrbitControls pan/orbit) stutters the camera — pick via a flat plane.
+  const pickDown = (e: { clientX: number; clientY: number; stopPropagation: () => void }) => {
+    pointerDown.current = { x: e.clientX, y: e.clientY }
+  }
+  const pickClick = (e: {
+    clientX: number
+    clientY: number
+    point: THREE.Vector3
+    stopPropagation: () => void
+  }) => {
+    e.stopPropagation()
+    pick(e.clientX, e.clientY, e.point)
+  }
+
   return (
     <group>
-      <mesh
-        geometry={terrain}
-        material={terrainMat}
-        receiveShadow
-        onPointerDown={(e) => {
-          pointerDown.current = { x: e.clientX, y: e.clientY }
-        }}
-        onClick={(e) => {
-          e.stopPropagation()
-          pick(e.clientX, e.clientY, e.point)
-        }}
-        onPointerOver={() => {
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={() => {
-          document.body.style.cursor = 'default'
-        }}
-      />
+      <mesh geometry={terrain} material={terrainMat} receiveShadow raycast={() => {}} />
 
       {/* Valley water — clipped to submerged bed so banks frame the shoreline */}
       <mesh
@@ -431,14 +429,29 @@ export function Board({
         material={waterMat}
         renderOrder={2}
         receiveShadow
-        onPointerDown={(e) => {
-          pointerDown.current = { x: e.clientX, y: e.clientY }
-        }}
-        onClick={(e) => {
-          e.stopPropagation()
-          pick(e.clientX, e.clientY, e.point)
-        }}
+        raycast={() => {}}
       />
+
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.05, 0]}
+        onPointerDown={pickDown}
+        onClick={pickClick}
+        onPointerOver={() => {
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'default'
+        }}
+      >
+        <planeGeometry args={[GROUND_RADIUS * 2, GROUND_RADIUS * 2]} />
+        <meshBasicMaterial
+          transparent
+          opacity={0}
+          depthWrite={false}
+          colorWrite={false}
+        />
+      </mesh>
 
       {/* Forest clutter in cell corners — rocks, stumps, shrubs, small trees */}
       <mesh
