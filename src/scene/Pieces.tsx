@@ -83,6 +83,8 @@ interface Plan {
    * Default 0.5; Minato waits for the marked kunai (~0.62).
    */
   snapAt?: number
+  /** All Might — temporary muscle form for this capture bout. */
+  combatForm?: boolean
 }
 
 interface Ghost {
@@ -211,6 +213,16 @@ function hashBout(...parts: string[]): number {
 const fxColor = (heroId: string | null, color: 'w' | 'b', awakened = false) => {
   const p = getHeroDesign(heroId, color, { awakened }).palette
   return { c1: p.glow ?? p.accent, c2: p.accent === (p.glow ?? p.accent) ? p.hair : p.accent }
+}
+
+/** Gaunt All Might bulks up for captures, then steams back to True Form. */
+function allMightCombatForm(
+  heroId: string | null,
+  color: 'w' | 'b',
+  awakened: boolean,
+): boolean {
+  if (awakened || !heroId) return false
+  return getHeroDesign(heroId, color).extras.includes('allMightTruth')
 }
 
 let fxId = 1
@@ -462,6 +474,10 @@ function BoardFighter({
   const root = useRef<THREE.Group>(null)
   const api = useRef<FighterApi | null>(null)
   const pointerDown = useRef({ x: 0, y: 0 })
+  const canCombatForm = allMightCombatForm(piece.heroId, piece.color, piece.awakened)
+  const combatFormRef = useRef(false)
+  const formSwaps = useRef(0)
+  const [combatForm, setCombatForm] = useState(false)
   const state = useRef({
     yaw: homeYaw(piece.color),
     pos: ghost
@@ -472,13 +488,26 @@ function BoardFighter({
     reported: false,
   })
   const seed = useMemo(() => heroSeed(piece.id), [piece.id])
+  const formAwake = piece.awakened || combatForm
 
   useFrame((_, rawDt) => {
+    const t = now()
+    if (canCombatForm) {
+      const plan = director.plans.get(piece.id)
+      const inPlan = !!(plan?.combatForm && t >= plan.start && t < planEnd(plan))
+      const inGhostFight = !!(ghost && t < ghost.hitAt)
+      const want = inPlan || inGhostFight
+      if (want !== combatFormRef.current) {
+        combatFormRef.current = want
+        formSwaps.current += 1
+        setCombatForm(want)
+      }
+    }
+
     const g = root.current
     const f = api.current
     if (!g || !f) return
     const dt = Math.min(rawDt, 0.1) * TIME_SCALE
-    const t = now()
     const st = state.current
     let anim: AnimInput
     let yaw = homeYaw(piece.color)
@@ -628,12 +657,14 @@ function BoardFighter({
         <TeamGlow color={piece.color} focused={selected} />
       )}
       <HeroFighter
+        key={`${piece.id}-${formAwake ? 'muscle' : 'truth'}`}
         heroId={piece.heroId}
         color={piece.color}
         seed={seed}
         apiRef={api}
         floor={BOARD_FLOOR}
-        awakened={piece.awakened}
+        awakened={formAwake}
+        steamOnMount={canCombatForm && formSwaps.current > 0}
       />
     </group>
   )
@@ -744,11 +775,14 @@ export function Pieces({
       }
       if (existing) t0 = Math.max(t0, planEnd(existing))
       const to = coords(mover.square)
-      const style = moveStyle(old.type, mover.heroId, mover.color, mover.awakened)
-      const moverDesign = getHeroDesign(mover.heroId, mover.color, {
-        awakened: mover.awakened,
-      })
       const victim = captured.find((c) => c.color !== mover.color) ?? null
+      const fightAwake =
+        !!victim && allMightCombatForm(mover.heroId, mover.color, mover.awakened)
+      const formAwake = mover.awakened || fightAwake
+      const style = moveStyle(old.type, mover.heroId, mover.color, formAwake)
+      const moverDesign = getHeroDesign(mover.heroId, mover.color, {
+        awakened: formAwake,
+      })
 
       const turnRate = (moverDesign.moveSpeedMul ?? 1) >= 4 ? 90 : 18
 
@@ -815,7 +849,7 @@ export function Pieces({
           opening.to,
           t0 + opening.t,
           opening.dur,
-          fxColor(mover.heroId, mover.color, mover.awakened),
+          fxColor(mover.heroId, mover.color, formAwake),
         )
         if (kunai) newFx.push(kunai)
       }
@@ -852,6 +886,7 @@ export function Pieces({
         turnRate,
         beats: duel.attacker,
         beatsEnd: attackAt,
+        combatForm: fightAwake,
       }
       director.plans.set(mover.id, plan)
 
@@ -875,7 +910,7 @@ export function Pieces({
       })
 
       // Signature effect. Duel taps are the non-lethal exchanges before it.
-      const { c1, c2 } = fxColor(mover.heroId, mover.color, mover.awakened)
+      const { c1, c2 } = fxColor(mover.heroId, mover.color, formAwake)
       const lifted = (x: number, z: number, y: number) => y + walkY(x, z)
       for (const tap of duel.taps) {
         newFx.push({

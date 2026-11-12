@@ -293,11 +293,20 @@ function Unit({
   const guardRoot = useRef<THREE.Group>(null)
   const clock = useRef({ t: 0 })
   const fired = useRef(-1)
+  const canCombatForm =
+    !awakened && getHeroDesign(id, 'w').extras.includes('allMightTruth')
+  const combatFormRef = useRef(canCombatForm && mode === 'attack')
+  const formSwaps = useRef(0)
+  const [combatForm, setCombatForm] = useState(canCombatForm && mode === 'attack')
   const [fx, setFx] = useState<FxEvent[]>([])
   const protector = protectorForKing(id)
   const guardStage = (mode === 'check' || mode === 'checkmate') && Boolean(protector)
   const sparring = mode === 'attack' || mode === 'cycle' || guardStage
-  const atkDef = attackFor(getHeroDesign(id, 'w', { awakened }))
+  const formAwake = awakened || combatForm
+  // All Might fight timing always uses muscle United Smash, even while True Form idles.
+  const atkDef = attackFor(
+    getHeroDesign(id, 'w', { awakened: awakened || canCombatForm || combatForm }),
+  )
   const foeDesign = getHeroDesign(id, 'b', { awakened })
   const foeDie = deathDuration(foeDesign, atkDef.dmg)
   const duel = useRef(
@@ -316,6 +325,10 @@ function Unit({
     setFx([])
     clock.current.t = 0
     applyMover(mover.current, null)
+    const next = canCombatForm && mode === 'attack'
+    if (next !== combatFormRef.current) formSwaps.current += 1
+    combatFormRef.current = next
+    setCombatForm(next)
     duel.current = protector
       ? buildProtectorDuel({
           attackerStart: new THREE.Vector2(0, THREAT_Z),
@@ -324,7 +337,7 @@ function Unit({
           seed: Math.floor(seed * 9973),
         })
       : null
-  }, [mode, id, damage, awakened, protector, seed])
+  }, [mode, id, damage, awakened, protector, seed, canCombatForm])
 
   const fireFx = (design: HeroDesign, attackLocalT: number, key: number) => {
     if (freeze !== null || fired.current === key) return
@@ -482,6 +495,14 @@ function Unit({
       } else if (c < selfAt) anim = { kind: 'ready', t }
       else anim = { kind: 'death', t: c - selfAt, dmg: selfDmg(k), zone: 'mid' }
       if (c >= atkAt) foeAnim = victimAnim(atk, c - atkAt, foeDie)
+      if (canCombatForm) {
+        const want = c >= atkAt - 0.12 && c < atkAt + atkDur + 0.2
+        if (want !== combatFormRef.current) {
+          combatFormRef.current = want
+          formSwaps.current += 1
+          setCombatForm(want)
+        }
+      }
     }
     applyMover(mover.current, preview)
     a.update(anim, dt, anim.kind === 'move' ? 1 : 0)
@@ -491,11 +512,13 @@ function Unit({
     <group position={[x, 0, z]}>
       <group ref={mover}>
         <HeroFighter
+          key={`${id}-${formAwake ? 'muscle' : 'truth'}`}
           heroId={id}
           color="w"
           seed={seed}
           apiRef={api}
-          awakened={awakened}
+          awakened={formAwake}
+          steamOnMount={canCombatForm && formSwaps.current > 0}
         />
       </group>
       {sparring ? (

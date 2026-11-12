@@ -384,6 +384,58 @@ function FullCowlAura({
   )
 }
 
+/** All Might form swap — billowing white/gold steam that erupts from the body. */
+function MightSteamAura({
+  formRef,
+  color,
+  color2,
+}: {
+  formRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      hot: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.72, depthWrite: false }),
+      soft: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.55, depthWrite: false }),
+      mist: new THREE.MeshBasicMaterial({ color: '#f4f0e8', transparent: true, opacity: 0.48, depthWrite: false }),
+    }),
+    [color, color2],
+  )
+  const puffs = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2
+        return {
+          a,
+          elev: 0.1 + (i % 5) * 0.16,
+          orbit: 0.12 + (i % 4) * 0.05,
+          size: 0.06 + (i % 3) * 0.035,
+          spin: 0.8 + (i % 5) * 0.35,
+          rise: 0.35 + (i % 4) * 0.12,
+        }
+      }),
+    [],
+  )
+  return (
+    <group ref={formRef} visible={false}>
+      <P s={S.torus(0.22, 0.02, Math.PI * 1.9, 20)} m={mats.mist} line={false} shadow={false} p={[0, 0.35, 0]} r={[Math.PI / 2, 0, 0]} />
+      <P s={S.torus(0.16, 0.014, Math.PI * 1.6, 16)} m={mats.soft} line={false} shadow={false} p={[0, 0.62, -0.01]} r={[Math.PI / 2 + 0.12, 0, 0]} />
+      <P s={S.torus(0.11, 0.01, Math.PI * 1.4, 14)} m={mats.hot} line={false} shadow={false} p={[0, 0.9, 0]} r={[Math.PI / 2 + 0.08, 0, 0]} />
+      {puffs.map((p, i) => (
+        <P
+          key={i}
+          s={S.sphere(p.size, 10, 8)}
+          m={i % 3 === 0 ? mats.hot : i % 3 === 1 ? mats.soft : mats.mist}
+          line={false}
+          shadow={false}
+          p={[Math.cos(p.a) * p.orbit, p.elev, Math.sin(p.a) * p.orbit * 0.7]}
+        />
+      ))}
+    </group>
+  )
+}
+
 /** Eighth Gate — crimson flame tongues that swirl and rise around the body. */
 function GatesFlameAura({
   formRef,
@@ -1170,6 +1222,7 @@ export function HeroFighter({
   apiRef,
   floor = 0,
   awakened = false,
+  steamOnMount = false,
   design: designProp,
 }: {
   heroId: string | null
@@ -1180,6 +1233,8 @@ export function HeroFighter({
   floor?: number
   /** Promoted pawn — uses that hero's awakened design. */
   awakened?: boolean
+  /** All Might True ↔ muscle remount — erupt steam on this mount. */
+  steamOnMount?: boolean
   /** Skip hero lookup — used for NPC extras like recovery jonin. */
   design?: HeroDesign
 }) {
@@ -1238,6 +1293,9 @@ export function HeroFighter({
   const hasJackpot = design.extras.includes('hakariJackpot')
   /** Might Guy Eighth Gate — crimson flame aura swirling around the body. */
   const hasEightGates = design.extras.includes('eightGates')
+  /** All Might — steam bursts when True Form ↔ muscle form remounts. */
+  const hasMightSteam =
+    design.extras.includes('allMightTruth') || design.extras.includes('allMightSuit')
   /** Gaara — sand cloud underfoot + orbiting grains. */
   const hasGaaraSand = design.extras.includes('gaaraSuit')
   /** Shukaku — collapses into a sand pile while sliding. */
@@ -1249,7 +1307,24 @@ export function HeroFighter({
 
   const bones = useRef<RigBones>({})
   const pose = useRef(restPose())
-  const drag = useRef({ cape: 0.1, tails: 0.04, hair: 0.05, t: 0, trail: 0, harden: 0, saw: 0, jackpot: 0, yeoui: 1, thunder: 0, mugetsu: 0, gates: 0, hollow: 0, sand: 0, limitless: 0 })
+  const drag = useRef({
+    cape: 0.1,
+    tails: 0.04,
+    hair: 0.05,
+    t: 0,
+    trail: 0,
+    harden: 0,
+    saw: 0,
+    jackpot: 0,
+    yeoui: 1,
+    thunder: 0,
+    mugetsu: 0,
+    gates: 0,
+    steam: hasMightSteam && steamOnMount ? 1 : 0,
+    hollow: 0,
+    sand: 0,
+    limitless: 0,
+  })
   const jets = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
   const limitlessBombs = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
   const tremor = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
@@ -1278,6 +1353,7 @@ export function HeroFighter({
   const mugetsuAura = useRef<THREE.Group | null>(null)
   const jackpotAura = useRef<THREE.Group | null>(null)
   const gatesAura = useRef<THREE.Group | null>(null)
+  const mightSteam = useRef<THREE.Group | null>(null)
   const hardenShells = useRef<Record<string, THREE.Group | null>>({})
   const chainsawShells = useRef<Record<string, THREE.Group | null>>({})
   const hollowMask = useRef<THREE.Group | null>(null)
@@ -1415,6 +1491,8 @@ export function HeroFighter({
             sandGrains.current,
             sandPile.current,
             hollowMask.current,
+            mightSteam.current,
+            gatesAura.current,
             ...Object.values(hardenShells.current),
             ...Object.values(chainsawShells.current),
           ]) {
@@ -2107,6 +2185,45 @@ export function HeroFighter({
           }
         }
 
+        if (hasMightSteam && mightSteam.current) {
+          // Remount burst (True ↔ muscle) — thick steam that lifts and thins out.
+          dr.steam = Math.max(0, dr.steam - dt * 1.65)
+          const g = mightSteam.current
+          const body = b.body
+          if (body) {
+            g.position.copy(body.position)
+            g.rotation.copy(body.rotation)
+          }
+          const on = dr.steam > 0.04
+          g.visible = on
+          if (on) {
+            const u = dr.steam
+            const pulse = 1 + Math.sin(dr.t * 18 + seed) * 0.08
+            g.scale.setScalar((0.9 + u * 0.55) * pulse)
+            g.children.forEach((c, i) => {
+              if (i < 3) {
+                c.visible = true
+                c.rotation.z = dr.t * (1.2 + i * 0.4)
+                c.position.y = [0.35, 0.62, 0.9][i]! + (1 - u) * 0.25 + Math.sin(dr.t * 2.8 + i) * 0.02
+              } else {
+                const pi = i - 3
+                const spin = 0.8 + (pi % 5) * 0.35
+                const baseA = (pi / 16) * Math.PI * 2
+                const a = baseA + dr.t * spin
+                const orbit = (0.12 + (pi % 4) * 0.05) * (0.85 + u * 0.4)
+                const elev =
+                  0.1 +
+                  (pi % 5) * 0.16 +
+                  (1 - u) * (0.35 + (pi % 4) * 0.12) +
+                  ((dr.t * (0.9 + (pi % 3) * 0.2) + pi) % 1) * 0.2 * u
+                c.visible = u > 0.08
+                c.position.set(Math.cos(a) * orbit, elev, Math.sin(a) * orbit * 0.7)
+                c.scale.setScalar(0.7 + u * 0.9 + Math.abs(Math.sin(dr.t * 6 + pi)) * 0.25)
+              }
+            })
+          }
+        }
+
         if (hasTremor) {
           const t = dr.t + seed * 3
           const hardenedMove = hasRiotHarden && anim.kind === 'move' && dr.harden > 0.2
@@ -2212,7 +2329,7 @@ export function HeroFighter({
     return () => {
       apiRef.current = null
     }
-  }, [apiRef, design, pr, seed, hasEngines, hasTremor, hasMag, hasVoltForm, hasZenitsuTrail, hasVectorForm, hasPhaseForm, hasPortalForm, hasYunoGrimoire, hasKunaiForm, hasClapForm, hasRiotHarden, hasChainsawForm, hasHollowMask, hasMobForm, hasFullCowl, hasSsj2, hasSpiritDive, hasZenitsuThunder, hasMugetsu, hasJackpot, hasEightGates, hasGaaraSand, hasShukaku, hasYeoui, hasLimitless])
+  }, [apiRef, design, pr, seed, hasEngines, hasTremor, hasMag, hasVoltForm, hasZenitsuTrail, hasVectorForm, hasPhaseForm, hasPortalForm, hasYunoGrimoire, hasKunaiForm, hasClapForm, hasRiotHarden, hasChainsawForm, hasHollowMask, hasMobForm, hasFullCowl, hasSsj2, hasSpiritDive, hasZenitsuThunder, hasMugetsu, hasJackpot, hasEightGates, hasMightSteam, hasGaaraSand, hasShukaku, hasYeoui, hasLimitless])
 
   const limb = (side: 'l' | 'r') => {
     const s = side === 'l' ? 1 : -1
@@ -2391,6 +2508,15 @@ export function HeroFighter({
           color2={design.palette.accent ?? '#ff2020'}
           formRef={(g) => {
             gatesAura.current = g
+          }}
+        />
+      )}
+      {hasMightSteam && (
+        <MightSteamAura
+          color={design.palette.glow ?? '#ffe060'}
+          color2={design.palette.metal ?? '#e8e4dc'}
+          formRef={(g) => {
+            mightSteam.current = g
           }}
         />
       )}
