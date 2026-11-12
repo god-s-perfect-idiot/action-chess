@@ -242,6 +242,11 @@ export function buildLethalDuel(opts: {
   snapAt?: number
   signatureDur: number
   travel: (dist: number) => number
+  /**
+   * Ranged fighter who closes with a blink: teleport into the pocket, trade
+   * blows, teleport back to the firing square, then the beam plays.
+   */
+  blink?: boolean
 }): LethalDuel {
   const A = new Lane(opts.start)
   const V = new Lane(opts.vStart)
@@ -278,6 +283,52 @@ export function buildLethalDuel(opts: {
     if (d.lengthSq() < 1e-4) d.copy(aim).multiplyScalar(-1)
     else d.normalize()
     return target.clone().addScaledVector(d, POCKET)
+  }
+
+  // Vanish window in teleportPose sits around the middle of the clip.
+  const BLINK = 0.46
+
+  if (opts.blink && opts.ranged) {
+    const aim = new THREE.Vector2().subVectors(opts.vHome, opts.start)
+    const len = aim.length()
+    if (len > 1e-4) aim.multiplyScalar(1 / len)
+    else aim.set(0, 1)
+    const meetV = opts.vHome.clone().addScaledVector(aim, -CELL_SIZE * 0.035)
+    const meetA = meetV.clone().addScaledVector(aim, -POCKET)
+    const needA = A.pos.distanceTo(meetA) > 0.12
+    const needV = V.pos.distanceTo(meetV) > 0.12
+    if (needA || needV) {
+      if (needA) A.travel(meetA, BLINK, clock.t, 'teleport')
+      else A.pose('guard', BLINK, clock.t, meetV, 'jab', 'mid', 1)
+      if (needV) V.travel(meetV, BLINK, clock.t, 'dash')
+      else V.pose('guard', BLINK, clock.t, meetA, 'jab', 'mid', 1)
+      clock.t += BLINK
+    } else {
+      A.pos.copy(meetA)
+      V.pos.copy(meetV)
+    }
+    rally(A, V, opts.seed)
+    // Blink back to the firing square; the victim settles onto the mark the beam will hit.
+    const leaving = A.pos.distanceTo(opts.fireHome) > 0.2
+    const settling = V.pos.distanceTo(opts.vHome) > 0.08
+    if (leaving || settling) {
+      if (leaving) A.travel(opts.fireHome, BLINK, clock.t, 'teleport')
+      else A.pose('guard', BLINK, clock.t, opts.vHome, 'jab', 'mid', 1)
+      if (settling) V.travel(opts.vHome, BLINK, clock.t, 'dash')
+      else V.pose('guard', BLINK, clock.t, opts.fireHome, 'jab', 'mid', 1)
+      clock.t += BLINK
+    }
+    stare([A, V], [opts.vHome, opts.fireHome], 0.16, clock)
+    assertCovered(A.beats, clock.t, 'blink-atk')
+    assertCovered(V.beats, clock.t, 'blink-vic')
+    return {
+      attacker: A.beats,
+      victim: V.beats,
+      attackAt: clock.t,
+      stop: opts.fireHome.clone(),
+      killPos: opts.vHome.clone(),
+      taps,
+    }
   }
 
   if (opts.ranged) {
@@ -505,6 +556,7 @@ function selfCheckBouts() {
         vStart: b,
         vHome: b.clone(),
         ranged,
+        blink: ranged && seed === 1,
         style: seed % 2 ? 'run' : 'fly',
         seed,
         signatureDur: seed > 5 ? 2.8 : 1.1,

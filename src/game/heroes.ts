@@ -167,7 +167,7 @@ export const HEROES: HeroDef[] = [
     piece: 'q',
     color: 'w',
     startSquare: 'd1',
-    blurb: 'Hands in pockets until the gap collapses — then purple eats the file.',
+    blurb: 'Blinks in for a scrap, blinks back, then purple eats the file.',
     gimmick: 'Hollow Purple',
     look: 'White spikes, black blindfold, high-collar jujutsu blacks',
     stats: { pwr: 5, spd: 4, sty: 5 },

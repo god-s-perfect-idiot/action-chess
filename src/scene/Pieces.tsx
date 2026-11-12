@@ -794,12 +794,14 @@ export function Pieces({
         if (vis && vis.distanceTo(vLogical) < CELL_SIZE * 1.25) vStart = vis.clone()
       }
       const isMinato = moverDesign.extras.includes('minatoSuit')
+      const isGojo = moverDesign.extras.includes('gojoSuit')
       const duel = buildLethalDuel({
         start: from,
         fireHome: logical,
         vStart,
         vHome: vLogical,
         ranged: atk.ranged,
+        blink: isGojo,
         style,
         seed: hashBout(mover.id, victim.id, old.square, victim.square),
         snapAt: isMinato ? MINATO_SNAP : undefined,
@@ -830,7 +832,7 @@ export function Pieces({
       const vanishAt = hitAt + deathDuration(vDesign, atk.dmg) + 0.35
       const goneAt = vanishAt + RETRIEVAL_DUR
       const waitUntil = Math.max(attackAt + atk.clip.dur, goneAt + 0.05 - t0)
-      const finishStyle: MoveStyle = style === 'fly' ? 'fly' : atk.ranged ? style : 'walk'
+      const finishStyle: MoveStyle = style === 'fly' ? 'fly' : isGojo ? 'teleport' : atk.ranged ? style : 'walk'
       const finish = travelTime(finishStyle, stop.distanceTo(to), moverDesign)
 
       const plan: Plan = {
