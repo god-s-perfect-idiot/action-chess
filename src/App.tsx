@@ -16,6 +16,7 @@ import {
 } from './game/useChessGame'
 import { ChessScene } from './scene/ChessScene'
 import { CharactersPage } from './ui/CharactersPage'
+import { PickFightersPage } from './ui/PickFightersPage'
 import './App.css'
 
 const PROMOTION_OPTIONS: { type: PromotionPiece; label: string }[] = [
@@ -41,7 +42,8 @@ function StatPips({ label, value }: { label: string; value: number }) {
   )
 }
 
-type Screen = 'menu' | 'characters' | 'battle'
+type Screen = 'menu' | 'characters' | 'pick' | 'battle'
+type MenuStep = 'root' | 'normal'
 
 function battleBanner(
   status: string,
@@ -108,6 +110,7 @@ function forceCount(
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
+  const [menuStep, setMenuStep] = useState<MenuStep>('root')
   const [menuDifficulty, setMenuDifficulty] = useState<Difficulty>('normal')
   const [menuMode, setMenuMode] = useState<GameMode>('versus')
   const game = useChessGame('normal', 'versus')
@@ -157,18 +160,25 @@ export default function App() {
   const allyPct = Math.round((allyForce / 16) * 100)
   const foePct = Math.round((foeForce / 16) * 100)
 
-  const startBattle = () => {
-    game.reset(menuDifficulty, menuMode)
+  const openPickFighters = () => {
+    setScreen('pick')
+  }
+
+  const startBattle = (deck: string[]) => {
+    game.reset(menuDifficulty, menuMode, deck)
     setScreen('battle')
   }
 
   const quitToMenu = () => {
     game.reset(menuDifficulty, menuMode)
+    setMenuStep('root')
     setScreen('menu')
   }
 
   return (
-    <div className={`app ${screen === 'battle' ? 'in-battle' : 'in-menu'}`}>
+    <div
+      className={`app ${screen === 'battle' ? 'in-battle' : 'in-menu'}${screen === 'pick' ? ' in-pick' : ''}`}
+    >
       {screen === 'battle' && (
         <div className="stage">
           <ChessScene
@@ -198,10 +208,23 @@ export default function App() {
       )}
 
       {screen === 'characters' ? (
-        <CharactersPage onBack={() => setScreen('menu')} />
+        <CharactersPage
+          onBack={() => {
+            setMenuStep('root')
+            setScreen('menu')
+          }}
+        />
+      ) : screen === 'pick' ? (
+        <PickFightersPage
+          mode={menuMode}
+          onBack={() => setScreen('menu')}
+          onConfirm={startBattle}
+        />
       ) : screen === 'menu' ? (
         <div className="main-menu">
           <div className="menu-bg" aria-hidden="true">
+            <span className="menu-bg-art" />
+            <span className="menu-bg-veil" />
             <span className="blob blob-a" />
             <span className="blob blob-b" />
             <span className="blob blob-c" />
@@ -212,90 +235,126 @@ export default function App() {
             <span className="spark s3" />
           </div>
 
-          <div className="menu-shell">
+          <div className="menu-shell comic-scroll">
             <header className="menu-brand">
               <p className="eyebrow">
                 <span className="kanji">激闘</span> ANIME FIGHTER
               </p>
               <h1 className="brand-mark">
-                URBAN
-                <span className="brand-mark-accent">IA</span>
+                Heroes will{' '}
+                <span className="brand-mark-accent">die</span>
               </h1>
-              <p className="brand-sub">Pick a mode · Set the rank</p>
+              <p className="brand-sub">
+                {menuStep === 'root'
+                  ? 'Choose your path'
+                  : 'Pick a mode · Set the rank'}
+              </p>
             </header>
 
-            <section className="mode-panel">
-              <div className="panel-head">
-                <span>Mode</span>
-                <span className={`mode-pill mode-${menuMode}`}>
-                  {selectedMode.tag}
-                </span>
-              </div>
-              <div className="mode-grid">
-                {modes.map((key) => {
-                  const cfg = GAME_MODE_CONFIG[key]
-                  const active = menuMode === key
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`mode-card ${active ? 'active' : ''} mode-${key}`}
-                      onClick={() => setMenuMode(key)}
-                    >
-                      <span className="mode-name">{cfg.label}</span>
-                      <span className="mode-blurb">{cfg.blurb}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
+            {menuStep === 'root' ? (
+              <nav className="start-nav" aria-label="Start menu">
+                <button
+                  type="button"
+                  className="start-nav-btn start-nav-primary"
+                  onClick={() => setMenuStep('normal')}
+                >
+                  <span className="enter-kanji">通常</span>
+                  <span className="start-nav-copy">
+                    <span className="enter-label">Normal Battle</span>
+                    <span className="start-nav-blurb">
+                      Vs AI · pick difficulty
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="start-nav-btn start-nav-secondary"
+                  onClick={() => setScreen('characters')}
+                >
+                  <span className="enter-kanji">人物</span>
+                  <span className="start-nav-copy">
+                    <span className="enter-label">Characters</span>
+                    <span className="start-nav-blurb">
+                      Browse the full roster
+                    </span>
+                  </span>
+                </button>
+              </nav>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="menu-back-btn"
+                  onClick={() => setMenuStep('root')}
+                >
+                  ← Back
+                </button>
 
-            <section className="rank-panel">
-              <div className="panel-head">
-                <span>Difficulty</span>
-                <span className={`rank-pill rank-${menuDifficulty}`}>
-                  {selectedCfg.threat}
-                </span>
-              </div>
-              <div className="rank-grid">
-                {difficulties.map((key) => {
-                  const cfg = DIFFICULTY_CONFIG[key]
-                  const active = menuDifficulty === key
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`rank-card ${active ? 'active' : ''}`}
-                      onClick={() => setMenuDifficulty(key)}
-                    >
-                      <span className="rank-letter">{cfg.rank}</span>
-                      <span className="rank-body">
-                        <span className="rank-name">{cfg.label}</span>
-                        <span className="rank-blurb">{cfg.blurb}</span>
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
+                <section className="mode-panel">
+                  <div className="panel-head">
+                    <span>Mode</span>
+                    <span className={`mode-pill mode-${menuMode}`}>
+                      {selectedMode.tag}
+                    </span>
+                  </div>
+                  <div className="mode-grid">
+                    {modes.map((key) => {
+                      const cfg = GAME_MODE_CONFIG[key]
+                      const active = menuMode === key
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`mode-card ${active ? 'active' : ''} mode-${key}`}
+                          onClick={() => setMenuMode(key)}
+                        >
+                          <span className="mode-name">{cfg.label}</span>
+                          <span className="mode-blurb">{cfg.blurb}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
 
-            <button
-              type="button"
-              className="menu-secondary-btn"
-              onClick={() => setScreen('characters')}
-            >
-              <span className="enter-kanji">人物</span>
-              <span className="enter-label">Characters</span>
-            </button>
+                <section className="rank-panel">
+                  <div className="panel-head">
+                    <span>Difficulty</span>
+                    <span className={`rank-pill rank-${menuDifficulty}`}>
+                      {selectedCfg.threat}
+                    </span>
+                  </div>
+                  <div className="rank-grid">
+                    {difficulties.map((key) => {
+                      const cfg = DIFFICULTY_CONFIG[key]
+                      const active = menuDifficulty === key
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`rank-card ${active ? 'active' : ''}`}
+                          onClick={() => setMenuDifficulty(key)}
+                        >
+                          <span className="rank-letter">{cfg.rank}</span>
+                          <span className="rank-body">
+                            <span className="rank-name">{cfg.label}</span>
+                            <span className="rank-blurb">{cfg.blurb}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
 
-            <button
-              type="button"
-              className={`enter-btn ${menuMode === 'autopilot' ? 'enter-auto' : ''}`}
-              onClick={startBattle}
-            >
-              <span className="enter-kanji">{selectedMode.kanji}</span>
-              <span className="enter-label">{selectedMode.cta}</span>
-            </button>
+                <button
+                  type="button"
+                  className={`enter-btn ${menuMode === 'autopilot' ? 'enter-auto' : ''}`}
+                  onClick={openPickFighters}
+                >
+                  <span className="enter-kanji">選抜</span>
+                  <span className="enter-label">PICK FIGHTERS</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       ) : (

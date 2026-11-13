@@ -1,6 +1,6 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { getHeroDesign, HERO_DESIGNS, type HeroDesign } from '../game/heroDesigns'
 import { protectorForKing } from '../game/protectors'
@@ -563,6 +563,141 @@ function OutlineSync() {
   return null
 }
 
+function hash01(s: string): number {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return ((h >>> 0) % 10_000) / 10_000
+}
+
+/** Keep squad clustered; min sep stops body overlap. */
+const LINEUP_MIN_SEP = 0.68
+const LINEUP_SPREAD = 0.48
+
+/**
+ * Seeded irregular pack for the deck stage — stable per hero id, not a grid.
+ */
+function lineupPositions(ids: readonly string[]): { x: number; z: number }[] {
+  const n = ids.length
+  if (n === 0) return []
+  if (n === 1) return [{ x: 0, z: 0 }]
+
+  const radius = Math.sqrt(n) * LINEUP_SPREAD
+  const positions: { x: number; z: number }[] = []
+
+  for (let i = 0; i < n; i++) {
+    const id = ids[i]!
+    let placed: { x: number; z: number } | null = null
+    for (let attempt = 0; attempt < 28; attempt++) {
+      const hx = hash01(`${id}:x:${attempt}`)
+      const hz = hash01(`${id}:z:${attempt}`)
+      const grow = 1 + attempt * 0.07
+      const x = (hx - 0.5) * 2 * radius * grow
+      const z = (hz - 0.5) * 2 * radius * 0.88 * grow
+      const ok = positions.every(
+        (p) => (p.x - x) ** 2 + (p.z - z) ** 2 >= LINEUP_MIN_SEP ** 2,
+      )
+      if (ok) {
+        placed = { x, z }
+        break
+      }
+    }
+    if (!placed) {
+      const a = i * 2.399963229728653
+      const r = Math.sqrt(i + 0.35) * LINEUP_MIN_SEP * 0.72
+      placed = { x: Math.cos(a) * r, z: Math.sin(a) * r * 0.9 }
+    }
+    positions.push(placed)
+  }
+
+  const cx = positions.reduce((s, p) => s + p.x, 0) / n
+  const cz = positions.reduce((s, p) => s + p.z, 0) / n
+  return positions.map((p) => ({ x: p.x - cx, z: p.z - cz }))
+}
+
+function lineupExtent(slots: readonly { x: number; z: number }[]) {
+  let maxR = 0.6
+  for (const p of slots) {
+    maxR = Math.max(maxR, Math.hypot(p.x, p.z))
+  }
+  return maxR
+}
+
+function LineupCamera({ extent }: { extent: number }) {
+  const { camera } = useThree()
+  useEffect(() => {
+    const dist = 3.35 + extent * 1.35
+    camera.position.set(0, 1.35 + extent * 0.35, dist)
+    camera.lookAt(0, 0.52, 0)
+  }, [camera, extent])
+  return null
+}
+
+/** Warm dusk dome + low sun for the pick-fighters stage. */
+function SunsetSky() {
+  const { scene } = useThree()
+  const skyMat = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 2
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')!
+    // Sphere V: 0 = south pole (ground), 1 = zenith — dusk above, warm glow at horizon.
+    const g = ctx.createLinearGradient(0, 0, 0, 256)
+    g.addColorStop(0, '#c46838')
+    g.addColorStop(0.28, '#ffb060')
+    g.addColorStop(0.42, '#f07838')
+    g.addColorStop(0.58, '#c45a3a')
+    g.addColorStop(0.78, '#4a3a68')
+    g.addColorStop(1, '#1a2744')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, 2, 256)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.magFilter = THREE.LinearFilter
+    tex.minFilter = THREE.LinearFilter
+    return new THREE.MeshBasicMaterial({
+      map: tex,
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+    })
+  }, [])
+
+  useEffect(() => {
+    const prev = scene.background
+    scene.background = new THREE.Color('#f07838')
+    return () => {
+      scene.background = prev
+      skyMat.map?.dispose()
+      skyMat.dispose()
+    }
+  }, [scene, skyMat])
+
+  return (
+    <group>
+      <mesh material={skyMat} frustumCulled={false}>
+        <sphereGeometry args={[28, 32, 24]} />
+      </mesh>
+      <mesh position={[-6.5, 3.2, -14]} frustumCulled={false}>
+        <sphereGeometry args={[2.4, 24, 18]} />
+        <meshBasicMaterial color="#fff0c0" toneMapped={false} depthWrite={false} />
+      </mesh>
+      <mesh position={[-6.5, 3.2, -14]} scale={1.55} frustumCulled={false}>
+        <sphereGeometry args={[2.4, 16, 12]} />
+        <meshBasicMaterial
+          color="#ff9a40"
+          transparent
+          opacity={0.28}
+          toneMapped={false}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  )
+}
+
 const COLS = 8
 const GAP = 1.3
 
@@ -574,6 +709,7 @@ export function CharacterStage({
   awakened = false,
   cam,
   className,
+  layout = 'grid',
 }: {
   ids: string[]
   mode: AnimMode
@@ -585,36 +721,81 @@ export function CharacterStage({
   /** Camera position override for single-hero views. */
   cam?: [number, number, number]
   className?: string
+  /** `lineup` packs fighters facing the camera for deck preview. */
+  layout?: 'grid' | 'lineup'
 }) {
   const valid = ids.filter((id) => HERO_DESIGNS[id])
-  const rows = Math.max(1, Math.ceil(valid.length / COLS))
-  const single = valid.length === 1
+  const lineup = layout === 'lineup'
+  const cols = COLS
+  const gap = GAP
+  const rows = Math.max(1, Math.ceil(valid.length / cols))
+  const single = !lineup && valid.length === 1
+  const scatter = useMemo(
+    () => (lineup ? lineupPositions(valid) : []),
+    // ids string keeps order/content stable without depending on `valid` array identity
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lineup, valid.join('|')],
+  )
+  const extent = lineup ? lineupExtent(scatter) : 0
+  const camPos: [number, number, number] = single
+    ? (cam ?? [1.9, 1.1, 1.9])
+    : lineup
+      ? [0, 1.35 + extent * 0.35, 3.35 + extent * 1.35]
+      : [0, 4, 9]
+  const camTarget: [number, number, number] = single
+    ? [0, 0.6, 0.3]
+    : lineup
+      ? [0, 0.52, 0]
+      : [0, 0.5, 0]
 
   return (
     <div className={className} style={{ width: '100%', height: '100%' }}>
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={
-          single
-            ? { position: cam ?? [1.9, 1.1, 1.9], fov: 35 }
-            : { position: [0, 4, 9], fov: 40 }
-        }
+        camera={{ position: camPos, fov: single ? 35 : lineup ? 38 : 40 }}
       >
-        <color attach="background" args={['#cfd8e3']} />
-        <ambientLight intensity={0.95} />
-        <hemisphereLight args={['#dff0ff', '#b8c0a8', 0.85]} />
-        <directionalLight castShadow position={[4, 8, 5]} intensity={2.1} color="#fff4e0" />
+        {lineup ? (
+          <>
+            <SunsetSky />
+            <ambientLight intensity={0.72} color="#ffd2a8" />
+            <hemisphereLight args={['#ffb078', '#5a3828', 0.95]} />
+            <directionalLight
+              castShadow
+              position={[-7, 4.2, 3]}
+              intensity={2.35}
+              color="#ff9a55"
+            />
+            <directionalLight position={[3, 2.5, -4]} intensity={0.45} color="#6a7ab8" />
+          </>
+        ) : (
+          <>
+            <color attach="background" args={['#cfd8e3']} />
+            <ambientLight intensity={0.95} />
+            <hemisphereLight args={['#dff0ff', '#b8c0a8', 0.85]} />
+            <directionalLight castShadow position={[4, 8, 5]} intensity={2.1} color="#fff4e0" />
+          </>
+        )}
         <OutlineSync />
+        {lineup ? <LineupCamera extent={extent} /> : null}
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[40, 40]} />
-          <meshToonMaterial color="#aeb8c4" />
+          <meshToonMaterial color={lineup ? '#8a5a42' : '#aeb8c4'} />
         </mesh>
         {valid.map((id, i) => {
-          const c = i % COLS
-          const r = Math.floor(i / COLS)
-          const x = single ? 0 : (c - (COLS - 1) / 2) * GAP
-          const z = single ? 0 : (r - (rows - 1) / 2) * GAP * 1.2
+          let x = 0
+          let z = 0
+          if (lineup) {
+            const slot = scatter[i] ?? { x: 0, z: 0 }
+            x = slot.x
+            z = slot.z
+          } else if (!single) {
+            const c = i % cols
+            const r = Math.floor(i / cols)
+            const rowLen = Math.min(cols, valid.length - r * cols)
+            x = (c - (rowLen - 1) / 2) * gap
+            z = (r - (rows - 1) / 2) * gap * 1.2
+          }
           return (
             <Unit
               key={`${id}-${awakened ? 'awake' : 'base'}`}
@@ -629,7 +810,11 @@ export function CharacterStage({
             />
           )
         })}
-        <OrbitControls target={[0, single ? 0.6 : 0.5, single ? 0.3 : 0]} />
+        <OrbitControls
+          target={camTarget}
+          enablePan={!lineup}
+          maxPolarAngle={lineup ? Math.PI * 0.48 : Math.PI}
+        />
       </Canvas>
     </div>
   )

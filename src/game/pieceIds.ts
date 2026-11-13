@@ -59,17 +59,32 @@ function shuffleInPlace<T>(arr: T[]): T[] {
 }
 
 /**
- * Deal every hero of a piece class across both teams so you can play as anyone.
- * Chess roles stay fixed; only the character skins are shuffled.
+ * Deal heroes of each piece class across both teams.
+ * Chess roles stay fixed; only the character skins are assigned.
+ *
+ * When `whiteDeck` is provided, those heroes fill Dawn (white) slots first;
+ * Eclipse gets the remaining roster (shuffled within each class).
  */
-export function createTrackedPieces(): TrackedPiece[] {
+export function createTrackedPieces(whiteDeck?: readonly string[]): TrackedPiece[] {
   const pools = new Map<PieceType, string[]>()
   for (const hero of HEROES) {
     const list = pools.get(hero.piece) ?? []
     list.push(hero.id)
     pools.set(hero.piece, list)
   }
-  for (const list of pools.values()) shuffleInPlace(list)
+
+  const deck = whiteDeck?.length ? whiteDeck : null
+  const deckSet = deck ? new Set(deck) : null
+  for (const [type, list] of pools) {
+    if (deckSet) {
+      const chosen = deck.filter((id) => list.includes(id))
+      const rest = list.filter((id) => !deckSet.has(id))
+      shuffleInPlace(rest)
+      pools.set(type, [...chosen, ...rest])
+    } else {
+      shuffleInPlace(list)
+    }
+  }
 
   const next = new Map<PieceType, number>()
   return START.map((piece, index) => {

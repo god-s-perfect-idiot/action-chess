@@ -3,7 +3,6 @@ import { heroRosterArtCandidates } from '../game/heroArt'
 import { HEROES, type HeroDef } from '../game/heroes'
 import { getHeroDesign } from '../game/heroDesigns'
 import {
-  difficultyLabel,
   filterRoster,
   getHeroRosterProfile,
   type RosterClass,
@@ -28,21 +27,6 @@ const CLASS_TABS: { id: RosterClass; label: string }[] = [
   { id: 'q', label: 'Queen' },
   { id: 'k', label: 'King' },
 ]
-
-function StatBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="roster-stat" title={`${label} ${value}/5`}>
-      <span className="roster-stat-label">{label}</span>
-      <span className="roster-stat-track" aria-hidden="true">
-        <span
-          className="roster-stat-fill"
-          style={{ width: `${(value / 5) * 100}%` }}
-        />
-      </span>
-      <span className="roster-stat-val">{value}</span>
-    </div>
-  )
-}
 
 function PortraitTile({
   hero,
@@ -112,7 +96,6 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<AnimMode>('idle')
   const [damage, setDamage] = useState<DamageType | null>(null)
   const [awakened, setAwakened] = useState(false)
-  const [abilityKey, setAbilityKey] = useState<'P' | 'Q' | 'R'>('Q')
 
   const roster = useMemo(
     () => filterRoster(HEROES, { classTab, query }),
@@ -131,7 +114,6 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
 
   function selectHero(h: HeroDef) {
     setSelectedId(h.id)
-    setAbilityKey('Q')
     if (h.piece !== 'p') setAwakened(false)
     if (h.piece !== 'k' && (mode === 'check' || mode === 'checkmate')) {
       setMode('idle')
@@ -158,8 +140,6 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
   const protector = hero ? protectorForKing(hero.id) : null
   const animModes =
     isKing && protector ? [...ANIM_MODES, ...KING_ANIM_MODES] : ANIM_MODES
-  const activeAbility =
-    profile?.abilities.find((a) => a.key === abilityKey) ?? profile?.abilities[1]
 
   return (
     <div className="characters-page">
@@ -184,7 +164,7 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
           </button>
         </header>
 
-        <div className="characters-split">
+        <div className="characters-split comic-scroll">
           <section className="roster-pane" aria-label="Fighter list">
             <label className="roster-search">
               <span className="visually-hidden">Search fighters</span>
@@ -203,7 +183,7 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
             </label>
 
             <div
-              className="roster-filter-bar"
+              className="roster-filter-bar comic-scroll"
               role="tablist"
               aria-label="Piece class"
             >
@@ -226,7 +206,7 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
               <span className="chars-count">{roster.length}</span>
             </div>
 
-            <div className="comic-page" role="list">
+            <div className="comic-page comic-scroll" role="list">
               {roster.map((h) => (
                 <div key={h.id} role="listitem" className="comic-gutter-cell">
                   <PortraitTile
@@ -311,23 +291,12 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
               ) : null}
             </div>
 
-            <div className="roster-dossier">
+            <div className="roster-dossier comic-scroll">
               {hero && profile && design ? (
                 <>
                   <div className="panel-head">
                     <span>
                       {showAwakened ? 'Awakened' : profile.pieceLabel}
-                    </span>
-                    <span className={`roster-diff diff-${profile.difficulty}`}>
-                      {difficultyLabel(profile.difficulty)}
-                      <span className="roster-diff-pips" aria-hidden="true">
-                        {Array.from({ length: 3 }, (_, i) => (
-                          <span
-                            key={i}
-                            className={`roster-diff-pip ${i < profile.difficulty ? 'on' : ''}`}
-                          />
-                        ))}
-                      </span>
                     </span>
                   </div>
 
@@ -347,44 +316,6 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
                       </span>
                     ))}
                   </div>
-
-                  <div className="hero-stats roster-stats">
-                    <StatBar label="PWR" value={hero.stats.pwr} />
-                    <StatBar label="SPD" value={hero.stats.spd} />
-                    <StatBar label="STY" value={hero.stats.sty} />
-                  </div>
-
-                  <section className="roster-abilities">
-                    <div className="roster-section-label">Abilities</div>
-                    <div
-                      className="roster-ability-keys"
-                      role="tablist"
-                      aria-label="Abilities"
-                    >
-                      {profile.abilities.map((a) => (
-                        <button
-                          key={a.key}
-                          type="button"
-                          role="tab"
-                          aria-selected={abilityKey === a.key}
-                          className={`roster-ability-key key-${a.key} ${abilityKey === a.key ? 'active' : ''}`}
-                          onClick={() => setAbilityKey(a.key)}
-                          title={a.name}
-                        >
-                          <span className="roster-ability-badge">{a.key}</span>
-                          <span className="roster-ability-slot">{a.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                    {activeAbility ? (
-                      <div className="roster-ability-body">
-                        <p className="roster-ability-name">{activeAbility.name}</p>
-                        <p className="roster-ability-blurb">
-                          {activeAbility.blurb}
-                        </p>
-                      </div>
-                    ) : null}
-                  </section>
 
                   <section className="roster-lore">
                     <div className="roster-section-label">Lore</div>

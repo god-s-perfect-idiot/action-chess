@@ -1,4 +1,4 @@
-# War Chesst
+# Heroes will die
 
 Cel-shaded 3D chess vs Stockfish.
 

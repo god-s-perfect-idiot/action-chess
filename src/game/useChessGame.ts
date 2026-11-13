@@ -236,7 +236,11 @@ export function useChessGame(
   )
 
   const reset = useCallback(
-    (nextDifficulty?: Difficulty, nextMode?: GameMode) => {
+    (
+      nextDifficulty?: Difficulty,
+      nextMode?: GameMode,
+      whiteDeck?: readonly string[],
+    ) => {
       requestId.current += 1
       chessRef.current.reset()
       boardFreeAtRef.current = 0
@@ -246,7 +250,7 @@ export function useChessGame(
       setLegalTargets([])
       setPendingPromotion(null)
       setHistory([])
-      setPieces(createTrackedPieces())
+      setPieces(createTrackedPieces(whiteDeck))
       if (nextDifficulty) setDifficulty(nextDifficulty)
       if (nextMode) setMode(nextMode)
       setFen(chessRef.current.fen())
