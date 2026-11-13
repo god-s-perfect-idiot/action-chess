@@ -84,7 +84,7 @@ const CHRONOSTASIS: HeroDesign = {
 export const PROTECTORS: ProtectorDef[] = [
   {
     id: 'komamura',
-    forKingId: 'dawn-boss',
+    forKingId: 'yamamoto',
     codename: 'Komamura',
     trueName: 'Sajin Komamura',
     blurb: 'Body-flickers in when Yamamoto is locked — Tenken drawn, standing between the Captain-Commander and the file.',
@@ -93,7 +93,7 @@ export const PROTECTORS: ProtectorDef[] = [
   },
   {
     id: 'chronostasis',
-    forKingId: 'night-void',
+    forKingId: 'overhaul',
     codename: 'Chronostasis',
     trueName: 'Hari Kurono',
     blurb: 'Body-flickers in when Overhaul is locked — plague beak under the hood, blade out, clocking the threat.',

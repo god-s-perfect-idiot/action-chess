@@ -453,7 +453,7 @@ export interface HeroDesign {
 
 export const HERO_DESIGNS: Record<string, HeroDesign> = {
   // ───────────── Block Dawn ─────────────
-  'dawn-cinder': {
+  'escanor': {
     // Night form — frail bartender, small ember attacks.
     body: 'wiry',
     figure: 'm',
@@ -483,7 +483,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     death: 'crumple',
     tempo: 0.85,
   },
-  'dawn-latch': {
+  'one-punch-man': {
     // One Punch Man — bored Caped Baldy. Runs in, throws normal punches.
     body: 'athletic',
     figure: 'm',
@@ -513,7 +513,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 0.92,
     locomotion: 'run',
   },
-  'dawn-stamp': {
+  'mob': {
     // Normal Mob — stiff bowl-cut schoolboy, walk + awkward punch.
     body: 'petite',
     figure: 'm',
@@ -546,7 +546,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.48,
     moveSpeedMul: 0.55,
   },
-  'dawn-needle': {
+  'might-guy': {
     // Might Guy — green jumpsuit, olive flak, orange warmers. Runs in, punch/kick combo.
     body: 'athletic',
     figure: 'm',
@@ -580,7 +580,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.48,
     moveSpeedMul: 1.85,
   },
-  'dawn-chord': {
+  'deku': {
     // Deku — Gamma suit. Leaps in, Full Cowl punches that explode on impact.
     body: 'athletic',
     figure: 'm',
@@ -613,7 +613,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.5,
     moveSpeedMul: 1.4,
   },
-  'dawn-grit': {
+  'all-might': {
     // All Might — thin True Form. Runs in, Texas Smash punch.
     body: 'wiry',
     figure: 'm',
@@ -646,7 +646,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.52,
     moveSpeedMul: 1.35,
   },
-  'dawn-wisp': {
+  'chainsaw-man': {
     // Denji — lanky Public Safety kid. Runs in; attack pulls the cord into Chainsaw Man.
     body: 'lean',
     figure: 'm',
@@ -679,7 +679,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.5,
     moveSpeedMul: 1.25,
   },
-  'dawn-hook': {
+  'hakari': {
     // Hakari — bulky dark-green puffer, khaki baggies. Runs in, punch→kick combo.
     body: 'athletic',
     figure: 'm',
@@ -712,7 +712,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.52,
     moveSpeedMul: 1.35,
   },
-  'dawn-rush': {
+  'ingenium': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.06, bulk: 1.08, shoulders: 1.1 },
@@ -746,7 +746,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     /** Inhuman pace — ~3× default sprint across the file. */
     moveSpeedMul: 3,
   },
-  'dawn-vault': {
+  'lemillion': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.08, bulk: 1.1, shoulders: 1.12 },
@@ -776,7 +776,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 1.1,
     locomotion: 'teleport',
   },
-  'dawn-deadshot': {
+  'deadshot': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.02, shoulders: 1.08, bulk: 1.04 },
@@ -804,7 +804,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     death: 'crumple',
     tempo: 0.85,
   },
-  'dawn-aria': {
+  'gojo': {
     body: 'tall',
     figure: 'm',
     tweak: { height: 1.08, bulk: 0.96, shoulders: 1.02 },
@@ -834,7 +834,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 0.95,
     locomotion: 'run',
   },
-  'dawn-boss': {
+  'yamamoto': {
     body: 'titan',
     figure: 'm',
     tweak: { height: 1.08, bulk: 1.12, shoulders: 1.14, head: 0.96 },
@@ -866,7 +866,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.62,
     moveSpeedMul: 0.38,
   },
-  'dawn-nanami': {
+  'nanami': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.06, bulk: 1.04, shoulders: 1.06 },
@@ -895,7 +895,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     death: 'kneel',
     tempo: 0.7,
   },
-  'dawn-riddle': {
+  'finral': {
     body: 'lean',
     figure: 'm',
     tweak: { height: 1.04, bulk: 0.96, shoulders: 1.02 },
@@ -925,7 +925,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 0.95,
     locomotion: 'teleport',
   },
-  'dawn-volt': {
+  'flash-manhattan': {
     body: 'lean',
     figure: 'm',
     tweak: { height: 1.05, bulk: 0.98, shoulders: 1.06 },
@@ -960,7 +960,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
   },
 
   // ───────────── Night Circuit ─────────────
-  'night-rust': {
+  'kaneki': {
     // Kaneki — black fringe, eyepatch, black combat suit. Fast run + razor slash.
     body: 'lean',
     figure: 'm',
@@ -993,7 +993,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.46,
     moveSpeedMul: 1.85,
   },
-  'night-static': {
+  'arthur-pendragon': {
     // Arthur Boyle — Company 8 bunker coat, plasma Excalibur. Runs in, fire-sword cuts.
     body: 'athletic',
     figure: 'm',
@@ -1026,7 +1026,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.52,
     moveSpeedMul: 1.0,
   },
-  'night-brick': {
+  'jin-mori': {
     // Jin Mori — white tee, jacket at waist, green goggles. Sprints in, punch→kick.
     body: 'athletic',
     figure: 'm',
@@ -1059,7 +1059,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.54,
     moveSpeedMul: 1.15,
   },
-  'night-vein': {
+  'gohan': {
     // Gohan — orange gi, navy sash. Runs in, Special Beam Cannon.
     body: 'athletic',
     figure: 'm',
@@ -1092,7 +1092,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.5,
     moveSpeedMul: 1.4,
   },
-  'night-null': {
+  'yuno': {
     // Yuno — Golden Dawn wind mage. Runs the file; air-blade cuts from the grimoire.
     body: 'lean',
     figure: 'm',
@@ -1125,7 +1125,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.48,
     moveSpeedMul: 1.4,
   },
-  'night-crow': {
+  'zenitsu': {
     // Zenitsu — yellow triangle haori, dark gakuran, sheathed katana draw-cut.
     body: 'lean',
     figure: 'm',
@@ -1158,7 +1158,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.48,
     moveSpeedMul: 1.05,
   },
-  'night-oil': {
+  'ichigo': {
     // Ichigo — orange spikes, black shihakushō, oversized Zangetsu. Runs in, heavy slash.
     body: 'athletic',
     figure: 'm',
@@ -1191,7 +1191,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.52,
     moveSpeedMul: 1.15,
   },
-  'night-fang': {
+  'gaara': {
     // Gaara — red spikes, eye rings, 愛 mark, burgundy coat, sand gourd; floats on a sand cloud.
     body: 'lean',
     figure: 'm',
@@ -1223,7 +1223,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     locomotion: 'fly',
     moveSpeedMul: 1.05,
   },
-  'night-sonic': {
+  'red-riot': {
     // Kirishima — Gaara-height but fit/athletic, not lanky.
     body: 'athletic',
     figure: 'm',
@@ -1255,7 +1255,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 0.95,
     locomotion: 'run',
   },
-  'night-hex': {
+  'todo': {
     body: 'titan',
     figure: 'm',
     tweak: { height: 1.06, bulk: 1.08, shoulders: 1.12 },
@@ -1286,7 +1286,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 0.95,
     locomotion: 'teleport',
   },
-  'night-eclipse': {
+  'hawks': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.02, bulk: 0.96, shoulders: 1.04 },
@@ -1317,7 +1317,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     locomotion: 'leap',
     moveSpeedMul: 1.45,
   },
-  'night-nova': {
+  'gilgamesh': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.05, bulk: 1.04, shoulders: 1.12 },
@@ -1348,7 +1348,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     locomotion: 'fly',
     moveSpeedMul: 1.25,
   },
-  'night-void': {
+  'overhaul': {
     body: 'athletic',
     figure: 'm',
     tweak: { height: 1.02, bulk: 0.98, shoulders: 1.04 },
@@ -1383,7 +1383,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     /** Slow reach → touch → total dismember. */
     attackSpeedMul: 0.85,
   },
-  'night-razor': {
+  'byakuya': {
     body: 'tall',
     figure: 'm',
     tweak: { height: 1.06, bulk: 0.88, shoulders: 0.94 },
@@ -1412,7 +1412,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     death: 'shatter',
     tempo: 0.55,
   },
-  'night-moth': {
+  'minato': {
     body: 'lean',
     figure: 'm',
     tweak: { height: 1.04, bulk: 0.96, shoulders: 1.02 },
@@ -1443,7 +1443,7 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     // Hold on the pad, hurl a marked kunai, snap onto the mark — no leap arc.
     locomotion: 'teleport',
   },
-  'night-plasma': {
+  'accelerator': {
     body: 'wiry',
     figure: 'm',
     tweak: { height: 1.03, bulk: 0.9, shoulders: 0.94 },
@@ -1479,8 +1479,8 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
   },
 }
 
-const FALLBACK_W: HeroDesign = HERO_DESIGNS['dawn-cinder']
-const FALLBACK_B: HeroDesign = HERO_DESIGNS['night-rust']
+const FALLBACK_W: HeroDesign = HERO_DESIGNS['escanor']
+const FALLBACK_B: HeroDesign = HERO_DESIGNS['kaneki']
 
 /**
  * Per-hero awakened overrides for promoted pawns.
@@ -1488,7 +1488,7 @@ const FALLBACK_B: HeroDesign = HERO_DESIGNS['night-rust']
  * Missing entries fall back to `placeholderAwaken(base)`.
  */
 export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
-  'dawn-cinder': {
+  'escanor': {
     // Day form — Pride of the Lion, Divine Axe Rhitta, Cruel Sun.
     body: 'titan',
     figure: 'm',
@@ -1522,7 +1522,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     stride: 0.7,
     moveSpeedMul: 0.85,
   },
-  'dawn-latch': {
+  'one-punch-man': {
     // Serious Mode — same suit, sharper face; teleports in, one explosive punch.
     body: 'athletic',
     figure: 'm',
@@ -1553,7 +1553,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     locomotion: 'teleport',
     moveSpeedMul: 2.4,
   },
-  'dawn-needle': {
+  'might-guy': {
     // Eighth Gate — crimson steam, red hair up, teleport in, burning punch.
     body: 'athletic',
     figure: 'm',
@@ -1587,7 +1587,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     /** Blistering taijutsu — Gates speed reads as a near-instant flurry. */
     attackSpeedMul: 2.2,
   },
-  'dawn-stamp': {
+  'mob': {
     // ???% — spiky hair, white-out eyes, purple/black psychic flicker, explosive beams.
     body: 'lean',
     figure: 'm',
@@ -1621,7 +1621,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 4.2,
     attackSpeedMul: 2.4,
   },
-  'dawn-chord': {
+  'deku': {
     // Full Cowl 100% — battle-torn Gamma suit, cyan OFA aura; leaps in fast with trails, punch→kick detonations.
     body: 'athletic',
     figure: 'm',
@@ -1654,7 +1654,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 2.8,
     attackSpeedMul: 1.25,
   },
-  'dawn-grit': {
+  'all-might': {
     // Muscle form — Symbol of Peace. Leaps in fast, chains explosive punches.
     body: 'titan',
     figure: 'm',
@@ -1687,7 +1687,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 2.4,
     attackSpeedMul: 1.2,
   },
-  'dawn-wisp': {
+  'chainsaw-man': {
     // Hero of Hell — four-armed Chainsaw Devil. Brutal full-body dismemberment.
     body: 'titan',
     figure: 'm',
@@ -1721,7 +1721,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 1.85,
     attackSpeedMul: 1.15,
   },
-  'dawn-hook': {
+  'hakari': {
     // Jackpot — golden-green aura, domain grin; blinks in, detonating punch rush.
     body: 'athletic',
     figure: 'm',
@@ -1754,7 +1754,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 3.2,
     attackSpeedMul: 1.4,
   },
-  'night-rust': {
+  'kaneki': {
     // Centipede — white hair, ghoul mask, black suit, four rinkaku; superfast dismembering.
     body: 'athletic',
     figure: 'm',
@@ -1788,7 +1788,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 3.6,
     attackSpeedMul: 1.35,
   },
-  'night-static': {
+  'arthur-pendragon': {
     // Awakened knight — fat wide blue plasma Excalibur, fire damage on the slam.
     body: 'athletic',
     figure: 'm',
@@ -1822,7 +1822,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 1.1,
     attackSpeedMul: 1.15,
   },
-  'night-vein': {
+  'gohan': {
     // SSJ2 — gold spikes, purple gi, red wraps; teleports in, devastating punch→kick.
     body: 'athletic',
     figure: 'm',
@@ -1855,7 +1855,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 2.6,
     attackSpeedMul: 1.3,
   },
-  'night-brick': {
+  'jin-mori': {
     // Monkey King — circlet, tiger sash, Yeoui, Geindun cloud ride; grows the pillar and crushes.
     body: 'athletic',
     figure: 'm',
@@ -1888,7 +1888,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 2.2,
     attackSpeedMul: 1.15,
   },
-  'night-null': {
+  'yuno': {
     // Spirit Dive — fairy wings, entire suit one green, flight, whirlwind assault.
     body: 'lean',
     figure: 'm',
@@ -1922,7 +1922,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 1.7,
     attackSpeedMul: 1.15,
   },
-  'night-fang': {
+  'gaara': {
     // Shukaku — sand tanuki shell, purple seal veins, spiked tail; slides as a sand pile, entombs foes.
     body: 'titan',
     figure: 'm',
@@ -1956,7 +1956,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     moveSpeedMul: 1.65,
     attackSpeedMul: 1.1,
   },
-  'night-crow': {
+  'zenitsu': {
     // Thunder Breathing awaken — asleep eyes, yellow thunder shell, Flash-pace sprint, lightning katana.
     body: 'lean',
     figure: 'm',
@@ -1991,7 +1991,7 @@ export const AWAKENED_DESIGNS: Partial<Record<string, HeroDesign>> = {
     /** Thunderclap and Flash — one cut, played blisteringly fast. */
     attackSpeedMul: 2.8,
   },
-  'night-oil': {
+  'ichigo': {
     // Final Getsuga Tenshō — long black hair, grey seals, void cloak; fast dash + dark-dimension slash.
     body: 'athletic',
     figure: 'm',

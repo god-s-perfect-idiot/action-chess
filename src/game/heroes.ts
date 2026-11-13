@@ -23,7 +23,7 @@ export interface HeroDef {
 export const HEROES: HeroDef[] = [
   // --- Block Dawn pawns ---
   {
-    id: 'dawn-cinder',
+    id: 'escanor',
     codename: 'Escanor',
     trueName: 'Escanor',
     piece: 'p',
@@ -35,7 +35,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 2, spd: 2, sty: 5 },
   },
   {
-    id: 'dawn-latch',
+    id: 'one-punch-man',
     codename: 'One Punch Man',
     trueName: 'Saitama',
     piece: 'p',
@@ -47,7 +47,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 2 },
   },
   {
-    id: 'dawn-stamp',
+    id: 'mob',
     codename: 'Mob',
     trueName: 'Shigeo Kageyama',
     piece: 'p',
@@ -59,7 +59,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 2, sty: 4 },
   },
   {
-    id: 'dawn-needle',
+    id: 'might-guy',
     codename: 'Might Guy',
     trueName: 'Might Guy',
     piece: 'p',
@@ -71,7 +71,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 5, sty: 4 },
   },
   {
-    id: 'dawn-chord',
+    id: 'deku',
     codename: 'Deku',
     trueName: 'Izuku Midoriya',
     piece: 'p',
@@ -84,7 +84,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 4 },
   },
   {
-    id: 'dawn-grit',
+    id: 'all-might',
     codename: 'All Might',
     trueName: 'Toshinori Yagi',
     piece: 'p',
@@ -97,7 +97,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 5 },
   },
   {
-    id: 'dawn-wisp',
+    id: 'chainsaw-man',
     codename: 'Chainsaw Man',
     trueName: 'Denji',
     piece: 'p',
@@ -110,7 +110,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 3 },
   },
   {
-    id: 'dawn-hook',
+    id: 'hakari',
     codename: 'Hakari',
     trueName: 'Kinji Hakari',
     piece: 'p',
@@ -125,7 +125,7 @@ export const HEROES: HeroDef[] = [
 
   // --- Block Dawn officers ---
   {
-    id: 'dawn-rush',
+    id: 'ingenium',
     codename: 'Ingenium',
     trueName: 'Tenya Iida',
     piece: 'r',
@@ -137,7 +137,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 3, spd: 5, sty: 3 },
   },
   {
-    id: 'dawn-vault',
+    id: 'lemillion',
     codename: 'Lemillion',
     trueName: 'Mirio Togata',
     piece: 'n',
@@ -149,7 +149,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 5, sty: 4 },
   },
   {
-    id: 'dawn-deadshot',
+    id: 'deadshot',
     codename: 'Deadshot',
     trueName: 'Floyd Lawton',
     piece: 'b',
@@ -161,7 +161,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 3, sty: 4 },
   },
   {
-    id: 'dawn-aria',
+    id: 'gojo',
     codename: 'GOJO',
     trueName: 'Satoru Gojo',
     piece: 'q',
@@ -173,7 +173,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 5 },
   },
   {
-    id: 'dawn-boss',
+    id: 'yamamoto',
     codename: 'YAMAMOTO',
     trueName: 'Genryūsai Shigekuni Yamamoto',
     piece: 'k',
@@ -185,7 +185,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 1, sty: 5 },
   },
   {
-    id: 'dawn-nanami',
+    id: 'nanami',
     codename: 'Nanami',
     trueName: 'Kento Nanami',
     piece: 'b',
@@ -197,7 +197,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 3, sty: 4 },
   },
   {
-    id: 'dawn-riddle',
+    id: 'finral',
     codename: 'Finral',
     trueName: 'Finral Roulacase',
     piece: 'n',
@@ -209,7 +209,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 2, spd: 5, sty: 4 },
   },
   {
-    id: 'dawn-volt',
+    id: 'flash-manhattan',
     codename: 'Flash Manhattan',
     trueName: 'Wally West',
     piece: 'r',
@@ -223,7 +223,7 @@ export const HEROES: HeroDef[] = [
 
   // --- Night Circuit pawns ---
   {
-    id: 'night-rust',
+    id: 'kaneki',
     codename: 'Kaneki',
     trueName: 'Ken Kaneki',
     piece: 'p',
@@ -236,7 +236,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 5, sty: 4 },
   },
   {
-    id: 'night-static',
+    id: 'arthur-pendragon',
     codename: 'Arthur Pendragon',
     trueName: 'Arthur Boyle',
     piece: 'p',
@@ -249,7 +249,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 5 },
   },
   {
-    id: 'night-brick',
+    id: 'jin-mori',
     codename: 'Jin Mori',
     trueName: 'Jin Mori',
     piece: 'p',
@@ -262,7 +262,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 5, sty: 5 },
   },
   {
-    id: 'night-vein',
+    id: 'gohan',
     codename: 'Gohan',
     trueName: 'Son Gohan',
     piece: 'p',
@@ -275,7 +275,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 4 },
   },
   {
-    id: 'night-null',
+    id: 'yuno',
     codename: 'Yuno',
     trueName: 'Yuno Grinberryall',
     piece: 'p',
@@ -288,7 +288,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 5, sty: 5 },
   },
   {
-    id: 'night-crow',
+    id: 'zenitsu',
     codename: 'Zenitsu',
     trueName: 'Zenitsu Agatsuma',
     piece: 'p',
@@ -301,7 +301,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 5, sty: 4 },
   },
   {
-    id: 'night-oil',
+    id: 'ichigo',
     codename: 'Ichigo',
     trueName: 'Ichigo Kurosaki',
     piece: 'p',
@@ -314,7 +314,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 5, sty: 5 },
   },
   {
-    id: 'night-fang',
+    id: 'gaara',
     codename: 'Gaara',
     trueName: 'Gaara',
     piece: 'p',
@@ -329,7 +329,7 @@ export const HEROES: HeroDef[] = [
 
   // --- Night Circuit officers ---
   {
-    id: 'night-sonic',
+    id: 'red-riot',
     codename: 'Red Riot',
     trueName: 'Eijiro Kirishima',
     piece: 'r',
@@ -341,7 +341,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 3, sty: 2 },
   },
   {
-    id: 'night-hex',
+    id: 'todo',
     codename: 'Todo',
     trueName: 'Aoi Todo',
     piece: 'n',
@@ -353,7 +353,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 3 },
   },
   {
-    id: 'night-eclipse',
+    id: 'hawks',
     codename: 'Hawks',
     trueName: 'Keigo Takami',
     piece: 'b',
@@ -365,7 +365,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 3, spd: 5, sty: 5 },
   },
   {
-    id: 'night-nova',
+    id: 'gilgamesh',
     codename: 'Gilgamesh',
     trueName: 'Gilgamesh',
     piece: 'q',
@@ -377,7 +377,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 4, sty: 5 },
   },
   {
-    id: 'night-void',
+    id: 'overhaul',
     codename: 'Overhaul',
     trueName: 'Kai Chisaki',
     piece: 'k',
@@ -389,7 +389,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 5, spd: 1, sty: 4 },
   },
   {
-    id: 'night-razor',
+    id: 'byakuya',
     codename: 'Byakuya',
     trueName: 'Byakuya Kuchiki',
     piece: 'b',
@@ -401,7 +401,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 4, sty: 5 },
   },
   {
-    id: 'night-moth',
+    id: 'minato',
     codename: 'Minato',
     trueName: 'Minato Namikaze',
     piece: 'n',
@@ -413,7 +413,7 @@ export const HEROES: HeroDef[] = [
     stats: { pwr: 4, spd: 5, sty: 5 },
   },
   {
-    id: 'night-plasma',
+    id: 'accelerator',
     codename: 'Accelerator',
     trueName: 'Accelerator',
     piece: 'r',
