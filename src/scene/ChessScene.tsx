@@ -20,8 +20,10 @@ import { PALETTE } from './toon'
 interface ChessSceneProps {
   pieces: TrackedPiece[]
   selected: Square | null
-  /** Stable id — pull-in only when the user focuses a new fighter. */
-  selectedId?: string | null
+  /** Stable id — pull-in only when the user double-clicks a fighter. */
+  focusedId?: string | null
+  /** Square of the focused fighter (camera follow target). */
+  focused?: Square | null
   legalTargets: Square[]
   lastMove: { from: Square; to: Square } | null
   checkedKing: Square | null
@@ -29,6 +31,7 @@ interface ChessSceneProps {
   checkerSquare?: Square | null
   defeatedKing?: Square | null
   onSquareClick: (square: Square) => void
+  onPieceDoubleClick: (square: Square) => void
   boardFreeAtRef?: MutableRefObject<number>
 }
 
@@ -37,7 +40,7 @@ const BOARD_SPAN = CELL_SIZE * 8
 const MAX_DISTANCE = BOARD_SPAN * 1.62
 const MIN_DISTANCE = BOARD_SPAN * 0.36
 const OVERVIEW_DISTANCE = BOARD_SPAN * 1.28
-/** Pull-in distance when a fighter is tapped. */
+/** Pull-in distance when a fighter is double-clicked. */
 const FOCUS_DISTANCE = BOARD_SPAN * 0.52
 const PAN_BOUNDS = BOARD_SPAN * 0.72
 /** Matches Cityscape / terrainHeight bowl radius. */
@@ -115,13 +118,14 @@ function SkyDome() {
  * Ease orbit target toward the focused fighter. Does not call controls.update()
  * — drei's OrbitControls already does, and double-updating with damping stutters.
  * User drags pause follow so pan/orbit stay responsive.
+ * Only runs after a double-click focus — single-click selection does not pull the camera.
  */
 function CameraFocus({
-  selected,
-  selectedId,
+  focused,
+  focusedId,
 }: {
-  selected: Square | null
-  selectedId: string | null
+  focused: Square | null
+  focusedId: string | null
 }) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const desired = useRef(new THREE.Vector3(0, 0.4, 0))
@@ -147,12 +151,12 @@ function CameraFocus({
   }, [controls])
 
   useEffect(() => {
-    if (selected) {
-      const [x, z] = squareToCoords(selected)
+    if (focused && focusedId) {
+      const [x, z] = squareToCoords(focused)
       desired.current.set(x, walkY(x, z) + PERSON_HEIGHT * 0.55, z)
       active.current = true
-      // Zoom-in only on a new focus tap — not when the same fighter walks.
-      if (selectedId && prevFocusId.current !== selectedId) {
+      // Zoom-in only on a new focus — not when the same fighter walks.
+      if (prevFocusId.current !== focusedId) {
         pullDist.current = FOCUS_DISTANCE
       }
     } else {
@@ -160,8 +164,8 @@ function CameraFocus({
       pullDist.current = null
       active.current = false
     }
-    prevFocusId.current = selectedId
-  }, [selected, selectedId])
+    prevFocusId.current = focusedId
+  }, [focused, focusedId])
 
   useFrame((_, dt) => {
     if (!controls || !active.current || dragging.current) return
@@ -273,6 +277,7 @@ function SceneContent(props: ChessSceneProps) {
           checkerSquare={props.checkerSquare ?? null}
           defeatedKing={props.defeatedKing}
           onPieceClick={props.onSquareClick}
+          onPieceDoubleClick={props.onPieceDoubleClick}
           boardFreeAtRef={props.boardFreeAtRef}
         />
       </group>
@@ -293,8 +298,8 @@ function SceneContent(props: ChessSceneProps) {
         target={[0, 0.4, 0]}
       />
       <CameraFocus
-        selected={props.selected}
-        selectedId={props.selectedId ?? null}
+        focused={props.focused ?? null}
+        focusedId={props.focusedId ?? null}
       />
       <PanClamp limit={PAN_BOUNDS} />
       <OrbitEventGate />

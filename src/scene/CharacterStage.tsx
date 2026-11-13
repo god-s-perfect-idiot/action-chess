@@ -13,11 +13,14 @@ import {
   type HitZone,
   type MoveStyle,
 } from './fighters/anims'
+import { bodyFlickerTravelScale } from './fighters/BodyRetrieval'
 import { buildProtectorDuel, sampleBeat } from './fighters/bouts'
 import { now } from './fighters/clock'
 import { FxLayer, type FxEvent } from './fighters/Fx'
 import { HeroFighter, type FighterApi } from './fighters/HeroFighter'
 import { outlineUniforms } from './fighters/materials'
+
+const _runFlicker = new THREE.Vector3()
 
 export type AnimMode = 'cycle' | 'idle' | 'run' | 'attack' | 'death' | 'check' | 'checkmate'
 
@@ -117,15 +120,31 @@ function runPreview(d: HeroDesign, t: number): RunPreview {
   return { anim, x: 0, y, z, yaw }
 }
 
-function applyMover(g: THREE.Group | null, preview: RunPreview | null) {
+function applyMover(g: THREE.Group | null, preview: RunPreview | null, design?: HeroDesign) {
   if (!g) return
   if (!preview) {
     g.position.set(0, 0, 0)
     g.rotation.y = 0
+    g.scale.set(1, 1, 1)
+    g.visible = true
     return
   }
   g.position.set(preview.x, preview.y, preview.z)
   g.rotation.y = preview.yaw
+  // Rock Lee — jonin-style body-flicker stretch on the Characters run preview.
+  if (
+    design &&
+    preview.anim.kind === 'move' &&
+    preview.anim.style === 'teleport' &&
+    design.extras.includes('rockLeeSuit')
+  ) {
+    bodyFlickerTravelScale(preview.anim.p, _runFlicker)
+    g.scale.copy(_runFlicker)
+    g.visible = _runFlicker.x >= 0.02
+  } else {
+    g.scale.set(1, 1, 1)
+    g.visible = true
+  }
 }
 
 function fxColors(d: HeroDesign) {
@@ -184,7 +203,7 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
         ? atk.fx === 'murasaki' || atk.fx === 'percentBlast'
           ? 0.75
           : 0.55
-        : atk.fx === 'voltBarrage'
+        : atk.fx === 'voltBarrage' || atk.fx === 'punchBarrage'
           ? 0.95
           : atk.fx === 'rasengan'
             ? 0.75
@@ -441,7 +460,7 @@ function Unit({
     if (freeze !== null && mode !== 'cycle') {
       if (mode === 'run') {
         const preview = runPreview(a.design, freeze * runOneWay(a.design) * 2)
-        applyMover(mover.current, preview)
+        applyMover(mover.current, preview, a.design)
         a.update(preview.anim, 0.1, 0.6)
         return
       }
@@ -504,7 +523,7 @@ function Unit({
         }
       }
     }
-    applyMover(mover.current, preview)
+    applyMover(mover.current, preview, a.design)
     a.update(anim, dt, anim.kind === 'move' ? 1 : 0)
     v?.update(foeAnim, dt, 0)
   })

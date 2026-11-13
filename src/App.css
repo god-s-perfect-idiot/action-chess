@@ -1355,13 +1355,24 @@
 
 .roster-filter-bar {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.28rem;
-  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.characters-shell > .roster-filter-bar {
+  padding: 0.4rem 0.5rem;
+  background: rgba(14, 18, 28, 0.88);
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.characters-shell > .roster-filter-bar .roster-class-tab {
+  flex: 1 1 4.5rem;
 }
 
 .roster-class-tab {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   min-width: 3.6rem;
   min-height: 2.2rem;
   padding: 0.4rem 0.55rem;
@@ -1808,9 +1819,19 @@
 
 .pick-confirm {
   margin: 0;
+  width: auto;
   padding: 0.55rem 1rem;
   min-height: 2.8rem;
+  gap: 0.45rem;
   animation: none;
+}
+
+.pick-confirm .enter-kanji {
+  font-size: 1.05rem;
+}
+
+.pick-confirm .enter-label {
+  font-size: 0.95rem;
 }
 
 .pick-confirm:disabled {
@@ -1846,6 +1867,85 @@
   border: 3px solid #000;
   box-shadow: 5px 5px 0 #000;
   color: var(--cream);
+}
+
+.pick-team-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.pick-team-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.4rem 0.5rem;
+  border: 2px solid rgba(255, 244, 228, 0.2);
+  background: rgba(255, 248, 238, 0.05);
+  color: rgba(255, 244, 228, 0.75);
+  cursor: pointer;
+  text-align: left;
+}
+
+.pick-team-tab:hover {
+  border-color: rgba(255, 244, 228, 0.45);
+  color: #fff;
+}
+
+.pick-team-tab.active {
+  border-color: #000;
+  color: #fff;
+}
+
+.pick-team-tab.team-w.active {
+  background: rgba(255, 214, 110, 0.22);
+}
+
+.pick-team-tab.team-b.active {
+  background: rgba(70, 120, 160, 0.3);
+}
+
+.pick-team-tab.ready:not(.active) {
+  border-color: rgba(255, 210, 74, 0.55);
+  color: var(--gold);
+}
+
+.pick-team-name {
+  font-family: 'Dela Gothic One', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.pick-team-count {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+.pick-team-head {
+  padding-top: 0.1rem;
+}
+
+.comic-panel.pick-other-team {
+  opacity: 0.5;
+}
+
+.pick-other-badge {
+  position: absolute;
+  left: 0.2rem;
+  top: 0.2rem;
+  z-index: 2;
+  padding: 0.12rem 0.28rem;
+  border: 2px solid #000;
+  background: rgba(28, 36, 48, 0.92);
+  color: #e8f0f8;
+  font-family: 'Dela Gothic One', sans-serif;
+  font-size: 0.52rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 1px 1px 0 #000;
 }
 
 .pick-stage-pane {

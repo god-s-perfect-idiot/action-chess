@@ -32,6 +32,7 @@ import {
 import { now, TIME_SCALE } from './fighters/clock'
 import {
   BodyRetrieval,
+  bodyFlickerTravelScale,
   flickerScale,
   RETRIEVAL_DUR,
   RETRIEVAL_OUT_AT,
@@ -257,6 +258,53 @@ function minatoKunaiTravelFx(
   }
 }
 
+/** Leaf shunshin travel — Rock Lee / Kakashi (same streaks as the jonin squad). */
+function usesBodyFlickerTravel(design: ReturnType<typeof getHeroDesign>): boolean {
+  return design.extras.includes('rockLeeSuit') || design.extras.includes('kakashiSuit')
+}
+
+/** Body-flicker vanish / rematerialize streaks — same FX kind + timing as the jonin squad. */
+function bodyFlickerTravelFx(
+  from: THREE.Vector2,
+  to: THREE.Vector2,
+  start: number,
+  dur: number,
+  colors: { c1: string; c2: string },
+): FxEvent[] {
+  if (dur < 0.06) return []
+  const snap = 0.5
+  const vanishDur = Math.min(FLICKER_OUT, dur * snap * 0.95)
+  const appearDur = Math.min(FLICKER_IN, dur * (1 - snap) * 0.95)
+  const feetFrom = new THREE.Vector3(from.x, walkY(from.x, from.y), from.y)
+  const feetTo = new THREE.Vector3(to.x, walkY(to.x, to.y), to.y)
+  return [
+    {
+      id: fxId++,
+      kind: 'bodyFlicker',
+      start,
+      travel: 0,
+      dur: vanishDur,
+      from: feetFrom,
+      to: feetFrom,
+      color: '#1a2848',
+      color2: colors.c1,
+      size: PERSON_HEIGHT,
+    },
+    {
+      id: fxId++,
+      kind: 'bodyFlicker',
+      start: start + dur * snap,
+      travel: 0,
+      dur: appearDur,
+      from: feetTo,
+      to: feetTo,
+      color: '#1a2848',
+      color2: colors.c1,
+      size: PERSON_HEIGHT,
+    },
+  ]
+}
+
 /** White / black team readout while a fighter is selected. */
 const TEAM_GLOW = {
   w: { rim: '#ffffff', core: '#f2f6ff', soft: '#c8d6ee' },
@@ -457,6 +505,7 @@ function BoardFighter({
   ghost,
   director,
   onPieceClick,
+  onPieceDoubleClick,
   onCorpse,
 }: {
   piece: TrackedPiece
@@ -468,6 +517,7 @@ function BoardFighter({
   ghost: Ghost | null
   director: Director
   onPieceClick: (square: Square) => void
+  onPieceDoubleClick: (square: Square) => void
   /** Ghosts report where the ragdoll came to rest just before vanishing. */
   onCorpse?: (ghost: Ghost, at: THREE.Vector3, bled: boolean) => void
 }) {
@@ -515,6 +565,8 @@ function BoardFighter({
     let speed = 0
     let yawRate = 10
     let scale = UNIT_SCALE
+    _flicker.set(1, 1, 1)
+    let flickerActive = false
 
     const setKind = (kind: AnimInput['kind']) => {
       if (st.lastKind !== kind) {
@@ -534,6 +586,16 @@ function BoardFighter({
         y = played.y
         speed = played.speed
         yawRate = played.yawRate
+        if (
+          carry.style === 'teleport' &&
+          anim.kind === 'move' &&
+          usesBodyFlickerTravel(
+            getHeroDesign(piece.heroId, piece.color, { awakened: formAwake }),
+          )
+        ) {
+          bodyFlickerTravelScale(anim.p, _flicker, carry.snapAt ?? 0.5)
+          flickerActive = true
+        }
       } else if (ghost.beats.length && t < ghost.duelUntil) {
         const played = adoptBeat(ghost.beats, t - ghost.duelStart, st, setKind)
         anim = played.anim
@@ -562,8 +624,7 @@ function BoardFighter({
       if (t >= ghost.vanishAt + RETRIEVAL_OUT_AT) {
         const p = Math.min(1, (t - ghost.vanishAt - RETRIEVAL_OUT_AT) / (RETRIEVAL_DUR - RETRIEVAL_OUT_AT))
         flickerScale(p, false, _flicker)
-      } else {
-        _flicker.set(1, 1, 1)
+        flickerActive = true
       }
     } else if (defeatedAt !== null && t >= defeatedAt) {
       const home = coords(piece.square)
@@ -584,6 +645,16 @@ function BoardFighter({
         y = played.y
         speed = played.speed
         yawRate = played.yawRate
+        if (
+          anim.kind === 'move' &&
+          anim.style === 'teleport' &&
+          usesBodyFlickerTravel(
+            getHeroDesign(piece.heroId, piece.color, { awakened: formAwake }),
+          )
+        ) {
+          bodyFlickerTravelScale(anim.p, _flicker, plan.snapAt ?? 0.5)
+          flickerActive = true
+        }
       } else {
         if (plan) director.plans.delete(piece.id)
         const home = coords(piece.square)
@@ -605,9 +676,9 @@ function BoardFighter({
     const ground = walkY(st.pos.x, st.pos.y)
     g.rotation.set(0, st.yaw, 0)
     g.position.set(st.pos.x, y + ground, st.pos.y)
-    if (ghost && t >= ghost.vanishAt + RETRIEVAL_OUT_AT) {
+    if (flickerActive) {
       g.scale.set(scale * _flicker.x, scale * _flicker.y, scale * _flicker.z)
-      if (_flicker.x < 0.02) g.visible = false
+      g.visible = _flicker.x >= 0.02
     } else {
       g.visible = true
       g.scale.setScalar(scale)
@@ -635,10 +706,16 @@ function BoardFighter({
       }}
       onClick={(e) => {
         if (ghost) return
-        // Orbit drag often starts on a fighter; don't treat that as a focus tap.
+        // Orbit drag often starts on a fighter; don't treat that as a select tap.
         if (isPointerDrag(pointerDown.current, e)) return
         e.stopPropagation()
         onPieceClick(piece.square)
+      }}
+      onDoubleClick={(e) => {
+        if (ghost) return
+        if (isPointerDrag(pointerDown.current, e)) return
+        e.stopPropagation()
+        onPieceDoubleClick(piece.square)
       }}
       onPointerOver={(e) => {
         if (ghost) return
@@ -679,6 +756,7 @@ interface PiecesProps {
   checkerSquare?: Square | null
   defeatedKing?: Square | null
   onPieceClick: (square: Square) => void
+  onPieceDoubleClick: (square: Square) => void
   /** Written each plan update so the game loop can wait out choreography. */
   boardFreeAtRef?: MutableRefObject<number>
 }
@@ -690,6 +768,7 @@ export function Pieces({
   checkerSquare = null,
   defeatedKing = null,
   onPieceClick,
+  onPieceDoubleClick,
   boardFreeAtRef,
 }: PiecesProps) {
   const director = useRef<Director>({
@@ -789,6 +868,7 @@ export function Pieces({
       if (!victim) {
         const approach = travelTime(style, from.distanceTo(to), moverDesign)
         const isMinato = moverDesign.extras.includes('minatoSuit')
+        const isBodyFlicker = usesBodyFlickerTravel(moverDesign)
         const plan: Plan = {
           start: t0,
           from,
@@ -810,6 +890,17 @@ export function Pieces({
           const kunai = minatoKunaiTravelFx(from, to, t0, approach, fxColor(mover.heroId, mover.color, mover.awakened))
           if (kunai) newFx.push(kunai)
         }
+        if (isBodyFlicker && style === 'teleport') {
+          newFx.push(
+            ...bodyFlickerTravelFx(
+              from,
+              to,
+              t0,
+              approach,
+              fxColor(mover.heroId, mover.color, mover.awakened),
+            ),
+          )
+        }
         t0 = planEnd(plan)
         continue
       }
@@ -829,6 +920,7 @@ export function Pieces({
       }
       const isMinato = moverDesign.extras.includes('minatoSuit')
       const isGojo = moverDesign.extras.includes('gojoSuit')
+      const isBodyFlicker = usesBodyFlickerTravel(moverDesign)
       const duel = buildLethalDuel({
         start: from,
         fireHome: logical,
@@ -852,6 +944,22 @@ export function Pieces({
           fxColor(mover.heroId, mover.color, formAwake),
         )
         if (kunai) newFx.push(kunai)
+      }
+      if (
+        isBodyFlicker &&
+        opening?.kind === 'travel' &&
+        opening.style === 'teleport' &&
+        opening.dur > 0.06
+      ) {
+        newFx.push(
+          ...bodyFlickerTravelFx(
+            opening.from,
+            opening.to,
+            t0 + opening.t,
+            opening.dur,
+            fxColor(mover.heroId, mover.color, formAwake),
+          ),
+        )
       }
       const attackAt = duel.attackAt
       const stop = duel.stop
@@ -951,14 +1059,23 @@ export function Pieces({
       const inferno = atk.fx === 'inferno'
       const megaShock = atk.fx === 'megaShockwave'
       const airShock = atk.fx === 'airShockwave'
-      const fxFrom = rasengan
-        ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 1.85), vPos.y)
-        : src
-      const fxTo = rasengan
-        ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.85), vPos.y)
-        : inferno
-          ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.35), vPos.y)
-          : dst
+      const nullify = atk.fx === 'nullify'
+      // Dazai — enemy ability flies from victim toward him, then matrix-greens on touch.
+      const victimFx = nullify
+        ? fxColor(victim.heroId, victim.color, victim.awakened)
+        : null
+      const fxFrom = nullify
+        ? dst.clone()
+        : rasengan
+          ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 1.85), vPos.y)
+          : src
+      const fxTo = nullify
+        ? src.clone()
+        : rasengan
+          ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.85), vPos.y)
+          : inferno
+            ? new THREE.Vector3(vPos.x, lifted(vPos.x, vPos.y, up * 0.35), vPos.y)
+            : dst
       const sakura = atk.fx === 'sakura'
       newFx.push({
         id: fxId++,
@@ -966,13 +1083,13 @@ export function Pieces({
         start:
           t0 +
           attackAt +
-          (atk.ranged || babylon || portal
+          (atk.ranged || babylon || portal || nullify
             ? atk.release
             : rasengan
               ? atk.fxAt - 0.16
               : atk.fxAt),
         travel:
-          atk.ranged || babylon
+          atk.ranged || babylon || nullify
             ? Math.max(0, atk.hit - atk.release)
             : portal
               ? Math.max(0, atk.fxAt - atk.release)
@@ -984,23 +1101,41 @@ export function Pieces({
             ? atk.fx === 'murasaki' || atk.fx === 'percentBlast'
               ? 0.75
               : 0.55
-            : atk.fx === 'voltBarrage'
+            : atk.fx === 'voltBarrage' || atk.fx === 'punchBarrage'
               ? 0.95
               : atk.fx === 'rasengan'
                 ? 0.75
-                : inferno || megaShock
-                  ? 1.35
-                  : portal
-                    ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
-                    : sakura || babylon
-                      ? 0.95
-                      : airShock
-                        ? 0.75
-                        : 0.6,
+                : nullify
+                  ? 0.9
+                  : inferno || megaShock
+                    ? 1.35
+                    : portal
+                      ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
+                      : sakura || babylon
+                        ? 0.95
+                        : airShock
+                          ? 0.75
+                          : 0.6,
         from: fxFrom,
         to: fxTo,
-        color: sakura ? '#ff8ec8' : babylon ? '#f0d050' : inferno ? '#ff6a18' : c1,
-        color2: sakura ? '#ff4aa0' : babylon ? '#ffe060' : inferno ? '#ffd24a' : c2,
+        color: nullify
+          ? '#00ff41'
+          : sakura
+            ? '#ff8ec8'
+            : babylon
+              ? '#f0d050'
+              : inferno
+                ? '#ff6a18'
+                : c1,
+        color2: nullify
+          ? (victimFx?.c1 ?? '#39ff14')
+          : sakura
+            ? '#ff4aa0'
+            : babylon
+              ? '#ffe060'
+              : inferno
+                ? '#ffd24a'
+                : c2,
         size:
           UNIT_SCALE *
           (moverDesign.attack === 'emberFlick'
@@ -1009,33 +1144,37 @@ export function Pieces({
               ? 1.85
               : rasengan
                 ? 0.62
-                : inferno
-                  ? 1.35
-                  : megaShock
-                    ? 1.25
-                    : sakura || babylon
-                      ? 0.68
-                      : airShock
-                        ? 0.7
-                        : 0.55),
+                : nullify
+                  ? 0.62
+                  : inferno
+                    ? 1.35
+                    : megaShock
+                      ? 1.25
+                      : sakura || babylon
+                        ? 0.68
+                        : airShock
+                          ? 0.7
+                          : 0.55),
       })
 
       // Small impact for every punch/kick of the combo the signature fx doesn't cover.
+      // Fire signatures keep burning on every contact (Todoroki flame rush, etc.).
       if (!atk.ranged) {
+        const multiFire = atk.fx === 'fire'
         for (const h of atk.hits) {
           if (Math.abs(h.t - atk.fxAt) < 0.06) continue
           const at = vPos.clone().addScaledVector(dir, -UNIT_SCALE * 0.12)
           newFx.push({
             id: fxId++,
-            kind: 'hit',
+            kind: multiFire ? 'fire' : 'hit',
             start: t0 + attackAt + h.t,
             travel: 0,
-            dur: 0.4,
+            dur: multiFire ? 0.55 : 0.4,
             from: src,
             to: new THREE.Vector3(at.x, lifted(at.x, at.y, ZONE_Y[h.zone] * UNIT_SCALE), at.y),
-            color: '#fff1c4',
-            color2: c1,
-            size: UNIT_SCALE * 0.4,
+            color: multiFire ? '#ff6a18' : '#fff1c4',
+            color2: multiFire ? '#ffd24a' : c1,
+            size: UNIT_SCALE * (multiFire ? 0.5 : 0.4),
           })
         }
       }
@@ -1350,6 +1489,7 @@ export function Pieces({
           ghost={null}
           director={director}
           onPieceClick={onPieceClick}
+          onPieceDoubleClick={onPieceDoubleClick}
         />
       ))}
       {ghosts.map((g) => (
@@ -1362,6 +1502,7 @@ export function Pieces({
           ghost={g}
           director={director}
           onPieceClick={onPieceClick}
+          onPieceDoubleClick={onPieceDoubleClick}
           onCorpse={onCorpse}
         />
       ))}

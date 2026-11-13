@@ -164,8 +164,8 @@ export default function App() {
     setScreen('pick')
   }
 
-  const startBattle = (deck: string[]) => {
-    game.reset(menuDifficulty, menuMode, deck)
+  const startBattle = (whiteDeck: string[], blackDeck?: string[]) => {
+    game.reset(menuDifficulty, menuMode, whiteDeck, blackDeck)
     setScreen('battle')
   }
 
@@ -184,13 +184,15 @@ export default function App() {
           <ChessScene
             pieces={game.pieces}
             selected={game.selected}
-            selectedId={game.selectedId}
+            focused={game.focused}
+            focusedId={game.focusedId}
             legalTargets={game.legalTargets}
             lastMove={game.lastMove}
             checkedKing={checkedKing}
             checkerSquare={primaryChecker}
             defeatedKing={game.status === 'checkmate' ? checkedKing : null}
             onSquareClick={game.selectSquare}
+            onPieceDoubleClick={game.focusSquare}
             boardFreeAtRef={game.boardFreeAtRef}
           />
         </div>
@@ -241,8 +243,8 @@ export default function App() {
                 <span className="kanji">激闘</span> ANIME FIGHTER
               </p>
               <h1 className="brand-mark">
-                Heroes will{' '}
-                <span className="brand-mark-accent">die</span>
+                Heroes May{' '}
+                <span className="brand-mark-accent">Die</span>
               </h1>
               <p className="brand-sub">
                 {menuStep === 'root'
@@ -448,8 +450,8 @@ export default function App() {
               ) : (
                 <p className="lock-empty">
                   {auto
-                    ? 'Tap a fighter to inspect — autopilot handles moves.'
-                    : 'Tap a fighter to inspect — yours to move.'}
+                    ? 'Tap for lines · double-tap to focus — autopilot handles moves.'
+                    : 'Tap for lines · double-tap to focus — yours to move.'}
                 </p>
               )}
             </div>

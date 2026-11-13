@@ -101,6 +101,24 @@ export function flickerScale(p: number, appear: boolean, out = new THREE.Vector3
   return out.set(sxz, sy, sxz)
 }
 
+/**
+ * Board body-flicker travel — same stretch as the jonin squad / king protectors.
+ * First half collapses on the departure pad; second half rematerializes on arrival.
+ */
+export function bodyFlickerTravelScale(
+  p: number,
+  out = new THREE.Vector3(),
+  snap = 0.5,
+): THREE.Vector3 {
+  const u = Math.min(1, Math.max(0, p))
+  if (u < snap) {
+    const local = snap > 1e-6 ? u / snap : 1
+    return flickerScale(local, false, out)
+  }
+  const local = snap < 1 - 1e-6 ? (u - snap) / (1 - snap) : 1
+  return flickerScale(local, true, out)
+}
+
 export interface RetrievalEvent {
   id: number
   /** World position of the resting corpse. */

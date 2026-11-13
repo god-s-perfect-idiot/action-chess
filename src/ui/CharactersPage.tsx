@@ -164,6 +164,25 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
           </button>
         </header>
 
+        <div
+          className="roster-filter-bar"
+          role="tablist"
+          aria-label="Piece class"
+        >
+          {CLASS_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={classTab === tab.id}
+              className={`roster-class-tab ${classTab === tab.id ? 'active' : ''}`}
+              onClick={() => selectClassTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="characters-split comic-scroll">
           <section className="roster-pane" aria-label="Fighter list">
             <label className="roster-search">
@@ -181,25 +200,6 @@ export function CharactersPage({ onBack }: { onBack: () => void }) {
                 }}
               />
             </label>
-
-            <div
-              className="roster-filter-bar comic-scroll"
-              role="tablist"
-              aria-label="Piece class"
-            >
-              {CLASS_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={classTab === tab.id}
-                  className={`roster-class-tab ${classTab === tab.id ? 'active' : ''}`}
-                  onClick={() => selectClassTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
 
             <div className="roster-pane-head">
               <span>Fighters</span>

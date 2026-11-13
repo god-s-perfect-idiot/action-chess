@@ -895,6 +895,89 @@ function PortalSnap({ e }: { e: FxEvent }) {
   )
 }
 
+/** Kenpachi — one full-size vertical air-slash crescent (blade → target). */
+function ArchSlash({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const hot = useMemo(
+    () => ({
+      rim: new THREE.MeshBasicMaterial({ color: '#ffe56a' }),
+      mid: new THREE.MeshBasicMaterial({ color: '#fff2b0' }),
+      core: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
+    }),
+    [],
+  )
+  // Full C-arc (~270°) so the slash reads complete, not a truncated half.
+  const ARC = Math.PI * 1.55
+  const sparks = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 15) * ARC
+        return {
+          a,
+          r: 0.9 + rand(e.id, i) * 0.16,
+          size: 0.55 + rand(e.id, i + 20) * 0.9,
+          lag: rand(e.id, i + 40) * 0.1,
+        }
+      }),
+    [e.id],
+  )
+  const ref = useFx(e, (g, tp, u) => {
+    const draw = u < 0 ? ease(Math.min(1, tp / 0.55)) : 1
+    const fade = u < 0 ? 1 : pop(u, 0.1, 0.48)
+    if (fade < 0.001) {
+      g.visible = false
+      return
+    }
+    g.visible = true
+    // Center of the circle sits mid-lane at fighter height so the full C fits on screen.
+    g.position.lerpVectors(e.from, e.to, 0.52)
+    g.position.y = (e.from.y + e.to.y) * 0.5 + e.size * 0.55
+    g.lookAt(e.to.x, g.position.y, e.to.z)
+    g.rotateY(Math.PI / 2)
+    // Torus sits in XY; rotate so the open C stands vertical (high tip → ground tip).
+    g.rotateZ(-Math.PI * 0.5 - (Math.PI * 2 - ARC) * 0.5)
+
+    const R = e.size * 2.65
+    const s = R * fade * (0.35 + draw * 0.65)
+    const arc = g.children[0]
+    if (arc) {
+      arc.scale.set(s, s, Math.max(0.0001, fade * e.size * 0.7))
+    }
+    g.children.forEach((c, i) => {
+      if (i === 0) return
+      const sp = sparks[i - 1]
+      const local = Math.min(1, Math.max(0, (draw - sp.lag) / Math.max(0.001, 1 - sp.lag)))
+      if (local <= 0.02 || fade < 0.05) {
+        c.visible = false
+        return
+      }
+      c.visible = true
+      c.position.set(Math.cos(sp.a) * s * sp.r, Math.sin(sp.a) * s * sp.r, (rand(e.id, i) - 0.5) * 0.06)
+      c.scale.setScalar(Math.max(0.0001, pop(local, 0.1, 0.5) * fade * e.size * 0.13 * sp.size))
+      c.rotation.z = sp.a
+    })
+  })
+  return (
+    <group ref={ref}>
+      {/* Full C-crescent — entire arc visible, bright core + outer trail. */}
+      <group>
+        <P s={S.torus(1, 0.15, ARC, 48)} m={hot.rim} shadow={false} sc={[1, 1, 0.26]} />
+        <P s={S.torus(1, 0.095, ARC * 0.99, 44)} m={hot.mid} shadow={false} p={[0, 0, 0.02]} sc={[1, 1, 0.22]} />
+        <P s={S.torus(1, 0.048, ARC * 0.97, 40)} m={hot.core} line={false} shadow={false} p={[0, 0, 0.04]} sc={[1, 1, 0.18]} />
+        <P s={S.torus(1.03, 0.12, ARC, 40)} m={M.a} shadow={false} p={[0, 0, -0.025]} sc={[1, 1, 0.3]} />
+        {/* Tip flares at both ends of the full arc. */}
+        <P s={S.shard(0.12, 0.36, 0.04)} m={hot.core} line={false} shadow={false} p={[1.02, 0.08, 0.05]} r={[0.1, 0.2, 1.2]} />
+        <P s={S.shard(0.1, 0.3, 0.035)} m={hot.rim} line={false} shadow={false} p={[Math.cos(ARC) * 1.02, Math.sin(ARC) * 1.02, 0.04]} r={[0.2, 0.3, ARC + 0.4]} />
+      </group>
+      {sparks.map((_, i) => (
+        <group key={i}>
+          <P s={S.box(0.08, 0.08, 0.08, 0.02)} m={i % 2 ? hot.rim : hot.core} line={false} shadow={false} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
 /** Green wind crescent blades racing the travel path. */
 function WindBlades({ e }: { e: FxEvent }) {
   const M = useMats(e)
@@ -921,6 +1004,186 @@ function WindBlades({ e }: { e: FxEvent }) {
         <group key={i} rotation={[0, (i / blades) * Math.PI * 2, 0.2]}>
           <P s={S.panel(0.08, 0.42, 0.01, 0.02)} m={i % 2 ? M.a : M.b} shadow={false} p={[0.18, 0.05, 0]} r={[0.4, 0, 0.6]} />
           <P s={S.shard(0.03, 0.16, 0.012)} m={M.white} line={false} shadow={false} p={[0.28, 0.12, 0.02]} r={[0.2, 0, 0.9]} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** No Longer Human — enemy ability flies in, then matrix-greens and digitizes away on touch. */
+function NullifyCancel({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const matrix = useMemo(
+    () => ({
+      green: new THREE.MeshBasicMaterial({ color: '#00ff41' }),
+      lime: new THREE.MeshBasicMaterial({ color: '#39ff14' }),
+      dark: new THREE.MeshBasicMaterial({ color: '#061a0a' }),
+    }),
+    [],
+  )
+  const rain = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => ({
+        x: (rand(e.id, i) - 0.5) * 1.4,
+        z: (rand(e.id, i + 9) - 0.5) * 1.4,
+        delay: rand(e.id, i + 17) * 0.35,
+        fall: 0.6 + rand(e.id, i + 23) * 1.1,
+        w: 0.03 + rand(e.id, i + 31) * 0.04,
+        h: 0.12 + rand(e.id, i + 41) * 0.28,
+      })),
+    [e.id],
+  )
+  const shards = useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2 + rand(e.id, i + 50) * 0.4
+        return {
+          a,
+          elev: (rand(e.id, i + 60) - 0.3) * 1.2,
+          speed: 0.4 + rand(e.id, i + 70) * 0.7,
+        }
+      }),
+    [e.id],
+  )
+  const ref = useFx(e, (g, tp, u) => {
+    if (u < 0) {
+      // Incoming ability construct — enemy colors racing toward Dazai.
+      g.position.lerpVectors(e.from, e.to, ease(tp))
+      g.lookAt(e.to)
+      const pulse = 0.55 + Math.sin(tp * Math.PI * 6) * 0.12
+      g.scale.setScalar(e.size * pulse * (0.7 + tp * 0.45))
+      g.rotation.z = tp * Math.PI * 3
+      const orb = g.children[0]
+      const trail = g.children[1]
+      if (orb) orb.visible = true
+      if (trail) trail.visible = true
+      g.children.forEach((c, i) => {
+        if (i >= 2) c.visible = false
+      })
+      return
+    }
+    // Touch — ability snaps to matrix green and rains into code.
+    g.position.copy(e.to)
+    g.rotation.set(0, u * 4, 0)
+    const orb = g.children[0]
+    const trail = g.children[1]
+    const cancel = g.children[2]
+    if (orb) {
+      const shrink = Math.max(0, 1 - u * 2.2)
+      orb.scale.setScalar(Math.max(0.0001, shrink))
+      orb.visible = shrink > 0.02
+    }
+    if (trail) trail.visible = false
+    if (cancel) {
+      cancel.visible = true
+      cancel.scale.setScalar(pop(u, 0.08, 0.55) * e.size)
+    }
+    g.children.forEach((c, i) => {
+      if (i < 3) return
+      const drop = rain[i - 3]
+      if (!drop) {
+        c.visible = false
+        return
+      }
+      const local = Math.min(1, Math.max(0, (u - drop.delay) / (1 - drop.delay * 0.5)))
+      if (local <= 0) {
+        c.visible = false
+        return
+      }
+      c.visible = true
+      c.position.set(drop.x * e.size * 0.55, e.size * (0.55 - local * drop.fall), drop.z * e.size * 0.55)
+      const fade = pop(local, 0.05, 0.45)
+      c.scale.set(fade * drop.w * 8, fade * drop.h * 6, fade * drop.w * 8)
+    })
+  })
+  return (
+    <group ref={ref}>
+      {/* Ability orb (enemy palette). */}
+      <group>
+        <P s={S.sphere(0.28, 14, 10)} m={M.b} shadow={false} />
+        <P s={S.sphere(0.18, 10, 8)} m={M.a} shadow={false} />
+        <group rotation={[Math.PI / 2, 0, 0]}>
+          <P s={S.torus(0.38, 0.035, Math.PI * 2, 24)} m={M.white} shadow={false} />
+        </group>
+      </group>
+      {/* Trail shards while casting. */}
+      <group>
+        {shards.map((s, i) => (
+          <P
+            key={i}
+            s={S.shard(0.05, 0.14, 0.03)}
+            m={i % 2 ? M.a : M.b}
+            shadow={false}
+            p={[Math.cos(s.a) * 0.35, Math.sin(s.elev) * 0.2, Math.sin(s.a) * 0.35]}
+            r={[s.elev, s.a, 0.4]}
+          />
+        ))}
+      </group>
+      {/* Cancel flash — matrix green shell. */}
+      <group visible={false}>
+        <P s={S.sphere(0.32, 12, 10)} m={matrix.green} shadow={false} />
+        <group rotation={[Math.PI / 2, 0, 0]}>
+          <P s={S.torus(0.55, 0.04, Math.PI * 2, 28)} m={matrix.lime} shadow={false} />
+        </group>
+        <group rotation={[Math.PI / 2 + 0.5, 0.3, 0]}>
+          <P s={S.torus(0.7, 0.028, Math.PI * 2, 28)} m={matrix.green} shadow={false} />
+        </group>
+      </group>
+      {/* Cascading matrix code cubes. */}
+      {rain.map((_, i) => (
+        <P key={i} s={S.box(0.08, 0.2, 0.08, 0.01)} m={i % 3 ? matrix.green : matrix.lime} shadow={false} />
+      ))}
+    </group>
+  )
+}
+
+/** Rashomon — black fabric ribbons harden into blades and whip through the pad. */
+function RashomonBlades({ e, count = 8 }: { e: FxEvent; count?: number }) {
+  const M = useMats(e)
+  const blades = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        const a = (i / count) * Math.PI * 2 + rand(e.id, i) * 0.5
+        const elev = (rand(e.id, i + 20) - 0.2) * 1.1
+        const reach = 0.55 + rand(e.id, i + 7) * 1.15
+        const spin = (rand(e.id, i + 33) - 0.5) * 10
+        const delay = rand(e.id, i + 4) * 0.22
+        return { a, elev, reach, spin, delay, len: 0.7 + rand(e.id, i + 50) * 0.8 }
+      }),
+    [e.id, count],
+  )
+  const ref = useFx(e, (g, _tp, u) => {
+    if (u < 0) {
+      g.visible = false
+      return
+    }
+    g.visible = true
+    g.position.copy(e.to)
+    g.lookAt(e.from.x, e.to.y, e.from.z)
+    g.children.forEach((c, i) => {
+      const b = blades[i]
+      const local = Math.min(1, Math.max(0, (u - b.delay) / (1 - b.delay * 0.45)))
+      if (local <= 0) {
+        c.visible = false
+        return
+      }
+      c.visible = true
+      const whip = ease(local)
+      const ang = b.a + whip * 1.8 * (i % 2 ? 1 : -1)
+      const rad = whip * e.size * b.reach
+      const y = Math.sin(b.elev) * e.size * 0.4 + whip * e.size * 0.35 - local * local * e.size * 0.5
+      c.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad * 0.55)
+      c.rotation.set(local * b.spin, ang * 1.2, local * b.spin * 0.55 + (i % 2 ? 0.6 : -0.6))
+      const s = pop(local, 0.06, 0.4) * e.size * 0.28 * b.len
+      c.scale.set(Math.max(0.0001, s * 0.35), Math.max(0.0001, s), Math.max(0.0001, s * 0.2))
+    })
+  })
+  return (
+    <group ref={ref}>
+      {blades.map((_, i) => (
+        <group key={i}>
+          <P s={S.panel(0.1, 0.5, 0.014, 0.02)} m={i % 2 ? M.dark : M.a} shadow={false} />
+          <P s={S.shard(0.045, 0.22, 0.016)} m={M.b} line={false} shadow={false} p={[0, 0.22, 0.01]} />
         </group>
       ))}
     </group>
@@ -1054,6 +1317,49 @@ function MurasakiOrb({ e }: { e: FxEvent }) {
       <group rotation={[Math.PI / 2 + 0.45, 0.55, 0]}>
         <P s={S.torus(1.05, 0.045, Math.PI * 2, 28)} m={M.a} shadow={false} />
       </group>
+    </group>
+  )
+}
+
+/** Benimaru — sun-sized fireball that swells in the hand, then rockets into the pad. */
+function FireballOrb({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const tongues = useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2
+        return { a, len: 0.35 + (i % 3) * 0.12, lag: (i % 4) * 0.04 }
+      }),
+    [],
+  )
+  const ref = useFx(e, (g, tp, u) => {
+    const p = u < 0 ? ease(tp) : 1
+    g.position.lerpVectors(e.from, e.to, p)
+    g.position.y += Math.sin(p * Math.PI) * e.size * 0.35
+    const grow =
+      u < 0 ? 0.55 + ease(tp) * 1.35 : u < 0.22 ? 1.9 + u * 2.8 : Math.max(0.0001, (1 - u) * 3.2)
+    g.scale.setScalar(Math.max(0.0001, grow * e.size))
+    g.rotation.y += 0.48
+    g.rotation.z += 0.18
+    g.children.forEach((c, i) => {
+      if (i < 3) return
+      const tongue = tongues[i - 3]
+      if (!tongue) return
+      const flicker = 0.75 + Math.sin((u < 0 ? tp : u) * 18 + i) * 0.25
+      c.scale.setScalar(Math.max(0.0001, flicker))
+      c.rotation.z = tongue.a + (u < 0 ? tp : u) * 4
+    })
+  })
+  return (
+    <group ref={ref}>
+      <P s={S.sphere(0.72, 16, 12)} m={M.a} shadow={false} />
+      <P s={S.sphere(0.42, 12, 10)} m={M.white} line={false} shadow={false} />
+      <P s={S.sphere(0.95, 12, 10)} m={M.b} line={false} shadow={false} />
+      {tongues.map((t, i) => (
+        <group key={i} rotation={[0.4, 0, t.a]}>
+          <P s={S.cone(0.22, t.len, 5)} m={i % 2 ? M.a : M.b} line={false} shadow={false} p={[0, 0.55, 0]} />
+        </group>
+      ))}
     </group>
   )
 }
@@ -1363,6 +1669,22 @@ function FxView({ e }: { e: FxEvent }) {
           <SpeedLines e={e} />
         </>
       )
+    case 'fireball':
+      return (
+        <>
+          <FireballOrb e={e} />
+          <ScorchPatch e={e} />
+          <ScorchLine e={e} />
+          <Burst e={e} spikes={16} scale={1.9} />
+          <Burst e={e} spikes={10} scale={1.25} mat="b" />
+          <Debris e={e} count={24} kind="flame" />
+          <Debris e={e} count={12} kind="smoke" />
+          <Ring e={e} ground radius={2.4} />
+          <Ring e={e} ground radius={1.5} delay={0.1} />
+          <Ring e={e} radius={2.0} />
+          <SpeedLines e={e} />
+        </>
+      )
     case 'shockwave':
       return (
         <>
@@ -1532,6 +1854,43 @@ function FxView({ e }: { e: FxEvent }) {
           <Burst e={e} spikes={12} />
           <Ring e={e} ground radius={1.3} />
           <Ring e={e} ground radius={0.7} delay={0.18} />
+        </>
+      )
+    case 'punchBarrage':
+      return (
+        <>
+          <SpeedLines e={e} />
+          <Debris e={e} count={12} kind="cube" />
+          <Burst e={e} spikes={10} />
+          <Burst e={e} spikes={8} scale={0.7} />
+          <Ring e={e} ground radius={1.2} />
+          <Ring e={e} ground radius={0.65} delay={0.14} />
+        </>
+      )
+    case 'slashBarrage':
+      return (
+        <>
+          <SpeedLines e={e} />
+          <Slash e={e} sweeps={5} />
+          <Slash e={e} sweeps={4} />
+          <Burst e={e} spikes={10} scale={0.85} />
+          <Debris e={e} count={14} kind="shard" />
+          <Ring e={e} ground radius={1.15} />
+          <Ring e={e} ground radius={0.6} delay={0.12} />
+        </>
+      )
+    case 'voltSlash':
+      return (
+        <>
+          <SpeedLines e={e} />
+          <BarrageBolts e={e} />
+          <Bolts e={e} />
+          <Slash e={e} sweeps={5} />
+          <Slash e={e} sweeps={3} />
+          <Burst e={e} spikes={12} scale={0.9} />
+          <Debris e={e} count={14} kind="shard" />
+          <Ring e={e} ground radius={1.2} />
+          <Ring e={e} ground radius={0.65} delay={0.12} />
         </>
       )
     case 'shards':
@@ -1704,6 +2063,33 @@ function FxView({ e }: { e: FxEvent }) {
           <Debris e={e} count={26} kind="blood" />
         </>
       )
+    case 'rashomon':
+      // Living coat fabric → black blades that carve and dismember.
+      return (
+        <>
+          <RashomonBlades e={e} count={10} />
+          <Slash e={e} sweeps={4} />
+          <SpeedLines e={e} />
+          <Burst e={e} spikes={14} scale={1.2} mat="b" />
+          <Ring e={e} radius={1.35} />
+          <Ring e={e} ground radius={1.15} delay={0.06} />
+          <Debris e={e} count={16} kind="shard" />
+          <Debris e={e} count={24} kind="blood" />
+        </>
+      )
+    case 'nullify':
+      // No Longer Human — enemy cast flies in, touch turns it matrix green, then it digitizes away.
+      return (
+        <>
+          <NullifyCancel e={e} />
+          <Ring e={e} radius={1.35} />
+          <Ring e={e} radius={0.8} delay={0.1} />
+          <Ring e={e} ground radius={1.15} delay={0.06} />
+          <Burst e={e} spikes={10} scale={0.9} mat="a" />
+          <Debris e={e} count={14} kind="cube" />
+          <Debris e={e} count={10} kind="star" />
+        </>
+      )
     case 'yeoui':
       // Yeoui grows from a needle to a tower, then crushes the pad.
       return (
@@ -1730,6 +2116,34 @@ function FxView({ e }: { e: FxEvent }) {
           <Ring e={e} ground radius={1.0} delay={0.06} />
           <Burst e={e} spikes={8} scale={0.8} />
           <Debris e={e} count={10} kind="star" />
+        </>
+      )
+    case 'airSlash':
+      // Santoryu — pale air crescents in several directions, then the cut lands.
+      return (
+        <>
+          <WindBlades e={e} />
+          <WindBlades e={e} />
+          <Slash e={e} sweeps={5} />
+          <Slash e={e} sweeps={4} />
+          <SpeedLines e={e} />
+          <Burst e={e} spikes={12} scale={1.05} />
+          <Debris e={e} count={14} kind="shard" />
+          <Ring e={e} radius={1.35} />
+          <Ring e={e} ground radius={1.2} delay={0.06} />
+          <Ring e={e} ground radius={0.65} delay={0.14} />
+        </>
+      )
+    case 'archSlash':
+      // Kenpachi — one huge vertical air-slash crescent; target is cut apart.
+      return (
+        <>
+          <ArchSlash e={e} />
+          <SpeedLines e={e} />
+          <Burst e={e} spikes={10} scale={1.1} />
+          <Debris e={e} count={12} kind="shard" />
+          <Debris e={e} count={10} kind="blood" />
+          <Ring e={e} ground radius={1.2} delay={0.06} />
         </>
       )
     case 'whirlwind':

@@ -147,7 +147,7 @@ export class DeathFx {
       const back = stain(r * 1.3)
       back.rotation.y = Math.PI
       this.attach(bones, 'chest', back, [-0.01, this.holeY, -pr.chestD * 0.5])
-    } else if (o.dmg === 'slash' && o.sever) {
+    } else if (o.sever) {
       for (const s of expandSevers(o.sever)) {
         const c = this.cut(s)
         this.attach(bones, c.body, stumpCap(c.r), c.at, c.n)
@@ -193,20 +193,7 @@ export class DeathFx {
         ]
       }
       case 'slash': {
-        const cuts = expandSevers(o.sever)
-        if (!cuts.length) return []
-        const rateMul = cuts.length > 1 ? 0.55 : 1
-        return cuts.flatMap((s) => {
-          const c = this.cut(s)
-          const stump = this.from(c.body, c.at, c.n)
-          const part = this.from(c.part, [0, 0, 0], s === 'head' ? [0, -1, 0] : [0, 1, 0])
-          return [
-            blood({ t0: 0, t1: 0.1, rate: 520 * rateMul, speed: [0.5, 1.9], spread: 0.6, size: [0.008, 0.015], at: stump }),
-            blood({ t0: 0, t1: 1.9, rate: 150 * rateMul, pulse: 2.2, speed: [0.7, 1.7], spread: 0.28, size: [0.008, 0.015], at: stump }),
-            blood({ t0: 1.9, t1: dur, rate: 28 * rateMul, speed: [0.05, 0.2], spread: 0.4, size: [0.006, 0.011], at: stump }),
-            blood({ t0: 0, t1: 1.3, rate: 60 * rateMul, fade: true, speed: [0.1, 0.5], spread: 0.5, size: [0.006, 0.012], at: part }),
-          ]
-        })
+        return this.severBleed(dur)
       }
       case 'pierce': {
         const front = this.from('chest', [0, this.holeY, pr.chestD * 0.5], [0, 0.1, 1])
@@ -239,6 +226,8 @@ export class DeathFx {
         return [
           { kind: PK.Flame, t0: 0, t1: 2.1, rate: 230, fade: true, speed: [0.15, 0.5], spread: 0.4, size: [0.03, 0.065], at: this.fromParticles(all, [0, 1, 0]) },
           { kind: PK.Smoke, t0: 0.3, t1: dur, rate: 18, speed: [0.1, 0.25], spread: 0.3, size: [0.03, 0.05], at: this.fromParticles(torso, [0, 1, 0]) },
+          // Explosion finishers can burn and dismember — arterial spray from cuts.
+          ...this.severBleed(dur),
         ]
       }
       case 'shock': {
@@ -259,27 +248,53 @@ export class DeathFx {
     switch (o.dmg) {
       case 'blunt':
         return [{ t0: 0.7, grow: 1.6, maxR: o.zone === 'low' ? 0.07 : 0.11, at: at(R.HEAD) }]
-      case 'slash': {
-        const cuts = expandSevers(o.sever)
-        if (!cuts.length) return []
-        const poolFor = (s: Sever): Pool[] => {
-          const body = s === 'head' ? R.NECK : s === 'lArm' ? R.LSH : s === 'rArm' ? R.RSH : s === 'lLeg' ? R.LHIP : R.RHIP
-          const part = s === 'head' ? R.HEAD : s === 'lArm' ? R.LELB : s === 'rArm' ? R.RELB : s === 'lLeg' ? R.LKNEE : R.RKNEE
-          const scale = cuts.length > 1 ? 0.7 : 1
-          return [
-            { t0: 0.35, grow: 1.8, maxR: 0.17 * scale, at: at(body) },
-            { t0: 0.55, grow: 1.2, maxR: 0.07 * scale, at: at(part) },
-          ]
-        }
-        return cuts.flatMap(poolFor)
-      }
+      case 'slash':
+        return this.severPools()
       case 'pierce':
         return [{ t0: 0.5, grow: 1.7, maxR: 0.15, at: at(R.CHEST) }]
       case 'beam':
         return [{ t0: 0.95, grow: 1.3, maxR: 0.14, at: at(R.CHEST) }]
+      case 'burn':
+        return this.severPools()
       default:
         return []
     }
+  }
+
+  private severBleed(dur: number): Emitter[] {
+    const cuts = expandSevers(this.opts!.sever)
+    if (!cuts.length) return []
+    const rateMul = cuts.length > 1 ? 0.55 : 1
+    const blood = (e: Omit<Emitter, 'kind'>): Emitter => ({ kind: PK.Blood, ...e })
+    return cuts.flatMap((s) => {
+      const c = this.cut(s)
+      const stump = this.from(c.body, c.at, c.n)
+      const part = this.from(c.part, [0, 0, 0], s === 'head' ? [0, -1, 0] : [0, 1, 0])
+      return [
+        blood({ t0: 0, t1: 0.1, rate: 520 * rateMul, speed: [0.5, 1.9], spread: 0.6, size: [0.008, 0.015], at: stump }),
+        blood({ t0: 0, t1: 1.9, rate: 150 * rateMul, pulse: 2.2, speed: [0.7, 1.7], spread: 0.28, size: [0.008, 0.015], at: stump }),
+        blood({ t0: 1.9, t1: dur, rate: 28 * rateMul, speed: [0.05, 0.2], spread: 0.4, size: [0.006, 0.011], at: stump }),
+        blood({ t0: 0, t1: 1.3, rate: 60 * rateMul, fade: true, speed: [0.1, 0.5], spread: 0.5, size: [0.006, 0.012], at: part }),
+      ]
+    })
+  }
+
+  private severPools(): Pool[] {
+    const cuts = expandSevers(this.opts!.sever)
+    if (!cuts.length) return []
+    const p = this.rd.p
+    const R = RAG
+    const at = (i: number) => (out: THREE.Vector3) => out.copy(p[i])
+    const poolFor = (s: Sever): Pool[] => {
+      const body = s === 'head' ? R.NECK : s === 'lArm' ? R.LSH : s === 'rArm' ? R.RSH : s === 'lLeg' ? R.LHIP : R.RHIP
+      const part = s === 'head' ? R.HEAD : s === 'lArm' ? R.LELB : s === 'rArm' ? R.RELB : s === 'lLeg' ? R.LKNEE : R.RKNEE
+      const scale = cuts.length > 1 ? 0.7 : 1
+      return [
+        { t0: 0.35, grow: 1.8, maxR: 0.17 * scale, at: at(body) },
+        { t0: 0.55, grow: 1.2, maxR: 0.07 * scale, at: at(part) },
+      ]
+    }
+    return cuts.flatMap(poolFor)
   }
 
   update(bones: RigBones, t: number, dt: number) {
@@ -339,7 +354,9 @@ export class DeathFx {
 
   bleeds(): boolean {
     const d = this.opts?.dmg
-    return d === 'blunt' || d === 'slash' || d === 'pierce' || d === 'beam'
+    if (d === 'blunt' || d === 'slash' || d === 'pierce' || d === 'beam') return true
+    // Burn+sever (e.g. Howitzer Impact) still sprays from the cuts.
+    return d === 'burn' && !!this.opts?.sever
   }
 
   dispose() {

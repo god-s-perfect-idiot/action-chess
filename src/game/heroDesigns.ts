@@ -50,6 +50,8 @@ export type FaceMark =
   | 'thread'
   | 'soot'
   | 'hawkMarks'
+  /** Speed-o'-Sonic — horizontal teardrop under-eye marks. */
+  | 'sonicMarks'
 
 export type HairStyle =
   | 'spiky'
@@ -171,6 +173,16 @@ export type Extra =
   | 'sparkCuffs'
   | 'arcSuit'
   | 'dominoMask'
+  /** Flash Manhattan only — forehead atomic mark on the speed cowl. */
+  | 'manhattanMark'
+  /** Quicksilver — blue suit, white zigzag, white gloves/boots; vector-style slipstream. */
+  | 'quicksilverSuit'
+  /** Red Rush — Quicksilver kit color-swapped to maroon/scarlet; open-face cowl + red goggles. */
+  | 'redRushCowl'
+  /** Speed — Quicksilver kit color-swapped to forest green; amber wraparound goggles (no cowl). */
+  | 'speedGoggles'
+  /** Speed-o'-Sonic — Quicksilver kit color-swapped to black/purple ninja; riveted plates + muffler. */
+  | 'sonicSuit'
   | 'engineVents'
   | 'springs'
   | 'pouches'
@@ -184,12 +196,18 @@ export type Extra =
   | 'finralSuit'
   | 'todoKit'
   | 'minatoSuit'
+  | 'kakashiSuit'
   | 'joninSuit'
   | 'byakuyaSuit'
   | 'deadshotSuit'
   | 'nanamiSuit'
   | 'gojoSuit'
+  | 'benimaruSuit'
+  | 'akutagawaSuit'
+  | 'dazaiSuit'
+  | 'chuuyaSuit'
   | 'gilgameshSuit'
+  | 'tengenSuit'
   | 'overhaulSuit'
   | 'komamuraSuit'
   | 'chronostasisSuit'
@@ -201,6 +219,8 @@ export type Extra =
   | 'saitamaSuit'
   | 'guySuit'
   | 'eightGates'
+  /** Rock Lee — Guy kit without the flak: green jumpsuit, waist headband, orange warmers. */
+  | 'rockLeeSuit'
   | 'dekuSuit'
   | 'dekuAwaken'
   | 'allMightSuit'
@@ -224,6 +244,16 @@ export type Extra =
   | 'ichigoMugetsu'
   | 'gaaraSuit'
   | 'shukakuAwaken'
+  | 'todorokiSuit'
+  | 'bakugoSuit'
+  /** Silver Surfer — chrome body + surfboard under the feet. */
+  | 'silverSurferSuit'
+  /** Kenpachi Zaraki — ragged white haori, eyepatch, bell-spikes, notched bandage blade. */
+  | 'kenpachiSuit'
+  /** Roronoa Zoro — Wano haori, open kimono, purple obi, chest scar, triple earrings. */
+  | 'zoroSuit'
+  /** Killua — lavender tee over navy turtleneck, grey shorts, maroon boots; blue Godspeed lightning. */
+  | 'killuaSuit'
 
 export type Weapon =
   | 'none'
@@ -237,6 +267,9 @@ export type Weapon =
   | 'stamp'
   | 'kunai'
   | 'cleaver'
+  | 'dualCleaver'
+  /** Zoro — three katanas: both hands + mouth; three saya at the hip. */
+  | 'santoryu'
   | 'staff'
   | 'rhitta'
   | 'yeoui'
@@ -244,6 +277,7 @@ export type Weapon =
   | 'excaliburHuge'
   | 'zangetsu'
   | 'book'
+  | 'flameBroom'
 
 export type IdleStyle =
   | 'warmup'
@@ -295,6 +329,8 @@ export type IdleStyle =
   | 'plagueReady'
   | 'sunshineStance'
   | 'niceGuy'
+  /** Rock Lee — low Strong Fist crouch, open palm forward, other hand behind the back. */
+  | 'leeStance'
   | 'deadpan'
   | 'percentRage'
   | 'plusUltra'
@@ -316,12 +352,26 @@ export type IdleStyle =
   | 'prideFlex'
   | 'fistCheek'
   | 'gojoStretch'
+  | 'benimaruReady'
+  | 'akutagawaReady'
+  | 'dazaiReady'
+  | 'chuuyaReady'
+  | 'tengenFlash'
+  | 'bakugoReady'
   | 'joninSalute'
   | 'joninKneel'
   | 'joninReach'
   | 'swordGuard'
   | 'komamuraLean'
   | 'chronoReach'
+  /** Silver Surfer — crouched hover on the board, bobbing up and down. */
+  | 'boardHover'
+  /** Kenpachi — wide stance, periodic sword swishes. */
+  | 'kenpachiSwish'
+  /** Zoro — draw all three swords, brief Santoryu flourish, sheath; loop. */
+  | 'zoroDraw'
+  /** Killua — planted ready stance while blue lightning conducts through him. */
+  | 'godspeedIdle'
 
 export type AttackStyle =
   | 'flameKick'
@@ -343,6 +393,10 @@ export type AttackStyle =
   | 'cardThrow'
   | 'thunderDrop'
   | 'gridStrike'
+  /** Quicksilver — Flash sprint-in flurry, punch impacts instead of lightning. */
+  | 'mercuryStrike'
+  /** Speed-o'-Sonic — Quicksilver sprint-in, hypersonic katana multi-cut. */
+  | 'sonicFlurry'
   | 'clawSwipe'
   | 'zap'
   | 'hammerFist'
@@ -365,6 +419,7 @@ export type AttackStyle =
   | 'portalGate'
   | 'boogieWoogie'
   | 'flyingRaijin'
+  | 'chidori'
   | 'wristShot'
   | 'ratioSlice'
   | 'senbonzakura'
@@ -378,6 +433,8 @@ export type AttackStyle =
   | 'percentBlast'
   | 'seriousPunch'
   | 'leafCombo'
+  /** Rock Lee — same taijutsu chain as leafCombo, bookended on leeStance. */
+  | 'rockLeeCombo'
   | 'gatesBurn'
   | 'ofaPunch'
   | 'ofaSmash'
@@ -403,6 +460,21 @@ export type AttackStyle =
   | 'getsugaSlash'
   | 'sandBarrage'
   | 'sandCoffin'
+  | 'hellfire'
+  | 'rashomon'
+  | 'noLongerHuman'
+  | 'gravityCrush'
+  | 'scoreCut'
+  | 'flameRush'
+  | 'howitzerImpact'
+  /** Silver Surfer — board whiz in, cosmic punch detonates. */
+  | 'cosmicPunch'
+  /** Kenpachi — vertical overhead cut; arch slash from blade to target, splits them. */
+  | 'nozarashiSlash'
+  /** Zoro — Santoryu multi-angle cuts with airslashes; full dismember. */
+  | 'santoryu'
+  /** Killua — Flash-pace sprint-in, Godspeed claw flurry; full dismember. */
+  | 'godspeedSlash'
 
 export type DeathStyle =
   | 'fallBack'
@@ -579,6 +651,38 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     locomotion: 'dash',
     stride: 0.48,
     moveSpeedMul: 1.85,
+  },
+  'rock-lee': {
+    // Rock Lee — green jumpsuit, waist headband, orange warmers. Body-flickers, Guy combo.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.0, bulk: 1.0, shoulders: 1.02, head: 1.06 },
+    palette: {
+      skin: '#e8b888',
+      hair: '#141218',
+      hairAlt: '#2a2430',
+      primary: '#1a5a38',
+      secondary: '#1a2840',
+      accent: '#e07028',
+      trim: '#1a2840',
+      metal: '#a8b0c0',
+      eye: '#3a2418',
+      glow: '#6a9a48',
+    },
+    face: { eyes: 'fierce', brows: 'none', mouth: 'line' },
+    hair: 'bowl',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'slippers',
+    hands: 'wraps',
+    extras: ['rockLeeSuit'],
+    weapon: 'none',
+    idle: 'leeStance',
+    attack: 'rockLeeCombo',
+    death: 'launched',
+    tempo: 1.15,
+    locomotion: 'teleport',
+    moveSpeedMul: 2.2,
   },
   'deku': {
     // Deku — Gamma suit. Leaps in, Full Cowl punches that explode on impact.
@@ -804,10 +908,76 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     death: 'crumple',
     tempo: 0.85,
   },
+  'todoroki': {
+    // Half-Cold Half-Hot — navy hero suit, split hair, ice-slide run, flame punch→kick.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.04, bulk: 0.98, shoulders: 1.04, head: 1.02 },
+    palette: {
+      skin: '#f0c8a8',
+      hair: '#f2f4f8',
+      hairAlt: '#c01828',
+      primary: '#1a2a48',
+      secondary: '#b0b8c4',
+      accent: '#e02828',
+      trim: '#0c1018',
+      metal: '#c8d0d8',
+      eye: '#5a6870',
+      glow: '#7ad8ff',
+    },
+    face: { eyes: 'sharp', brows: 'flat', mouth: 'line' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['todorokiSuit'],
+    weapon: 'none',
+    idle: 'armsCrossed',
+    attack: 'flameRush',
+    death: 'crumple',
+    tempo: 0.85,
+    locomotion: 'run',
+    moveSpeedMul: 1.35,
+    attackSpeedMul: 1.1,
+  },
+  'bakugo': {
+    // Explosion — grenade gauntlets, blast-jump fly, Howitzer Impact punch→kick→head boom.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.0, bulk: 1.06, shoulders: 1.1, head: 1.02 },
+    palette: {
+      skin: '#e8b890',
+      hair: '#e0c060',
+      hairAlt: '#c0a040',
+      primary: '#14161a',
+      secondary: '#2a5c38',
+      accent: '#e85818',
+      trim: '#0c0e12',
+      metal: '#a8b0b8',
+      eye: '#d02028',
+      glow: '#ff9030',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'grin' },
+    hair: 'spiky',
+    top: 'tank',
+    bottom: 'baggy',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['bakugoSuit'],
+    weapon: 'none',
+    idle: 'bakugoReady',
+    attack: 'howitzerImpact',
+    death: 'launched',
+    tempo: 1.05,
+    locomotion: 'fly',
+    moveSpeedMul: 1.45,
+    attackSpeedMul: 1.15,
+  },
   'gojo': {
     body: 'tall',
     figure: 'm',
-    tweak: { height: 1.08, bulk: 0.96, shoulders: 1.02 },
+    tweak: { height: 1.04, bulk: 0.96, shoulders: 1.02 },
     palette: {
       skin: '#f0c8a8',
       hair: '#f4f6fa',
@@ -833,6 +1003,176 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     death: 'launched',
     tempo: 0.95,
     locomotion: 'run',
+  },
+  'kakashi': {
+    // Kakashi — silver spikes, navy mask, olive flak. Jonin body-flicker, then Chidori.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.08, bulk: 0.98, shoulders: 1.02, head: 1.0 },
+    palette: {
+      skin: '#e8c4a0',
+      hair: '#c8ccd4',
+      hairAlt: '#9aa0a8',
+      primary: '#1a2840',
+      secondary: '#5a6b38',
+      accent: '#d43818',
+      trim: '#141c28',
+      metal: '#c8ccd4',
+      eye: '#3a2418',
+      glow: '#7ec8ff',
+    },
+    face: { eyes: 'sharp', brows: 'soft', mouth: 'none', marks: ['scarEye'] },
+    hair: 'spiky',
+    top: 'vest',
+    bottom: 'pants',
+    shoes: 'slippers',
+    hands: 'wraps',
+    extras: ['kakashiSuit'],
+    weapon: 'book',
+    idle: 'bookRead',
+    attack: 'chidori',
+    death: 'launched',
+    tempo: 1.05,
+    /** Same shunshin streaks as the jonin recovery squad / Rock Lee. */
+    locomotion: 'teleport',
+    moveSpeedMul: 2.0,
+  },
+  'benimaru': {
+    // Asakusa’s strongest — navy kimono, tree-pose idle; flies on a flame matoi.
+    body: 'tall',
+    figure: 'm',
+    tweak: { height: 1.12, bulk: 1.04, shoulders: 1.1, head: 0.96 },
+    palette: {
+      skin: '#e8b890',
+      hair: '#141418',
+      hairAlt: '#0a0a0c',
+      primary: '#1a2848',
+      secondary: '#12141a',
+      accent: '#ff4a18',
+      trim: '#0a0c10',
+      metal: '#6a5848',
+      eye: '#e01828',
+      glow: '#ff8a18',
+    },
+    face: { eyes: 'sleepy', brows: 'flat', mouth: 'line' },
+    hair: 'shaggy',
+    top: 'kimono',
+    bottom: 'baggy',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['benimaruSuit'],
+    weapon: 'flameBroom',
+    idle: 'benimaruReady',
+    attack: 'hellfire',
+    death: 'launched',
+    tempo: 0.92,
+    locomotion: 'fly',
+    moveSpeedMul: 1.55,
+    attackSpeedMul: 1.05,
+  },
+  'akutagawa': {
+    // Port Mafia — pale reaper in a living black coat; pocket sprint + Rashomon blades.
+    body: 'wiry',
+    figure: 'm',
+    tweak: { height: 1.02, bulk: 0.88, shoulders: 0.92, head: 1.02 },
+    palette: {
+      skin: '#e8d8d0',
+      hair: '#12141a',
+      hairAlt: '#e8e6ea',
+      primary: '#12141a',
+      secondary: '#f2eee8',
+      accent: '#c8ccd4',
+      trim: '#0a0b0e',
+      metal: '#9aa0a8',
+      eye: '#6a7078',
+      glow: '#2a2c34',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'line' },
+    hair: 'coverEye',
+    top: 'longcoat',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['akutagawaSuit'],
+    weapon: 'none',
+    idle: 'akutagawaReady',
+    attack: 'rashomon',
+    death: 'crumple',
+    tempo: 0.88,
+    locomotion: 'run',
+    stride: 0.52,
+    moveSpeedMul: 1.35,
+    attackSpeedMul: 1.1,
+  },
+  'dazai': {
+    // Armed Detective — sand trench, bandages, No Longer Human touch-nullify.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 0.98, bulk: 0.9, shoulders: 0.94, head: 1.02 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#3a2a22',
+      hairAlt: '#2a1c16',
+      primary: '#c4a574',
+      secondary: '#d8d2c4',
+      accent: '#2a8a8a',
+      trim: '#1a1c22',
+      metal: '#c0c4c8',
+      eye: '#5a3a28',
+      glow: '#00ff41',
+    },
+    face: { eyes: 'sleepy', brows: 'soft', mouth: 'smile' },
+    hair: 'messy',
+    top: 'longcoat',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'wraps',
+    extras: ['dazaiSuit'],
+    weapon: 'none',
+    idle: 'dazaiReady',
+    attack: 'noLongerHuman',
+    death: 'dissolve',
+    tempo: 0.9,
+    locomotion: 'run',
+    stride: 0.55,
+    moveSpeedMul: 1.2,
+    attackSpeedMul: 1.0,
+  },
+  'chuuya': {
+    // Port Mafia — gravity tyrant; fedora, coat-as-cape, flies by weight, crush-punch.
+    body: 'wiry',
+    figure: 'm',
+    tweak: { height: 0.9, bulk: 0.92, shoulders: 0.96, head: 1.06 },
+    palette: {
+      skin: '#f0c8a4',
+      hair: '#e04820',
+      hairAlt: '#b03014',
+      // Brown short jacket (vest base + jacket overlays in extras).
+      primary: '#3a2a1c',
+      // Black coat / trousers / fedora.
+      secondary: '#12141a',
+      // Dusty-rose coat lining.
+      accent: '#c87878',
+      trim: '#0a0b0e',
+      metal: '#c8ccd4',
+      eye: '#2858b0',
+      glow: '#6a48c8',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'grin' },
+    hair: 'shaggy',
+    top: 'vest',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['chuuyaSuit'],
+    weapon: 'none',
+    idle: 'chuuyaReady',
+    attack: 'gravityCrush',
+    death: 'launched',
+    tempo: 1.08,
+    locomotion: 'fly',
+    moveSpeedMul: 1.55,
+    attackSpeedMul: 1.12,
   },
   'yamamoto': {
     body: 'titan',
@@ -947,6 +1287,40 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     bottom: 'tights',
     shoes: 'boots',
     hands: 'gloves',
+    extras: ['dominoMask', 'arcSuit', 'manhattanMark'],
+    weapon: 'none',
+    idle: 'speedCrouch',
+    attack: 'gridStrike',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Speed Force blur — five× default sprint across the file. */
+    moveSpeedMul: 5,
+  },
+  'flash': {
+    // Classic scarlet speedster — same Speed Force kit as Flash Manhattan, yellow lightning.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.05, bulk: 0.98, shoulders: 1.06 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#e03820',
+      hairAlt: '#ff6030',
+      primary: '#c41828',
+      secondary: '#8a1020',
+      accent: '#ffe020',
+      trim: '#5a0810',
+      metal: '#f4f6fa',
+      eye: '#3a78d0',
+      glow: '#ffe848',
+    },
+    face: { eyes: 'fierce', brows: 'flat', mouth: 'line' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
     extras: ['dominoMask', 'arcSuit'],
     weapon: 'none',
     idle: 'speedCrouch',
@@ -957,6 +1331,249 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     stride: 0.48,
     /** Speed Force blur — five× default sprint across the file. */
     moveSpeedMul: 5,
+  },
+  'zoom': {
+    // Flash kit in villain paint — black suit skin, blue Speed Force lightning.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.05, bulk: 0.98, shoulders: 1.06 },
+    palette: {
+      skin: '#0a0c10',
+      hair: '#0a0c10',
+      hairAlt: '#161820',
+      primary: '#0c0e14',
+      secondary: '#06080c',
+      accent: '#3aa8ff',
+      trim: '#020306',
+      metal: '#d8e0e8',
+      eye: '#050608',
+      glow: '#5ac8ff',
+    },
+    face: { eyes: 'hidden', brows: 'flat', mouth: 'none' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['dominoMask', 'arcSuit'],
+    weapon: 'none',
+    idle: 'speedCrouch',
+    attack: 'gridStrike',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Speed Force blur — five× default sprint across the file. */
+    moveSpeedMul: 5,
+  },
+  'reverse-flash': {
+    // Classic Flash kit — yellow suit, red lightning / boots, black crest, red eyes.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.05, bulk: 0.98, shoulders: 1.06 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#c8b090',
+      hairAlt: '#a89070',
+      primary: '#f0c818',
+      secondary: '#c49810',
+      accent: '#e01828',
+      trim: '#6a4810',
+      metal: '#0c0c10',
+      eye: '#ff2030',
+      glow: '#ff2840',
+    },
+    face: { eyes: 'glow', brows: 'angry', mouth: 'grin' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['dominoMask', 'arcSuit'],
+    weapon: 'none',
+    idle: 'speedCrouch',
+    attack: 'gridStrike',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Speed Force blur — five× default sprint across the file. */
+    moveSpeedMul: 5,
+  },
+  'quicksilver': {
+    // Flash-pace sprint + punch flurry; Accelerator-style white slipstream (no lightning).
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.05, bulk: 1.02, shoulders: 1.08 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#e8eef4',
+      hairAlt: '#b8c0cc',
+      primary: '#2f6fd4',
+      secondary: '#1a4a9a',
+      accent: '#f4f6fa',
+      trim: '#0e1014',
+      metal: '#e8ecf2',
+      eye: '#3a78d0',
+      glow: '#dce8f8',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'line' },
+    hair: 'staticUp',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['quicksilverSuit'],
+    weapon: 'none',
+    idle: 'speedCrouch',
+    attack: 'mercuryStrike',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Same hypersonic file pace as Flash. */
+    moveSpeedMul: 5,
+  },
+  'red-rush': {
+    // Quicksilver kit — maroon/scarlet color swap; Red Rush cowl + goggles.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.05, bulk: 1.02, shoulders: 1.08 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#3a1018',
+      hairAlt: '#5a1820',
+      // Body primary matches the cowl maroon.
+      primary: '#5a1018',
+      secondary: '#3a080e',
+      accent: '#ff3a48',
+      trim: '#2a080c',
+      metal: '#e84858',
+      eye: '#c41828',
+      glow: '#ff6878',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'line' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['quicksilverSuit', 'redRushCowl'],
+    weapon: 'none',
+    idle: 'speedCrouch',
+    attack: 'mercuryStrike',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Same hypersonic file pace as Quicksilver / Flash. */
+    moveSpeedMul: 5,
+  },
+  'speed': {
+    // Quicksilver kit — forest green color swap; amber wraparound goggles, white hair.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.03, bulk: 0.98, shoulders: 1.04 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#e8eef4',
+      hairAlt: '#b8c0cc',
+      primary: '#1f6b3a',
+      secondary: '#0e3a22',
+      accent: '#f4f6fa',
+      trim: '#0e1014',
+      metal: '#e8ecf2',
+      eye: '#3a78d0',
+      glow: '#f0a020',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'smile' },
+    hair: 'staticUp',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['quicksilverSuit', 'speedGoggles'],
+    weapon: 'none',
+    idle: 'speedCrouch',
+    attack: 'mercuryStrike',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Same hypersonic file pace as Quicksilver / Flash. */
+    moveSpeedMul: 5,
+  },
+  'speed-o-sonic': {
+    // Quicksilver kit — black/purple ninja color swap; muffler, riveted plates, topknot.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.04, bulk: 0.9, shoulders: 0.96, head: 1.02 },
+    palette: {
+      skin: '#e8c8b0',
+      hair: '#0e0e12',
+      hairAlt: '#1c1c24',
+      primary: '#101218',
+      secondary: '#1a1c22',
+      accent: '#7a3a9a',
+      trim: '#08090c',
+      metal: '#c8ccd4',
+      eye: '#5a88c8',
+      glow: '#dce8f8',
+    },
+    face: { eyes: 'sharp', brows: 'soft', mouth: 'smile', marks: ['sonicMarks'] },
+    hair: 'manBun',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'slippers',
+    hands: 'bare',
+    extras: ['sonicSuit'],
+    weapon: 'katana',
+    idle: 'speedCrouch',
+    attack: 'sonicFlurry',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Same hypersonic file pace as Quicksilver / Flash. */
+    moveSpeedMul: 5,
+  },
+  'killua': {
+    // Flash-pace Godspeed — blue Nen lightning, claw slash flurry that dismembers.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 0.92, bulk: 0.9, shoulders: 0.96, head: 1.1 },
+    palette: {
+      skin: '#f0d8c4',
+      hair: '#e8eef4',
+      hairAlt: '#b8c0cc',
+      // Lavender tee.
+      primary: '#c8c0e0',
+      // Navy turtleneck + grey shorts.
+      secondary: '#1a2848',
+      accent: '#4ab0ff',
+      // Maroon boots / trim.
+      trim: '#3a1830',
+      metal: '#d0d4dc',
+      eye: '#6a88b0',
+      glow: '#6ad0ff',
+    },
+    face: { eyes: 'fierce', brows: 'flat', mouth: 'line' },
+    hair: 'staticUp',
+    top: 'tee',
+    bottom: 'shorts',
+    shoes: 'boots',
+    hands: 'claws',
+    extras: ['killuaSuit'],
+    weapon: 'none',
+    idle: 'godspeedIdle',
+    attack: 'godspeedSlash',
+    death: 'launched',
+    tempo: 1.2,
+    locomotion: 'sprint',
+    stride: 0.48,
+    /** Same hypersonic file pace as Flash. */
+    moveSpeedMul: 5,
+    attackSpeedMul: 1.35,
   },
 
   // ───────────── Night Circuit ─────────────
@@ -1348,6 +1965,40 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     locomotion: 'fly',
     moveSpeedMul: 1.25,
   },
+  'tengen': {
+    // Sound Hashira — jeweled headband, sleeveless navy, dual chain-cleavers; flashy draw idle.
+    body: 'titan',
+    figure: 'm',
+    tweak: { height: 1.1, bulk: 1.18, shoulders: 1.22, head: 0.96 },
+    palette: {
+      skin: '#e8c4a8',
+      hair: '#e8e6ea',
+      hairAlt: '#c8c4cc',
+      primary: '#12182a',
+      secondary: '#1a2438',
+      accent: '#c01840',
+      trim: '#0a0c12',
+      metal: '#e8c040',
+      eye: '#c02858',
+      glow: '#f04888',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'grin' },
+    hair: 'spiky',
+    top: 'vest',
+    bottom: 'hakama',
+    shoes: 'slippers',
+    hands: 'bare',
+    extras: ['tengenSuit'],
+    weapon: 'dualCleaver',
+    idle: 'tengenFlash',
+    attack: 'scoreCut',
+    death: 'launched',
+    tempo: 1.05,
+    locomotion: 'run',
+    stride: 0.58,
+    moveSpeedMul: 1.45,
+    attackSpeedMul: 1.2,
+  },
   'overhaul': {
     body: 'athletic',
     figure: 'm',
@@ -1476,6 +2127,106 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     moveSpeedMul: 1.35,
     /** Vector-redirected strike — ~6× normal attack tempo. */
     attackSpeedMul: 6,
+  },
+  'silver-surfer': {
+    // Chrome herald — silver skin reads as liquid metal; board lives in extras.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.08, bulk: 1.06, shoulders: 1.12, head: 0.98 },
+    palette: {
+      skin: '#c8d0dc',
+      hair: '#c8d0dc',
+      hairAlt: '#9aa4b4',
+      primary: '#c8d0dc',
+      secondary: '#a8b0c0',
+      accent: '#e8eef8',
+      trim: '#6a7488',
+      metal: '#e8ecf4',
+      eye: '#f4f8ff',
+      glow: '#5af0ff',
+    },
+    face: { eyes: 'glow', brows: 'flat', mouth: 'line' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'slippers',
+    hands: 'bare',
+    extras: ['silverSurferSuit'],
+    weapon: 'none',
+    idle: 'boardHover',
+    attack: 'cosmicPunch',
+    death: 'launched',
+    tempo: 1.05,
+    locomotion: 'fly',
+    /** Board whiz — rocket across the file. */
+    moveSpeedMul: 3.2,
+    attackSpeedMul: 1.15,
+  },
+  'roronoa-zoro': {
+    // Wano Pirate Hunter — moss topknot, open white kimono, green haori, purple obi, Santoryu.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.06, bulk: 1.12, shoulders: 1.18, head: 0.98 },
+    palette: {
+      skin: '#e8c4a0',
+      hair: '#2f6b3a',
+      hairAlt: '#1e4a28',
+      primary: '#f2eee8',
+      secondary: '#1a3a28',
+      accent: '#6a2a78',
+      trim: '#12141a',
+      metal: '#e0b040',
+      eye: '#2a2218',
+      glow: '#b8e8ff',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'line', marks: ['scarEye'] },
+    hair: 'manBun',
+    top: 'kimono',
+    bottom: 'hakama',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['zoroSuit'],
+    weapon: 'santoryu',
+    idle: 'zoroDraw',
+    attack: 'santoryu',
+    death: 'launched',
+    tempo: 1.05,
+    locomotion: 'run',
+    stride: 0.52,
+    attackSpeedMul: 1.15,
+  },
+  'kenpachi': {
+    // Kenpachi Zaraki — tall butcher build, spiky bell-hair, ragged captain haori, notched katana.
+    body: 'titan',
+    figure: 'm',
+    tweak: { height: 1.12, bulk: 1.14, shoulders: 1.2, head: 0.98 },
+    palette: {
+      skin: '#c49a78',
+      hair: '#0c0c10',
+      hairAlt: '#1a1a22',
+      primary: '#101218',
+      secondary: '#14161c',
+      accent: '#a898c8',
+      trim: '#0a0b0e',
+      metal: '#d4b040',
+      eye: '#1a1410',
+      glow: '#e8e4f0',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'grin', marks: ['scarEye'] },
+    hair: 'spiky',
+    top: 'kimono',
+    bottom: 'hakama',
+    shoes: 'slippers',
+    hands: 'bare',
+    extras: ['kenpachiSuit'],
+    weapon: 'katana',
+    idle: 'kenpachiSwish',
+    attack: 'nozarashiSlash',
+    death: 'launched',
+    tempo: 0.95,
+    locomotion: 'run',
+    stride: 0.58,
+    moveSpeedMul: 1.25,
   },
 }
 

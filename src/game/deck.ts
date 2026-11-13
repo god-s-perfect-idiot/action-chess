@@ -43,3 +43,36 @@ export function sortDeckIds(ids: readonly string[], heroes: HeroDef[]): string[]
     return (ha?.codename ?? a).localeCompare(hb?.codename ?? b)
   })
 }
+
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = arr[i]!
+    arr[i] = arr[j]!
+    arr[j] = tmp
+  }
+  return arr
+}
+
+/** Pick a full legal deck: quota per piece class, shuffled within each class. */
+export function randomDeck(
+  heroes: HeroDef[],
+  exclude: readonly string[] = [],
+): string[] {
+  const excluded = new Set(exclude)
+  const pools = new Map<PieceType, string[]>()
+  for (const hero of heroes) {
+    if (excluded.has(hero.id)) continue
+    const list = pools.get(hero.piece) ?? []
+    list.push(hero.id)
+    pools.set(hero.piece, list)
+  }
+
+  const ids: string[] = []
+  for (const piece of DECK_ORDER) {
+    const need = DECK_QUOTA[piece]
+    const pool = shuffleInPlace([...(pools.get(piece) ?? [])])
+    ids.push(...pool.slice(0, need))
+  }
+  return sortDeckIds(ids, heroes)
+}

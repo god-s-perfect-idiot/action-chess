@@ -227,6 +227,36 @@ function buildFace(c: Ctx) {
           )
         })
         break
+      case 'sonicMarks':
+        // Speed-o'-Sonic — horizontal purple teardrops under each eye.
+        sides((s) => {
+          const x = s * r * 0.36
+          const y = -r * 0.26
+          const z = faceZ(r, x, y) + r * 0.01
+          add(
+            'head',
+            <P
+              s={S.box(r * 0.16, r * 0.055, r * 0.03, r * 0.02)}
+              m={M.accent}
+              line={false}
+              shadow={false}
+              p={[x, y, z]}
+              r={[0, s * 0.35, s * 0.08]}
+            />,
+          )
+          add(
+            'head',
+            <P
+              s={S.sphere(r * 0.04, 8, 6)}
+              m={M.accent}
+              line={false}
+              shadow={false}
+              p={[x + s * r * 0.08, y - r * 0.01, z + r * 0.002]}
+              sc={[1.4, 0.7, 0.5]}
+            />,
+          )
+        })
+        break
       case 'circuit':
         sides((s) => {
           const x = s * r * 0.55
@@ -700,30 +730,98 @@ function buildHeadgear(c: Ctx) {
     add('head', <P s={S.torus(r * 0.95, r * 0.13, Math.PI * 1.15, 20)} m={M.glow} p={[0, ey + r * 0.02, -r * 0.02]} r={[Math.PI / 2, 0, Math.PI * 0.07 + Math.PI]} sc={[1, 1, 0.8]} />)
     add('head', <P s={S.box(r * 0.25, r * 0.05, r * 0.05, r * 0.02)} m={M.trim} line={false} p={[0, ey + r * 0.02, r * 1.07]} />)
   }
+  if (has('speedGoggles')) {
+    // Speed — wraparound amber goggles (no cowl); dark frame, glow lenses.
+    add('head', <P s={S.box(r * 1.65, r * 0.2, r * 0.14, r * 0.06)} m={M.trim} p={[0, ey + r * 0.06, r * 0.72]} />)
+    add('head', <P s={S.box(r * 0.18, r * 0.1, r * 0.06, r * 0.03)} m={M.trim} line={false} p={[0, ey + r * 0.04, faceZ(r, 0, ey) + r * 0.1]} />)
+    sides((s) => {
+      const x = s * r * 0.36
+      const y = ey + r * 0.02
+      const z = faceZ(r, x, y)
+      add('head', <P s={S.box(r * 0.5, r * 0.2, r * 0.08, r * 0.05)} m={M.trim} p={[x, y, z + r * 0.05]} r={[0, s * 0.3, s * 0.05]} />)
+      add(
+        'head',
+        <P
+          s={S.box(r * 0.4, r * 0.13, r * 0.04, r * 0.03)}
+          m={M.glow}
+          line={false}
+          shadow={false}
+          p={[x, y + r * 0.01, z + r * 0.12]}
+          r={[0, s * 0.3, 0]}
+        />,
+      )
+      add('head', <P s={S.box(r * 0.22, r * 0.12, r * 0.1, r * 0.04)} m={M.trim} line={false} p={[s * r * 0.78, y, r * 0.35]} r={[0, s * 0.9, 0]} />)
+    })
+  }
+  if (has('redRushCowl')) {
+    // Red Rush — open-face cowl in primary (same maroon as the suit) + scarlet goggles.
+    add('head', <P s={S.sphere(r * 1.1, 18, 14)} m={M.primary} p={[0, r * 0.08, -r * 0.02]} sc={[1.02, 0.92, 1.04]} />)
+    add('head', <P s={S.sphere(r * 1.06, 16, 12)} m={M.primary} p={[0, r * 0.32, -r * 0.06]} sc={[0.98, 0.62, 1.0]} />)
+    sides((s) => {
+      add('head', <P s={S.box(r * 0.4, r * 0.95, r * 0.7, r * 0.12)} m={M.primary} p={[s * r * 0.72, r * 0.02, -r * 0.02]} r={[0.08, s * 0.12, s * 0.04]} />)
+      add('head', <P s={S.box(r * 0.26, r * 0.55, r * 0.38, r * 0.09)} m={M.primary} p={[s * r * 0.82, r * 0.18, -r * 0.3]} r={[0.2, s * 0.35, s * -0.1]} />)
+    })
+    // Neck gaiter — stops above the chin so the mouth reads open-face.
+    add('head', <P s={S.sphere(r * 0.78, 12, 10)} m={M.primary} p={[0, -r * 0.48, -r * 0.02]} sc={[0.88, 0.55, 0.82]} />)
+    add('neck', <P s={S.cyl(0.042 * Math.sqrt(pr.limb), 0.05 * Math.sqrt(pr.limb), pr.neck * 0.9, 12)} m={M.primary} p={[0, pr.neck * 0.32, 0]} />)
+    // Wraparound goggle band + glowing scarlet lenses.
+    add('head', <P s={S.box(r * 1.65, r * 0.2, r * 0.14, r * 0.06)} m={M.primary} p={[0, ey + r * 0.06, r * 0.72]} />)
+    add('head', <P s={S.box(r * 0.18, r * 0.1, r * 0.06, r * 0.03)} m={M.primary} line={false} p={[0, ey + r * 0.04, faceZ(r, 0, ey) + r * 0.1]} />)
+    sides((s) => {
+      const x = s * r * 0.36
+      const y = ey + r * 0.02
+      const z = faceZ(r, x, y)
+      add('head', <P s={S.box(r * 0.5, r * 0.2, r * 0.08, r * 0.05)} m={M.accent} p={[x, y, z + r * 0.05]} r={[0, s * 0.3, s * 0.05]} />)
+      add(
+        'head',
+        <P
+          s={S.box(r * 0.4, r * 0.13, r * 0.04, r * 0.03)}
+          m={M.glow}
+          line={false}
+          shadow={false}
+          p={[x, y + r * 0.01, z + r * 0.12]}
+          r={[0, s * 0.3, 0]}
+        />,
+      )
+      // Side wing of the wraparound lens.
+      add('head', <P s={S.box(r * 0.22, r * 0.12, r * 0.1, r * 0.04)} m={M.accent} line={false} p={[s * r * 0.78, y, r * 0.35]} r={[0, s * 0.9, 0]} />)
+    })
+  }
   if (has('dominoMask')) {
-    // Flash Manhattan cowl — full face/jaw/cheek wrap, open crown for red spikes.
+    // Speedster cowl — full face/jaw/cheek wrap. Manhattan keeps an open crown for red spikes.
+    const manhattan = has('manhattanMark')
+    // Zoom — hollow black voids instead of white Flash lenses.
+    const voidLenses = !manhattan && c.d.face.eyes === 'hidden'
+    // Reverse Flash — red Negative Speed Force glow lenses.
+    const voltGlow = !manhattan && c.d.face.eyes === 'glow'
     add('head', <P s={S.sphere(r * 1.12, 18, 14)} m={M.primary} p={[0, -r * 0.04, r * 0.02]} sc={[1.02, 1.0, 1.06]} />)
+    if (!manhattan) {
+      // Classic Flash / Reverse Flash / Zoom — sealed crown (no hair breakout).
+      add('head', <P s={S.sphere(r * 1.08, 16, 12)} m={M.primary} p={[0, r * 0.28, -r * 0.04]} sc={[1.0, 0.72, 1.02]} />)
+    }
     add('head', <P s={S.sphere(r * 0.86, 14, 12)} m={M.primary} p={[0, -r * 0.42, r * 0.16]} sc={[0.92, 0.8, 0.9]} />)
     // Brow ridge + bridge over the lenses.
     add('head', <P s={S.box(r * 1.55, r * 0.28, r * 0.22, r * 0.1)} m={M.primary} p={[0, ey + r * 0.22, r * 0.78]} />)
     sides((s) => {
       add('head', <P s={S.box(r * 0.42, r * 1.1, r * 0.78, r * 0.14)} m={M.primary} p={[s * r * 0.74, -r * 0.06, r * 0.06]} r={[0.06, s * 0.1, s * 0.04]} />)
       add('head', <P s={S.box(r * 0.28, r * 0.6, r * 0.42, r * 0.1)} m={M.primary} p={[s * r * 0.84, r * 0.12, -r * 0.28]} r={[0.18, s * 0.38, s * -0.12]} />)
-      // Winged ear bolts.
-      add('head', <P s={S.box(r * 0.08, r * 0.22, r * 0.28, r * 0.03)} m={M.metal} line={false} p={[s * r * 1.05, r * 0.28, -r * 0.08]} r={[0.2, s * 0.4, s * -0.55]} />)
+      // Winged ear bolts — accent (gold / red / cyan / blue via palette).
+      add('head', <P s={S.box(r * 0.08, r * 0.22, r * 0.28, r * 0.03)} m={M.accent} line={false} p={[s * r * 1.05, r * 0.28, -r * 0.08]} r={[0.2, s * 0.4, s * -0.55]} />)
       add('head', <P s={S.box(r * 0.05, r * 0.12, r * 0.14, r * 0.02)} m={M.glow} line={false} shadow={false} p={[s * r * 1.1, r * 0.36, -r * 0.12]} r={[0.25, s * 0.45, s * -0.6]} />)
     })
-    // Glowing cyan eye lenses.
+    // Eye lenses — glow for Manhattan / Reverse Flash; void pits for Zoom; white plates for classic scarlet.
+    const lensFrame = manhattan ? M.secondary : voidLenses || voltGlow ? M.trim : M.metal
+    const lensGlow = manhattan || voltGlow ? M.glow : voidLenses ? M.ink : M.metal
     sides((s) => {
       const x = s * r * 0.34
       const y = ey + r * 0.02
       const z = faceZ(r, x, y)
-      add('head', <P s={S.box(r * 0.48, r * 0.22, r * 0.08, r * 0.06)} m={M.secondary} p={[x, y, z + r * 0.06]} r={[0, s * 0.28, s * 0.06]} />)
+      add('head', <P s={S.box(r * 0.48, r * 0.22, r * 0.08, r * 0.06)} m={lensFrame} p={[x, y, z + r * 0.06]} r={[0, s * 0.28, s * 0.06]} />)
       add(
         'head',
         <P
           s={S.box(r * 0.38, r * 0.14, r * 0.04, r * 0.03)}
-          m={M.glow}
+          m={lensGlow}
           line={false}
           shadow={false}
           p={[x, y + r * 0.01, z + r * 0.13]}
@@ -731,10 +829,12 @@ function buildHeadgear(c: Ctx) {
         />,
       )
     })
-    add('head', <P s={S.box(r * 0.16, r * 0.08, r * 0.04, r * 0.02)} m={M.secondary} line={false} p={[0, ey + r * 0.04, faceZ(r, 0, ey) + r * 0.08]} />)
-    // Dr. Manhattan forehead mark — circle + nucleus.
-    add('head', <P s={S.cyl(r * 0.12, r * 0.12, r * 0.04, 14)} m={M.glow} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.06]} r={[Math.PI / 2, 0, 0]} />)
-    add('head', <P s={S.cyl(r * 0.04, r * 0.04, r * 0.03, 10)} m={M.metal} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.09]} r={[Math.PI / 2, 0, 0]} />)
+    add('head', <P s={S.box(r * 0.16, r * 0.08, r * 0.04, r * 0.02)} m={lensFrame} line={false} p={[0, ey + r * 0.04, faceZ(r, 0, ey) + r * 0.08]} />)
+    if (manhattan) {
+      // Dr. Manhattan forehead mark — circle + nucleus.
+      add('head', <P s={S.cyl(r * 0.12, r * 0.12, r * 0.04, 14)} m={M.glow} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.06]} r={[Math.PI / 2, 0, 0]} />)
+      add('head', <P s={S.cyl(r * 0.04, r * 0.04, r * 0.03, 10)} m={M.metal} line={false} shadow={false} p={[0, r * 0.42, faceZ(r, 0, r * 0.42) + r * 0.09]} r={[Math.PI / 2, 0, 0]} />)
+    }
   }
   if (has('shades')) {
     sides((s) => {

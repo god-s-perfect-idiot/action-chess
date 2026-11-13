@@ -1,3 +1,4 @@
+import { DECK_QUOTA } from './deck'
 import { HEROES } from './heroes'
 import type { BoardPiece, PieceColor, PieceType, Square } from './types'
 
@@ -62,10 +63,14 @@ function shuffleInPlace<T>(arr: T[]): T[] {
  * Deal heroes of each piece class across both teams.
  * Chess roles stay fixed; only the character skins are assigned.
  *
- * When `whiteDeck` is provided, those heroes fill Dawn (white) slots first;
- * Eclipse gets the remaining roster (shuffled within each class).
+ * When `whiteDeck` is provided, those heroes fill Dawn (white) slots first.
+ * When `blackDeck` is also provided, those fill Eclipse; otherwise Eclipse
+ * gets the remaining roster (shuffled within each class).
  */
-export function createTrackedPieces(whiteDeck?: readonly string[]): TrackedPiece[] {
+export function createTrackedPieces(
+  whiteDeck?: readonly string[],
+  blackDeck?: readonly string[],
+): TrackedPiece[] {
   const pools = new Map<PieceType, string[]>()
   for (const hero of HEROES) {
     const list = pools.get(hero.piece) ?? []
@@ -73,12 +78,32 @@ export function createTrackedPieces(whiteDeck?: readonly string[]): TrackedPiece
     pools.set(hero.piece, list)
   }
 
-  const deck = whiteDeck?.length ? whiteDeck : null
-  const deckSet = deck ? new Set(deck) : null
+  const white = whiteDeck?.length ? whiteDeck : null
+  const black = blackDeck?.length ? blackDeck : null
+  const whiteSet = white ? new Set(white) : null
+  const blackSet = black ? new Set(black) : null
+
   for (const [type, list] of pools) {
-    if (deckSet) {
-      const chosen = deck.filter((id) => list.includes(id))
-      const rest = list.filter((id) => !deckSet.has(id))
+    if (whiteSet && blackSet) {
+      const wChosen = white!.filter((id) => list.includes(id))
+      const bChosen = black!.filter((id) => list.includes(id))
+      const claimed = new Set([...wChosen, ...bChosen])
+      const rest = list.filter((id) => !claimed.has(id))
+      shuffleInPlace(rest)
+      const need = DECK_QUOTA[type]
+      const wSlots = [...wChosen]
+      const bSlots = [...bChosen]
+      let ri = 0
+      while (wSlots.length < need && ri < rest.length) {
+        wSlots.push(rest[ri++]!)
+      }
+      while (bSlots.length < need && ri < rest.length) {
+        bSlots.push(rest[ri++]!)
+      }
+      pools.set(type, [...wSlots, ...bSlots, ...rest.slice(ri)])
+    } else if (whiteSet) {
+      const chosen = white!.filter((id) => list.includes(id))
+      const rest = list.filter((id) => !whiteSet.has(id))
       shuffleInPlace(rest)
       pools.set(type, [...chosen, ...rest])
     } else {

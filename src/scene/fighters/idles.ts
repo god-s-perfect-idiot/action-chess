@@ -1010,6 +1010,32 @@ export const IDLES: Record<IdleStyle, IdleFn> = {
       rHand: [0.2, 0, 0.1],
     })
   },
+  leeStance: (t) => {
+    // Rock Lee — low Strong Fist crouch: open right palm forward, left hand behind the back.
+    const b = sin(t * 1.4) * 0.012
+    const pulse = beat(t, 3.4, 0.35) * 0.02
+    return P({
+      hipY: -0.26 + b,
+      hips: [0.12, 0.22, 0.04],
+      root: [0, b * 0.5, 0.02],
+      // Right leg loaded forward, left planted back.
+      lFoot: [0.14, 0, -0.12],
+      rFoot: [0.12, 0, 0.14],
+      lToe: 0.2,
+      rToe: 0.35,
+      spine: [0.38 + b, -0.08, 0],
+      chest: [0.1, 0, 0],
+      head: [-0.2, 0.12, 0],
+      // Left arm tucked behind the waist.
+      lArm: [0.55, -0.55, -0.75],
+      lElbow: [-1.75, 0, 0.15],
+      lHand: [0.15, 0, 0.1],
+      // Right hand forward — flat open palm, fingers up.
+      rArm: [-1.15 + pulse, 0.12, 0.42],
+      rElbow: [-0.55, 0, 0.25],
+      rHand: [-0.65, 0.08, -0.35],
+    })
+  },
   deadpan: (t) => {
     // Mob — rigid, arms at sides, blank stare. Almost no motion.
     const br = sin(t * 0.55)
@@ -1519,6 +1545,114 @@ export const IDLES: Record<IdleStyle, IdleFn> = {
       prop: charge,
     })
   },
+  benimaruReady: (t) => {
+    // Benimaru — tree-pose idle: plant left, tuck right foot to the knee, casual brow salute.
+    const br = sin(t * 1.15)
+    const sway = sin(t * 0.55)
+    const wobble = sin(t * 2.1) * 0.008
+    return P({
+      hipY: -0.06 + br * 0.006 + wobble,
+      // Planted left; right foot hiked to the inside of the left knee.
+      lFoot: [0.08, 0, 0.04],
+      rFoot: [-0.02, 0.32 + br * 0.01, 0.02],
+      rToe: 0.55,
+      hips: [0.08, -0.22 + sway * 0.06, 0.1],
+      spine: [-0.02 + br * 0.015, 0.12 + sway * 0.04, -0.04],
+      chest: [-0.04 - br * 0.01, 0.08, 0],
+      head: [-0.08 + br * 0.02, 0.18 + sway * 0.08, 0.06],
+      // Left arm hangs loose at the side.
+      lArm: [0.12 + br * 0.03, 0.08, 0.18],
+      lElbow: [-0.35, 0, 0],
+      lHand: [0.15, 0, 0],
+      // Right hand up by the temple — two-finger casual salute / scratch.
+      rArm: [-2.15, -0.05, 0.65],
+      rElbow: [-0.95, 0, 0],
+      rHand: [0.45, 0.1, 0.35],
+      prop: 0,
+      blink: beat(t, 5.4, 0.14) > 0.75 ? 1 : 0,
+    })
+  },
+  akutagawaReady: (t) => {
+    // Akutagawa — stiff upper body, left hand buried in the coat, right covering a cough.
+    const br = sin(t * 1.05)
+    const sway = sin(t * 0.48)
+    const cough = beat(t, 5.8, 0.55)
+    const cover = cough > 0.15 ? 1 : 0
+    return P({
+      hipY: -0.04 + br * 0.004,
+      lFoot: [0.04, 0, 0.05],
+      rFoot: [0.045, 0, -0.04],
+      hips: [-0.04, sway * 0.05, 0.04],
+      spine: [-0.06 + br * 0.01, -sway * 0.04, -0.03],
+      chest: [-0.05, 0.02, 0],
+      neck: [0.06 + cover * 0.08, 0, 0],
+      head: [0.04 + cover * 0.12 + br * 0.02, 0.12 + sway * 0.08, 0.04],
+      // Left tucked in the coat pocket.
+      lArm: [0.2, 0.04, 0.2],
+      lElbow: [-0.58, 0, 0],
+      lHand: [0.22, 0.04, 0.02],
+      // Right rises to the mouth on the cough beat.
+      rArm: cover
+        ? [-1.55 - cough * 0.15, -0.15, 0.95]
+        : [0.18, -0.04, 0.18],
+      rElbow: cover ? [-1.05, 0, 0] : [-0.55, 0, 0],
+      rHand: cover ? [0.55, 0.1, 0.25] : [0.2, -0.04, 0],
+      blink: beat(t, 4.8, 0.12) > 0.75 || cough > 0.55 ? 1 : 0,
+    })
+  },
+  dazaiReady: (t) => {
+    // Dazai — left hand in the trench pocket, right loosely near the temple; lazy smirk sway.
+    const br = sin(t * 0.95)
+    const sway = sin(t * 0.42)
+    const scratch = beat(t, 6.2, 0.7)
+    const temple = scratch > 0.2 ? 1 : 0
+    return P({
+      hipY: -0.035 + br * 0.004,
+      lFoot: [0.035, 0, 0.05],
+      rFoot: [0.04, 0, -0.05],
+      hips: [-0.02, sway * 0.08, 0.03],
+      spine: [-0.08 + br * 0.01, -sway * 0.05, -0.03],
+      chest: [-0.04, 0.04, 0],
+      neck: [0.04, 0, 0],
+      head: [0.05 + br * 0.02, 0.18 + sway * 0.1, 0.05],
+      // Left buried in the coat pocket.
+      lArm: [0.22, 0.06, 0.18],
+      lElbow: [-0.55, 0, 0],
+      lHand: [0.24, 0.05, 0.02],
+      // Right hangs, then drifts up to the temple on the scratch beat.
+      rArm: temple
+        ? [-2.05 - scratch * 0.1, -0.08, 0.7]
+        : [0.15, -0.08, 0.22],
+      rElbow: temple ? [-0.9, 0, 0] : [-0.5, 0, 0],
+      rHand: temple ? [0.4, 0.08, 0.3] : [0.18, -0.05, 0],
+      blink: beat(t, 5.1, 0.12) > 0.75 ? 1 : 0,
+    })
+  },
+  chuuyaReady: (t) => {
+    // Chuuya — cocky weight shift, gloved hand open, fedora tipped; gravity hum in the stance.
+    const br = sin(t * 1.35)
+    const sway = sin(t * 0.7)
+    const tip = beat(t, 3.4, 0.35)
+    return P({
+      hipY: -0.05 + br * 0.005,
+      lFoot: [0.04, 0, 0.06],
+      rFoot: [0.055, 0, -0.08],
+      hips: [0.06, -0.35 + sway * 0.06, 0.05],
+      spine: [-0.04, 0.18, -0.05],
+      chest: [-0.05, 0.1, 0],
+      head: [-0.08 + tip * 0.12, -0.2 + sway * 0.1, -0.08],
+      // Left hangs relaxed under the draped coat.
+      lArm: [0.12, 0.15, 0.28],
+      lElbow: [-0.65, 0, 0],
+      lHand: [0.15, 0.05, 0],
+      // Right open toward the viewer — ready to crush.
+      rArm: [-0.95 + tip * -0.2, -0.35, 0.85],
+      rElbow: [-0.85, 0, 0],
+      rHand: [-0.35 + tip * 0.4, 0.1, tip * 0.35],
+      flap: 0.12 + abs(br) * 0.08,
+      blink: beat(t, 4.2, 0.12) > 0.75 ? 1 : 0,
+    })
+  },
   joninSalute: (t) => {
     // Hip cocked, two-finger salute at the brow — classic Leaf jonin arrival.
     const br = sin(t * 1.4)
@@ -1639,6 +1773,386 @@ export const IDLES: Record<IdleStyle, IdleFn> = {
       rElbow: [-0.15, 0, 0],
       rHand: [-0.55, 0.1, 0.05],
       blink: 1,
+    })
+  },
+  bakugoReady: (t) => {
+    // Dynamight — wide cocky stance, open palms out ready to detonate.
+    const br = sin(t * 1.35)
+    const sway = sin(t * 0.7)
+    const charge = 0.4 + 0.6 * abs(sin(t * 2.4))
+    return P({
+      hipY: -0.12 + br * 0.01,
+      root: [0, 0, 0.02],
+      lFoot: [0.08, 0, 0.14],
+      rFoot: [0.08, 0, -0.12],
+      hips: [0.06, sway * 0.1, 0.05],
+      spine: [0.12 + br * 0.02, -sway * 0.06, 0],
+      chest: [0.06, -sway * 0.04, 0],
+      head: [-0.05 + br * 0.03, 0.12 + sway * 0.08, -0.04],
+      // Both palms forward — nitroglycerin primed.
+      lArm: [-1.05 - charge * 0.08, 0.55 + sway * 0.05, 0.95 + charge * 0.1],
+      lElbow: [-0.35 - charge * 0.1, 0, 0],
+      lHand: [-0.45 - charge * 0.12, 0.2, 0.2],
+      rArm: [-1.05 - charge * 0.08, -0.55 - sway * 0.05, 0.95 + charge * 0.1],
+      rElbow: [-0.35 - charge * 0.1, 0, 0],
+      rHand: [-0.45 - charge * 0.12, -0.2, -0.2],
+      blink: beat(t, 3.8, 0.12) > 0.7 ? 1 : 0,
+      prop: charge,
+    })
+  },
+  tengenFlash: (t) => {
+    // Sound Hashira — draw both cleavers from the back, flashy dual swing, sheath; loop.
+    const br = sin(t * 1.2)
+    const sway = sin(t * 0.55)
+    const cycle = 5.2
+    const local = t % cycle
+    let prop = 0
+    let arms: Partial<Pose> = {}
+    if (local < 0.85) {
+      // Cocky rest — cleavers stowed, grin, slight chest puff.
+      const settle = smooth(local / 0.85)
+      arms = {
+        hipY: -0.06 + br * 0.008,
+        hips: [0.04, sway * 0.08, 0.04],
+        spine: [-0.04 + br * 0.02, -sway * 0.06, 0],
+        chest: [-0.02, 0.06, 0],
+        head: [0.04, 0.18 + sway * 0.1, -0.04],
+        lArm: [0.15 + settle * 0.05, 0.2, 0.35],
+        rArm: [0.15 + settle * 0.05, -0.2, 0.35],
+        lElbow: [-0.45, 0, 0],
+        rElbow: [-0.45, 0, 0],
+        lHand: [0.1, 0, 0.05],
+        rHand: [0.1, 0, -0.05],
+      }
+      prop = 0
+    } else if (local < 1.45) {
+      // Reach over both shoulders for the handles — keep stowed until clear of the torso.
+      const u = smooth((local - 0.85) / 0.6)
+      arms = {
+        hipY: -0.1,
+        hips: [0.08, 0.1, 0],
+        spine: [0.18 * u, 0.15, 0],
+        chest: [0.1 * u, 0.08, 0],
+        head: [-0.08 * u, 0.1, 0],
+        lArm: [-1.55 * u - 0.1, 0.85 * u, 0.95 * u],
+        rArm: [-1.55 * u - 0.1, -0.85 * u, 0.95 * u],
+        lElbow: [-0.35 * (1 - u) - 0.15 * u, 0, 0],
+        rElbow: [-0.35 * (1 - u) - 0.15 * u, 0, 0],
+        lHand: [-0.2 * u, 0.15, 0.2],
+        rHand: [-0.2 * u, -0.15, -0.2],
+      }
+      prop = 0
+    } else if (local < 2.15) {
+      // First wide swing — snap into hands once arms clear the shoulders.
+      const u = smooth((local - 1.45) / 0.7)
+      arms = {
+        hipY: -0.12,
+        root: [0, 0, 0.08 * u],
+        hips: [0.12, 0.45 * u, 0],
+        spine: [0.22, -0.55 * u, 0],
+        chest: [0.1, -0.2 * u, 0],
+        head: [0.05, -0.2 * u, 0],
+        lArm: [-1.65, 0.15 - 0.4 * u, 0.2 + 0.6 * u],
+        rArm: [-0.35 - 1.2 * u, -0.55, 0.85],
+        lElbow: [-0.1, 0, 0],
+        rElbow: [-0.25, 0, 0],
+        lHand: [-0.45, 0, 0.1],
+        rHand: [-0.35, 0, 0.25],
+      }
+      prop = 1
+    } else if (local < 2.85) {
+      // Cross reverse swing.
+      const u = smooth((local - 2.15) / 0.7)
+      arms = {
+        hipY: -0.14,
+        root: [0, 0, 0.12],
+        hips: [0.14, -0.5 * u + 0.2 * (1 - u), 0],
+        spine: [0.25, 0.55 * u - 0.2 * (1 - u), 0],
+        chest: [0.1, 0.18 * u, 0],
+        head: [0.06, 0.22 * u, 0],
+        lArm: [-0.4 - 1.15 * u, 0.55, 0.85],
+        rArm: [-1.65, -0.15 + 0.4 * u, 0.2 + 0.55 * u],
+        lElbow: [-0.2, 0, 0],
+        rElbow: [-0.1, 0, 0],
+        lHand: [-0.35, 0, 0.2],
+        rHand: [-0.45, 0, 0.1],
+      }
+      prop = 1
+    } else if (local < 3.55) {
+      // Dual overhead flourish, then reach back — sheath only once hands are parked.
+      const u = smooth((local - 2.85) / 0.7)
+      arms = {
+        hipY: -0.1,
+        root: [0, 0, 0.06 * (1 - u)],
+        hips: [0.08, 0.1, 0],
+        spine: [0.15 + 0.1 * u, 0.1, 0],
+        chest: [0.08, 0.06, 0],
+        head: [-0.05 * u, 0.12, 0],
+        lArm: [-1.7 + 0.15 * u, 0.7, 1.05 - 0.1 * u],
+        rArm: [-1.7 + 0.15 * u, -0.7, 1.05 - 0.1 * u],
+        lElbow: [-0.15, 0, 0],
+        rElbow: [-0.15, 0, 0],
+        lHand: [-0.3, 0.1, 0.15],
+        rHand: [-0.3, -0.1, -0.15],
+      }
+      prop = 1
+    } else {
+      // Settled stow — flashy idle until the next draw.
+      arms = {
+        hipY: -0.06 + br * 0.008,
+        hips: [0.04, sway * 0.08, 0.04],
+        spine: [-0.04 + br * 0.02, -sway * 0.06, 0],
+        chest: [-0.02, 0.06, 0],
+        head: [0.04, 0.18 + sway * 0.1, -0.04],
+        lArm: [0.18, 0.22, 0.38],
+        rArm: [0.18, -0.22, 0.38],
+        lElbow: [-0.5, 0, 0],
+        rElbow: [-0.5, 0, 0],
+        lHand: [0.12, 0, 0.05],
+        rHand: [0.12, 0, -0.05],
+      }
+      prop = 0
+    }
+    return P({
+      ...arms,
+      lFoot: [0.06, 0, 0.1],
+      rFoot: [0.06, 0, -0.08],
+      blink: beat(t, 4.2, 0.12) > 0.7 ? 1 : 0,
+      prop,
+    })
+  },
+  boardHover: (t) => {
+    // Silver Surfer — crouched on the board, hovering up and down.
+    const f = sin(t * 1.45)
+    const sway = sin(t * 0.7)
+    return P({
+      root: [0, 0.24 + f * 0.05, 0],
+      hipY: -0.12 + f * 0.008,
+      hips: [0.08, -0.15 + sway * 0.08, 0.06],
+      spine: [-0.12 + f * 0.02, 0.18 + sway * 0.05, f * 0.03],
+      chest: [-0.06, 0.1, 0],
+      head: [0.08, 0.25 + sway * 0.1, 0.04],
+      // Surfing crouch — lead foot forward, trail foot back on the board.
+      lFoot: [0.04, 0.06, 0.12],
+      rFoot: [0.05, 0.08, -0.14],
+      lToe: 0.45,
+      rToe: 0.55,
+      // Lead hand points / steers; rear arm balances.
+      lArm: [-0.55, 0.15, 0.55 + f * 0.06],
+      lElbow: [-1.15, 0, 0],
+      lHand: [-0.25, 0, 0.15],
+      rArm: [-1.15 - f * 0.04, -0.2, 0.85],
+      rElbow: [-0.45, 0, 0],
+      rHand: [-0.55, 0.1, 0.2],
+      blink: 0,
+    })
+  },
+  kenpachiSwish: (t) => {
+    // Kenpachi — wide bloodlust stance; periodic overhead and side sword swishes.
+    const br = sin(t * 1.05)
+    const sway = sin(t * 0.55)
+    const period = 4.6
+    const local = t % period
+    let swing = 0
+    if (local > 1.2 && local < 3.9) {
+      if (local < 1.55) swing = smooth((local - 1.2) / 0.35)
+      else if (local < 3.55) swing = 1
+      else swing = 1 - smooth((local - 3.55) / 0.35)
+    }
+    const ph = local > 1.2 && local < 3.9 ? ((local - 1.2) / 2.7) * PI * 2 : 0
+    const arc = sin(ph) * swing
+    const lift = max(0, -cos(ph)) * swing
+    const snap = abs(sin(ph * 2)) * swing
+    return P({
+      prop: 1,
+      hipY: -0.14 + br * 0.008 - swing * 0.03,
+      root: [0, 0, swing * 0.05],
+      lFoot: [0.08, 0, 0.14 + swing * 0.05],
+      rFoot: [0.09, 0, -0.12 - swing * 0.04],
+      hips: [0.12 + swing * 0.05, -0.2 + sway * 0.05 + arc * 0.4, 0],
+      spine: [0.16 + br * 0.02 + lift * 0.1, 0.15 - arc * 0.6, 0],
+      chest: [0.06 + lift * 0.08, 0.08 - arc * 0.2, 0],
+      head: [-0.1 + lift * 0.12, 0.22 + sway * 0.08 - arc * 0.3, 0.04],
+      // Left fist clenched at the side — ready to punch through the cut.
+      lArm: [-0.35 + swing * 0.25, -0.55 - swing * 0.2, 0.45 + swing * 0.15],
+      lElbow: [-1.05 + swing * 0.2, 0, 0],
+      lHand: [0.2 - swing * 0.15, 0, 0.1],
+      // Right arm drives the notched blade through practice arcs.
+      rArm: [
+        -0.85 - swing * (0.95 + lift * 0.6),
+        0.65 + arc * 1.05 - lift * 0.5,
+        0.65 + swing * 0.45 + snap * 0.4,
+      ],
+      rElbow: [-0.85 + swing * 0.85 - snap * 0.12, 0, 0],
+      rHand: [0.2 - swing * 0.15 + lift * 0.1, 0.12 + arc * 0.18, 0.2 + swing * 0.35],
+      blink: beat(t, 3.8, 0.1) > 0.7 ? 1 : 0,
+    })
+  },
+  zoroDraw: (t) => {
+    // Santoryu idle — hands to the hip saya, draw all three (mouth + dual), flourish, sheath.
+    const br = sin(t * 1.15)
+    const sway = sin(t * 0.5)
+    const cycle = 5.6
+    const local = t % cycle
+    let prop = 0
+    let arms: Partial<Pose> = {}
+    if (local < 0.9) {
+      // Rest — three swords sheathed at the hip, weight on the back foot.
+      arms = {
+        hipY: -0.1 + br * 0.008,
+        hips: [0.06, -0.2 + sway * 0.06, 0],
+        spine: [0.12 + br * 0.02, 0.12, 0],
+        chest: [0.04, 0.06, 0],
+        head: [-0.06, 0.1 + sway * 0.08, 0],
+        lArm: [-0.45, -0.55, 0.35],
+        rArm: [-0.55, -0.85, 0.4],
+        lElbow: [-1.15, 0, 0],
+        rElbow: [-1.35, 0, 0],
+        lHand: [0.15, 0, 0.05],
+        rHand: [0.2, 0, -0.05],
+      }
+      prop = 0
+    } else if (local < 1.55) {
+      // Both hands to the hip — grab hilts; mouth opens for Wado.
+      const u = smooth((local - 0.9) / 0.65)
+      arms = {
+        hipY: -0.14,
+        hips: [0.1, -0.25, 0],
+        spine: [0.22 * u + 0.08, 0.18, 0],
+        chest: [0.1 * u, 0.08, 0],
+        head: [-0.12 * u, 0.08, 0],
+        lArm: [-0.55 - 0.7 * u, -0.9 * u - 0.2, 0.55 * u + 0.25],
+        rArm: [-0.65 - 0.75 * u, -1.05 * u - 0.15, 0.6 * u + 0.25],
+        lElbow: [-1.0 + 0.55 * u, 0, 0],
+        rElbow: [-1.1 + 0.6 * u, 0, 0],
+        lHand: [-0.15 * u, 0.1, 0.1],
+        rHand: [-0.2 * u, -0.1, -0.1],
+      }
+      prop = 0
+    } else if (local < 2.15) {
+      // Snap-draw — blades clear the saya; Wado clenched in teeth.
+      const u = smooth((local - 1.55) / 0.6)
+      arms = {
+        hipY: -0.16,
+        root: [0, 0, 0.06 * u],
+        hips: [0.14, 0.15 * u - 0.1, 0],
+        spine: [0.2, -0.15 * u, 0],
+        chest: [0.08, -0.08 * u, 0],
+        head: [0.05 * u, -0.05, 0],
+        lArm: [-1.45 * u - 0.2, 0.55 * u, 0.85 * u],
+        rArm: [-1.45 * u - 0.2, -0.55 * u, 0.85 * u],
+        lElbow: [-0.25 * (1 - u) - 0.1 * u, 0, 0],
+        rElbow: [-0.25 * (1 - u) - 0.1 * u, 0, 0],
+        lHand: [-0.35 * u, 0.1, 0.15],
+        rHand: [-0.35 * u, -0.1, -0.15],
+      }
+      prop = 1
+    } else if (local < 2.85) {
+      // Diagonal dual rake — mouth blade tracks the turn.
+      const u = smooth((local - 2.15) / 0.7)
+      arms = {
+        hipY: -0.18,
+        root: [0, 0, 0.1],
+        hips: [0.18, 0.55 * u, 0],
+        spine: [0.28, -0.6 * u, 0],
+        chest: [0.12, -0.2 * u, 0],
+        head: [0.08, -0.22 * u, 0],
+        lArm: [-0.35 - 0.2 * u, 0.4, 0.75],
+        rArm: [-1.7, 0.2 * u, 0.15 + 0.1 * (1 - u)],
+        lElbow: [-0.9, 0, 0],
+        rElbow: [-0.05, 0, 0],
+        lHand: [-0.25, 0, 0.15],
+        rHand: [-0.55, 0, 0.1],
+      }
+      prop = 1
+    } else if (local < 3.55) {
+      // Cross reverse + mouth whip the other way.
+      const u = smooth((local - 2.85) / 0.7)
+      arms = {
+        hipY: -0.18,
+        root: [0, 0, 0.12],
+        hips: [0.18, -0.55 * u + 0.2 * (1 - u), 0],
+        spine: [0.3, 0.6 * u - 0.2 * (1 - u), 0],
+        chest: [0.12, 0.2 * u, 0],
+        head: [0.1, 0.25 * u, 0],
+        lArm: [-1.7, -0.2 * u, 0.15],
+        rArm: [-0.35 - 0.15 * u, -0.4, 0.75],
+        lElbow: [-0.05, 0, 0],
+        rElbow: [-0.9, 0, 0],
+        lHand: [-0.55, 0, 0.1],
+        rHand: [-0.25, 0, -0.15],
+      }
+      prop = 1
+    } else if (local < 4.25) {
+      // Triple overhead flourish, then hands return to the saya.
+      const u = smooth((local - 3.55) / 0.7)
+      arms = {
+        hipY: -0.14,
+        root: [0, 0, 0.06 * (1 - u)],
+        hips: [0.1, 0.08, 0],
+        spine: [0.18 + 0.1 * u, 0.12, 0],
+        chest: [0.08, 0.06, 0],
+        head: [-0.08 * u, 0.08, 0],
+        lArm: [-1.65 + 0.9 * u, 0.45 - 0.9 * u, 0.9 - 0.4 * u],
+        rArm: [-1.65 + 0.9 * u, -0.45 + 0.2 * u, 0.9 - 0.35 * u],
+        lElbow: [-0.15 - 0.7 * u, 0, 0],
+        rElbow: [-0.15 - 0.8 * u, 0, 0],
+        lHand: [-0.25 * (1 - u), 0.1, 0.1],
+        rHand: [-0.25 * (1 - u), -0.1, -0.1],
+      }
+      prop = u < 0.85 ? 1 : 0
+    } else {
+      // Sheathed settle until the next draw.
+      arms = {
+        hipY: -0.1 + br * 0.008,
+        hips: [0.06, -0.2 + sway * 0.06, 0],
+        spine: [0.12 + br * 0.02, 0.12, 0],
+        chest: [0.04, 0.06, 0],
+        head: [-0.06, 0.1 + sway * 0.08, 0],
+        lArm: [-0.45, -0.55, 0.35],
+        rArm: [-0.55, -0.85, 0.4],
+        lElbow: [-1.15, 0, 0],
+        rElbow: [-1.35, 0, 0],
+        lHand: [0.15, 0, 0.05],
+        rHand: [0.2, 0, -0.05],
+      }
+      prop = 0
+    }
+    return P({
+      ...arms,
+      lFoot: [0.05, 0, 0.12],
+      rFoot: [0.06, 0, -0.1],
+      blink: beat(t, 4.0, 0.12) > 0.7 ? 1 : 0,
+      prop,
+    })
+  },
+  godspeedIdle: (t) => {
+    // Killua — planted ready stance; blue electricity jitters through him while he stands still.
+    const br = sin(t * 1.05)
+    const surge = beat(t, 2.4, 0.38)
+    const snap = beat(t + 0.9, 3.1, 0.16)
+    const j = (k: number) => noise(floor(t * 20) + k) * (0.04 + surge * 0.06)
+    return P({
+      hipY: -0.12 - surge * 0.02 - snap * 0.01,
+      root: [j(0) * 0.2, snap * 0.01, 0.02],
+      hips: [0.1, 0.15 + j(1) * 0.4, 0.04],
+      lFoot: [0.06, 0, 0.16],
+      rFoot: [0.08, 0, -0.14],
+      lToe: 0.12,
+      rToe: 0.18,
+      spine: [0.12 + br * 0.015 + j(2), -0.08 + j(3), j(4)],
+      chest: [0.04 + br * 0.01, -0.04, j(5) * 0.5],
+      head: [-0.06 + j(6), 0.12 + j(7) * 1.2, j(8) * 0.6],
+      // Right fist planted at the hip; left claw cocked to strike.
+      rArm: [-0.55 + j(9), 0.15, 0.55 + surge * 0.15],
+      rElbow: [-1.35 - snap * 0.15, 0, 0],
+      rHand: [-0.15 - surge * 0.1, 0, j(10) * 3],
+      lArm: [-1.05 + j(11), -0.55, 0.75 + surge * 0.2],
+      lElbow: [-0.85 - surge * 0.15, 0, 0],
+      lHand: [-0.35, 0.1, 0.35 + j(12) * 2],
+      blink: beat(t, 3.6, 0.1) > 0.75 ? 1 : 0,
+      prop: 0,
+      vis: 1,
     })
   },
 }

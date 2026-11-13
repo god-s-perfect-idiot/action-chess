@@ -28,6 +28,7 @@ export const SKIN_BONES: BoneName[] = [
   'lUpper',
   'lFore',
   'lHand',
+  'propHandL',
   'rUpper',
   'rFore',
   'rHand',
@@ -36,6 +37,7 @@ export const SKIN_BONES: BoneName[] = [
   'head',
   'eyes',
   'hairBack',
+  'propMouth',
 ]
 
 /** One skinned draw: every part sharing a material kind, across all bones. */

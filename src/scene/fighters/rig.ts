@@ -380,6 +380,9 @@ export type BoneName =
   | 'wingL'
   | 'wingR'
   | 'propHand'
+  | 'propHandL'
+  /** Mouth-clenched blade (Santoryu / similar). */
+  | 'propMouth'
   | 'propStow'
 
 export type RigBones = Partial<Record<BoneName, THREE.Group>>
@@ -466,6 +469,8 @@ export function applyPose(bones: RigBones, pr: Proportions, pose: Pose) {
   if (bones.eyes) bones.eyes.scale.y = Math.max(0.08, 1 - pose.blink)
   // Skinned meshes ignore bone visibility, so swapped props collapse to zero scale.
   if (bones.propHand) bones.propHand.scale.setScalar(pose.prop > 0.5 ? 1 : 0)
+  if (bones.propHandL) bones.propHandL.scale.setScalar(pose.prop > 0.5 ? 1 : 0)
+  if (bones.propMouth) bones.propMouth.scale.setScalar(pose.prop > 0.5 ? 1 : 0)
   if (bones.propStow) bones.propStow.scale.setScalar(pose.prop <= 0.5 ? 1 : 0)
   if (bones.wingL) bones.wingL.rotation.y = -pose.flap
   if (bones.wingR) bones.wingR.rotation.y = pose.flap

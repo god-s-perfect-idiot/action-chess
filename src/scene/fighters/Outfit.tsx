@@ -46,8 +46,8 @@ export function buildBody(c: Ctx) {
   const L = pr.limb
   const robeLegs = d.top === 'robe'
   const topMat = M.primary
-  /** Flash Manhattan — unified navy suit; skip belt buckle / default piping. */
-  const voltSplit = has('arcSuit')
+  /** Speed Force / Quicksilver / chrome Surfer — unified body; skip belt buckle / default piping. */
+  const voltSplit = has('arcSuit') || has('quicksilverSuit') || has('silverSurferSuit')
   const engineArmor = has('engineVents')
   const cuff =
     d.top === 'bodysuit'
@@ -57,8 +57,10 @@ export function buildBody(c: Ctx) {
             has('saitamaSuit') ||
             has('guySuit') ||
             has('eightGates') ||
+            has('rockLeeSuit') ||
             has('dekuSuit') ||
             has('dekuAwaken') ||
+            has('todorokiSuit') ||
             has('allMightSuit') ||
             has('allMightTruth')
           ? M.secondary
@@ -79,6 +81,7 @@ export function buildBody(c: Ctx) {
     !has('saitamaSuit') &&
     !has('dekuSuit') &&
     !has('dekuAwaken') &&
+    !has('todorokiSuit') &&
     !has('allMightSuit') &&
     !has('allMightTruth') &&
     !has('gohanSuit') &&
@@ -86,7 +89,9 @@ export function buildBody(c: Ctx) {
     !has('zenitsuSuit') &&
     !has('zenitsuAwaken') &&
     !has('ichigoSuit') &&
-    !has('ichigoMugetsu')
+    !has('ichigoMugetsu') &&
+    !has('bakugoSuit') &&
+    !has('killuaSuit')
   ) {
     add(
       'pelvis',
@@ -102,7 +107,8 @@ export function buildBody(c: Ctx) {
   const shR1 = 0.025 * L
   const flare =
     robeLegs ? 0.07 : d.bottom === 'hakama' ? 0.06 : d.bottom === 'baggy' ? 0.025 : 0
-  const legMatBase = robeLegs || voltSplit ? M.primary : M.secondary
+  const legMatBase =
+    robeLegs || voltSplit || has('bakugoSuit') ? M.primary : M.secondary
 
   sides((s, l) => {
     const thigh = `${l}Thigh` as BoneName
@@ -134,12 +140,16 @@ export function buildBody(c: Ctx) {
     if (d.bottom === 'shorts' || d.bottom === 'skirt') {
       add(thigh, <P s={S.limb(thR0, thR1, pr.thigh)} m={M.skin} />)
       if (d.bottom === 'shorts') {
-        add(
-          thigh,
-          <P s={S.cyl(thR0 * 1.18, thR0 * 1.12, pr.thigh * 0.42, 12)} m={M.secondary} p={[0, -pr.thigh * 0.19, 0]} />,
-        )
+        if (!has('killuaSuit')) {
+          add(
+            thigh,
+            <P s={S.cyl(thR0 * 1.18, thR0 * 1.12, pr.thigh * 0.42, 12)} m={M.secondary} p={[0, -pr.thigh * 0.19, 0]} />,
+          )
+        }
         add(shin, <P s={S.limb(shR0, shR1, pr.shin)} m={M.skin} />)
-        add(shin, <P s={S.cyl(shR1 * 1.2, shR1 * 1.15, 0.05, 10)} m={M.light} p={[0, -pr.shin + 0.04, 0]} />)
+        if (!has('killuaSuit')) {
+          add(shin, <P s={S.cyl(shR1 * 1.2, shR1 * 1.15, 0.05, 10)} m={M.light} p={[0, -pr.shin + 0.04, 0]} />)
+        }
       } else {
         // Over-knee stockings.
         add(thigh, <P s={S.cyl(thR1 * 1.12, thR1 * 1.06, pr.thigh * 0.4, 12)} m={M.trim} p={[0, -pr.thigh * 0.8, 0]} />)
@@ -163,6 +173,7 @@ export function buildBody(c: Ctx) {
         !has('saitamaSuit') &&
         !has('guySuit') &&
         !has('eightGates') &&
+        !has('rockLeeSuit') &&
         !has('dekuSuit') &&
         !has('dekuAwaken') &&
         !has('allMightSuit') &&
@@ -266,8 +277,10 @@ function buildTop(c: Ctx, tb: number) {
       add('chest', <P s={S.torus(0.05, 0.007, Math.PI, 12)} m={M.trim} line={false} p={[0, ch * 0.98, front * 0.6]} r={[0.25, 0, Math.PI]} />)
       break
     case 'tee':
-      add('chest', <P s={S.torus(0.04, 0.008, Math.PI * 2, 14)} m={M.trim} p={[0, ch * 0.99, 0.008]} r={[Math.PI / 2 - 0.2, 0, 0]} />)
-      if (!c.has('vectorTee') && !c.has('gohanSuit')) {
+      if (!c.has('killuaSuit')) {
+        add('chest', <P s={S.torus(0.04, 0.008, Math.PI * 2, 14)} m={M.trim} p={[0, ch * 0.99, 0.008]} r={[Math.PI / 2 - 0.2, 0, 0]} />)
+      }
+      if (!c.has('vectorTee') && !c.has('gohanSuit') && !c.has('killuaSuit')) {
         add('chest', <P s={S.box(cw * 0.5, ch * 0.3, 0.012, 0.006)} m={M.accent} line={false} p={[0, ch * 0.55, front + 0.002]} />)
       }
       break
@@ -335,9 +348,12 @@ function buildTop(c: Ctx, tb: number) {
     case 'bodysuit':
       if (
         !c.has('arcSuit') &&
+        !c.has('quicksilverSuit') &&
+        !c.has('sonicSuit') &&
         !c.has('saitamaSuit') &&
         !c.has('guySuit') &&
         !c.has('eightGates') &&
+        !c.has('rockLeeSuit') &&
         !c.has('dekuSuit') &&
         !c.has('dekuAwaken') &&
         !c.has('allMightSuit') &&
@@ -428,8 +444,14 @@ function buildShoes(c: Ctx) {
     has('yunoSuit') ||
     has('todoKit') ||
     has('minatoSuit') ||
+    has('kakashiSuit') ||
+    has('joninSuit') ||
     has('byakuyaSuit') ||
+    has('kenpachiSuit') ||
     has('gojoSuit') ||
+    has('akutagawaSuit') ||
+    has('dazaiSuit') ||
+    has('chuuyaSuit') ||
     has('gilgameshSuit') ||
     has('overhaulSuit') ||
     has('escanorSuit') ||
@@ -438,8 +460,10 @@ function buildShoes(c: Ctx) {
     has('mobSuit') ||
     has('guySuit') ||
     has('eightGates') ||
+    has('rockLeeSuit') ||
     has('dekuSuit') ||
     has('dekuAwaken') ||
+    has('todorokiSuit') ||
     has('allMightSuit') ||
     has('allMightTruth') ||
     has('denjiSuit') ||
@@ -453,7 +477,10 @@ function buildShoes(c: Ctx) {
     has('ichigoSuit') ||
     has('ichigoMugetsu') ||
     has('gaaraSuit') ||
-    has('shukakuAwaken')
+    has('shukakuAwaken') ||
+    has('bakugoSuit') ||
+    has('silverSurferSuit') ||
+    has('killuaSuit')
   )
     return
 
@@ -475,9 +502,16 @@ function buildShoes(c: Ctx) {
         break
       case 'boots':
         if (has('arcSuit')) {
-          sole(M.primary, 0.024)
-          upper(M.primary, 0.06)
-          shaft(M.primary, 0.15)
+          // Classic Flash — gold boots; Manhattan — suit-color shafts.
+          const voltBoot = has('manhattanMark') ? M.primary : M.accent
+          sole(voltBoot, 0.024)
+          upper(voltBoot, 0.06)
+          shaft(voltBoot, 0.15)
+        } else if (has('quicksilverSuit')) {
+          // Quicksilver — white boots.
+          sole(M.metal, 0.024)
+          upper(M.metal, 0.06)
+          shaft(M.metal, 0.15)
         } else {
           sole(M.dark, 0.024)
           upper(M.trim, 0.06)
@@ -556,6 +590,7 @@ function buildHands(c: Ctx) {
   const { d, pr, M, add, has } = c
   const h = pr.hand
   const voltGauntlets = has('arcSuit')
+  const mercuryGloves = has('quicksilverSuit')
   // Custom gauntlets / gloves are fully built in extras.
   if (
     has('lemillionSuit') ||
@@ -563,8 +598,10 @@ function buildHands(c: Ctx) {
     has('saitamaSuit') ||
     has('dekuSuit') ||
     has('dekuAwaken') ||
+    has('todorokiSuit') ||
     has('allMightSuit') ||
-    has('allMightTruth')
+    has('allMightTruth') ||
+    has('bakugoSuit')
   )
     return
   sides((s, l) => {
@@ -574,7 +611,15 @@ function buildHands(c: Ctx) {
     let scale = 1
     if (d.hands === 'wraps') mat = M.light
     if (d.hands === 'gloves' || d.hands === 'claws')
-      mat = voltGauntlets ? M.primary : has('engineVents') ? M.secondary : has('overhaulSuit') ? M.light : M.trim
+      mat = mercuryGloves
+        ? M.metal
+        : voltGauntlets
+          ? M.primary
+          : has('engineVents')
+            ? M.secondary
+            : has('overhaulSuit')
+              ? M.light
+              : M.trim
     if (d.hands === 'mitts') {
       mat = M.accent
       scale = 1.5
@@ -592,7 +637,7 @@ function buildHands(c: Ctx) {
     }
     if (d.hands === 'gloves') {
       if (voltGauntlets) {
-        // Navy speedster gloves — same suit navy + cyan cuff ring.
+        // Speedster gloves — suit color + lightning cuff ring.
         add(fore, <P s={S.cyl(0.028 * pr.limb, 0.03 * pr.limb, pr.forearm * 0.72, 12)} m={M.primary} p={[0, -pr.forearm * 0.62, 0]} />)
         add(fore, <P s={S.cyl(0.031 * pr.limb, 0.031 * pr.limb, 0.018, 12)} m={M.glow} line={false} shadow={false} p={[0, -pr.forearm * 0.32, 0]} />)
         add(fore, <P s={S.box(0.014 * pr.limb, 0.04, 0.01, 0.003)} m={M.accent} line={false} p={[0.03 * pr.limb, -pr.forearm * 0.5, 0]} r={[0, 0, 0.4]} />)

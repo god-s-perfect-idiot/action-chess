@@ -94,8 +94,10 @@ export function useChessGame(
   const [difficulty, setDifficulty] = useState<Difficulty>(initialDifficulty)
   const [mode, setMode] = useState<GameMode>(initialMode)
   const [fen, setFen] = useState(() => chessRef.current.fen())
-  /** Stable fighter id so focus survives square changes / engine plies. */
+  /** Stable fighter id so selection survives square changes / engine plies. */
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  /** Camera pull-in — only set by double-click, not by selecting for moves. */
+  const [focusedId, setFocusedId] = useState<string | null>(null)
   const [legalTargets, setLegalTargets] = useState<Square[]>([])
   const [pendingPromotion, setPendingPromotion] =
     useState<PendingPromotion | null>(null)
@@ -113,12 +115,20 @@ export function useChessGame(
     return pieces.find((p) => p.id === selectedId)?.square ?? null
   }, [pieces, selectedId])
 
-  // Drop focus if the watched fighter was captured / removed.
+  const focused = useMemo(() => {
+    if (!focusedId) return null
+    return pieces.find((p) => p.id === focusedId)?.square ?? null
+  }, [pieces, focusedId])
+
+  // Drop selection / focus if the watched fighter was captured / removed.
   useEffect(() => {
     if (selectedId && !pieces.some((p) => p.id === selectedId)) {
       setSelectedId(null)
     }
-  }, [pieces, selectedId])
+    if (focusedId && !pieces.some((p) => p.id === focusedId)) {
+      setFocusedId(null)
+    }
+  }, [pieces, selectedId, focusedId])
 
   const sync = useCallback((move?: Move) => {
     const chess = chessRef.current
@@ -130,7 +140,7 @@ export function useChessGame(
     if (move) {
       setLastMove({ from: move.from as Square, to: move.to as Square })
     }
-    // Keep selectedId — autopilot (and inspect-during-CPU) should not unfocus.
+    // Keep selectedId / focusedId — autopilot (and inspect-during-CPU) should not unfocus.
     setLegalTargets([])
     setPendingPromotion(null)
   }, [])
@@ -152,6 +162,7 @@ export function useChessGame(
         })
         sync(move)
         setSelectedId(null)
+        setFocusedId(null)
       } catch {
         setPendingPromotion(null)
       }
@@ -167,6 +178,9 @@ export function useChessGame(
     (square: Square) => {
       const chess = chessRef.current
       if (pendingPromotion) return
+
+      // Single-click is board/moves only — drop camera pull-in.
+      setFocusedId(null)
 
       const canMove =
         mode !== 'autopilot' &&
@@ -187,19 +201,12 @@ export function useChessGame(
             to: square,
           })
           sync(move)
-          // Clear focus after you commit a move (engine plies keep focus).
+          // Clear selection after you commit a move (engine plies keep selection).
           setSelectedId(null)
           return
         } catch {
           // fall through to reselect
         }
-      }
-
-      // Second tap on the same fighter clears selection.
-      if (selected === square) {
-        setSelectedId(null)
-        setLegalTargets([])
-        return
       }
 
       const piece = chess.get(square as ChessSquare)
@@ -209,6 +216,8 @@ export function useChessGame(
         return
       }
 
+      // Same fighter again: keep board selection (double-click handles camera focus).
+      // Click empty ground to clear.
       const tracked = pieces.find((p) => p.square === square)
       setSelectedId(tracked?.id ?? null)
       // Move targets only for your fighters on your turn in versus.
@@ -235,11 +244,45 @@ export function useChessGame(
     ],
   )
 
+  /** Double-click: camera pull-in on a fighter (keeps / restores board selection). */
+  const focusSquare = useCallback(
+    (square: Square) => {
+      const chess = chessRef.current
+      if (pendingPromotion) return
+      const piece = chess.get(square as ChessSquare)
+      if (!piece) return
+      const tracked = pieces.find((p) => p.square === square)
+      if (!tracked) return
+
+      const canMove =
+        mode !== 'autopilot' &&
+        !thinking &&
+        status !== 'checkmate' &&
+        status !== 'stalemate' &&
+        status !== 'draw' &&
+        chess.turn() === 'w'
+
+      setSelectedId(tracked.id)
+      setFocusedId(tracked.id)
+      if (canMove && piece.color === 'w') {
+        const moves = chess.moves({
+          square: square as ChessSquare,
+          verbose: true,
+        })
+        setLegalTargets(moves.map((m) => m.to as Square))
+      } else {
+        setLegalTargets([])
+      }
+    },
+    [mode, pendingPromotion, pieces, status, thinking],
+  )
+
   const reset = useCallback(
     (
       nextDifficulty?: Difficulty,
       nextMode?: GameMode,
       whiteDeck?: readonly string[],
+      blackDeck?: readonly string[],
     ) => {
       requestId.current += 1
       chessRef.current.reset()
@@ -247,10 +290,11 @@ export function useChessGame(
       setThinking(false)
       setLastMove(null)
       setSelectedId(null)
+      setFocusedId(null)
       setLegalTargets([])
       setPendingPromotion(null)
       setHistory([])
-      setPieces(createTrackedPieces(whiteDeck))
+      setPieces(createTrackedPieces(whiteDeck, blackDeck))
       if (nextDifficulty) setDifficulty(nextDifficulty)
       if (nextMode) setMode(nextMode)
       setFen(chessRef.current.fen())
@@ -329,6 +373,8 @@ export function useChessGame(
     turn,
     selected,
     selectedId,
+    focused,
+    focusedId,
     legalTargets,
     pendingPromotion,
     lastMove,
@@ -342,6 +388,7 @@ export function useChessGame(
     pieces,
     boardFreeAtRef,
     selectSquare,
+    focusSquare,
     completePromotion,
     cancelPromotion,
     setDifficulty,

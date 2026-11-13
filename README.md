@@ -1,4 +1,4 @@
-# Heroes will die
+# Heroes May Die
 
 Cel-shaded 3D chess vs Stockfish.
 
