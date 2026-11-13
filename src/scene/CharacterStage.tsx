@@ -1,6 +1,6 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import { getHeroDesign, HERO_DESIGNS, type HeroDesign } from '../game/heroDesigns'
 import { protectorForKing } from '../game/protectors'
@@ -34,13 +34,21 @@ export const DAMAGE_TYPES: DamageType[] = ['beam', 'slash', 'pierce', 'blunt', '
 /** Local-units/sec so run cadence matches board travel feel. */
 const RUN_DIST_RATE = 2.5
 const RUN_LOOP = 1.2
-/** One-way shuttle length so the Characters run preview travels A→B instead of in place. */
-const RUN_PATH = 1.35
+/**
+ * One-way shuttle length (fighter-local). Long enough that speedster trails
+ * (~1 board-cell ≈ 4 local units) actually paint behind the runner.
+ */
+const RUN_PATH = 5.4
 /** Sparring partner distance in front of the fighter (+Z): board melee stop / one square for ranged. */
 const MELEE_Z = 0.66
 const RANGED_Z = 1.6
 const FX_SIZE = 0.55
 const ZONE_Y: Record<HitZone, number> = { high: 0.98, mid: 0.75, low: 0.4 }
+/** Single-hero cameras — run pulls back so the long shuttle + trail stay framed. */
+const CAM_IDLE: [number, number, number] = [1.9, 1.1, 1.9]
+const CAM_RUN: [number, number, number] = [4.6, 1.85, 5.2]
+const TARGET_IDLE: [number, number, number] = [0, 0.6, 0.3]
+const TARGET_RUN: [number, number, number] = [0, 0.55, 0]
 
 let fxSeq = 1
 
@@ -59,11 +67,12 @@ type RunPreview = {
 /** Seconds for one A→B leg at this hero's locomotion. */
 function runOneWay(d: HeroDesign): number {
   const style = locoOf(d)
-  if (style === 'leap') return RUN_LOOP
-  if (style === 'vector') return 1.15
-  if (style === 'teleport') return 0.95
-  if (style === 'fly') return Math.max(0.55, RUN_PATH / (RUN_DIST_RATE * (d.moveSpeedMul ?? 1)))
-  return Math.max(0.35, RUN_PATH / (RUN_DIST_RATE * (d.moveSpeedMul ?? 1)))
+  if (style === 'leap') return Math.max(RUN_LOOP, 1.6)
+  if (style === 'vector') return 1.85
+  if (style === 'teleport') return 1.35
+  // Floor keeps hyperspeed heroes on screen long enough for trails to linger.
+  if (style === 'fly') return Math.max(0.95, RUN_PATH / (RUN_DIST_RATE * (d.moveSpeedMul ?? 1)))
+  return Math.max(0.85, RUN_PATH / (RUN_DIST_RATE * (d.moveSpeedMul ?? 1)))
 }
 
 /**
@@ -461,6 +470,7 @@ function Unit({
       if (mode === 'run') {
         const preview = runPreview(a.design, freeze * runOneWay(a.design) * 2)
         applyMover(mover.current, preview, a.design)
+        mover.current?.updateMatrixWorld(true)
         a.update(preview.anim, 0.1, 0.6)
         return
       }
@@ -495,7 +505,8 @@ function Unit({
       anim = { kind: 'death', t: t - k * (die('shock') + 1.2), dmg, zone: 'mid' }
       if (anim.t > die(dmg) + 0.6) anim = { kind: 'ready', t }
     } else {
-      const runSeg = 2
+      // Full A→B→A so cycle mode also shows a complete trail wake.
+      const runSeg = runOneWay(a.design) * 2
       const atkAt = 4 + runSeg
       const selfAt = atkAt + Math.max(atkDur + 0.8, atk.hit + foeDie + 0.5)
       const cycle = selfAt + die('shock') + 1.2
@@ -524,6 +535,8 @@ function Unit({
       }
     }
     applyMover(mover.current, preview, a.design)
+    // Flush mover transform before HeroFighter samples world path for trails.
+    mover.current?.updateMatrixWorld(true)
     a.update(anim, dt, anim.kind === 'move' ? 1 : 0)
     v?.update(foeAnim, dt, 0)
   })
@@ -654,6 +667,35 @@ function LineupCamera({ extent }: { extent: number }) {
   return null
 }
 
+type OrbitApi = { target: THREE.Vector3; update: () => void }
+
+/** Reframe the single-hero stage when switching into the long run shuttle. */
+function RunFraming({
+  mode,
+  single,
+  controls,
+}: {
+  mode: AnimMode
+  single: boolean
+  controls: RefObject<OrbitApi | null>
+}) {
+  const { camera } = useThree()
+  useEffect(() => {
+    if (!single) return
+    const run = mode === 'run'
+    const pos = run ? CAM_RUN : CAM_IDLE
+    const look = run ? TARGET_RUN : TARGET_IDLE
+    camera.position.set(pos[0], pos[1], pos[2])
+    camera.lookAt(look[0], look[1], look[2])
+    const c = controls.current
+    if (c) {
+      c.target.set(look[0], look[1], look[2])
+      c.update()
+    }
+  }, [camera, controls, mode, single])
+  return null
+}
+
 /** Warm dusk dome + low sun for the pick-fighters stage. */
 function SunsetSky() {
   const { scene } = useThree()
@@ -749,6 +791,7 @@ export function CharacterStage({
   const gap = GAP
   const rows = Math.max(1, Math.ceil(valid.length / cols))
   const single = !lineup && valid.length === 1
+  const controls = useRef<OrbitApi | null>(null)
   const scatter = useMemo(
     () => (lineup ? lineupPositions(valid) : []),
     // ids string keeps order/content stable without depending on `valid` array identity
@@ -756,13 +799,16 @@ export function CharacterStage({
     [lineup, valid.join('|')],
   )
   const extent = lineup ? lineupExtent(scatter) : 0
+  const runView = single && mode === 'run'
   const camPos: [number, number, number] = single
-    ? (cam ?? [1.9, 1.1, 1.9])
+    ? (cam ?? (runView ? CAM_RUN : CAM_IDLE))
     : lineup
       ? [0, 1.35 + extent * 0.35, 3.35 + extent * 1.35]
       : [0, 4, 9]
   const camTarget: [number, number, number] = single
-    ? [0, 0.6, 0.3]
+    ? runView
+      ? TARGET_RUN
+      : TARGET_IDLE
     : lineup
       ? [0, 0.52, 0]
       : [0, 0.5, 0]
@@ -772,7 +818,7 @@ export function CharacterStage({
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: camPos, fov: single ? 35 : lineup ? 38 : 40 }}
+        camera={{ position: camPos, fov: single ? (runView ? 38 : 35) : lineup ? 38 : 40 }}
       >
         {lineup ? (
           <>
@@ -797,6 +843,7 @@ export function CharacterStage({
         )}
         <OutlineSync />
         {lineup ? <LineupCamera extent={extent} /> : null}
+        {!lineup ? <RunFraming mode={mode} single={single} controls={controls} /> : null}
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[40, 40]} />
           <meshToonMaterial color={lineup ? '#8a5a42' : '#aeb8c4'} />
@@ -830,6 +877,7 @@ export function CharacterStage({
           )
         })}
         <OrbitControls
+          ref={controls as never}
           target={camTarget}
           enablePan={!lineup}
           maxPolarAngle={lineup ? Math.PI * 0.48 : Math.PI}

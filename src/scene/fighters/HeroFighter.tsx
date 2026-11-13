@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
 import * as THREE from 'three'
 import { getHeroDesign, type HeroDesign } from '../../game/heroDesigns'
-import { CELL_SIZE, type PieceColor } from '../../game/types'
+import { CELL_SIZE, UNIT_SCALE, type PieceColor } from '../../game/types'
 import { deathDuration, evalPose, type AnimInput, type Sever, type SeverSpec } from './anims'
 import { bakeFighter, SKIN_BONES } from './bake'
 import { DeathFx } from './death'
@@ -806,10 +806,12 @@ const TRAIL_SAMPLES = 28
 /** Vertical bands — full body height for smear / bolt curtain. */
 const TRAIL_STRANDS = 5
 const TRAIL_SEGS = TRAIL_SAMPLES - 1
-/** World-space spacing — ~1 cell of trail when the ring buffer is full. */
-const TRAIL_MIN_STEP = CELL_SIZE / TRAIL_SEGS
-/** Cap painted length at one board cell; older samples stay in the buffer but hide. */
-const TRAIL_MAX_LEN = CELL_SIZE
+/**
+ * Fighter-local spacing / length. Multiplied by the frame's world scale so the
+ * Characters stage (scale 1) and the board (UNIT_SCALE) both paint a ~1-cell wake.
+ */
+const TRAIL_LOCAL_STEP = 0.12
+const TRAIL_LOCAL_LEN = CELL_SIZE / UNIT_SCALE
 /** Local-space height span (body origin ≈ feet → crown). */
 const TRAIL_HEIGHT = 1.08
 const TRAIL_Y0 = 0.04
@@ -822,6 +824,7 @@ const _trailLocalB = new THREE.Vector3()
 const _trailDir = new THREE.Vector3()
 const _trailMid = new THREE.Vector3()
 const _trailSide = new THREE.Vector3()
+const _trailScale = new THREE.Vector3()
 const _trailUp = new THREE.Vector3(0, 1, 0)
 const _trailAxis = new THREE.Vector3(0, 0, -1)
 const _trailInv = new THREE.Matrix4()
@@ -864,7 +867,13 @@ function ShadowTrail({
     [bandH],
   )
   return (
-    <group ref={streakRef} visible={false}>
+    <group
+      ref={(g) => {
+        if (g) g.frustumCulled = false
+        streakRef(g)
+      }}
+      visible={false}
+    >
       {bands.map((b, i) => (
         <group key={i}>
           <P
@@ -881,8 +890,8 @@ function ShadowTrail({
 }
 
 /**
- * Speed Force lightning — fat white-core bolts + colored glow shards that
- * zig-zag and fork across full body height (reference: sharp electric cracks).
+ * Speed Force lightning — thin white-core filaments that trace the body path
+ * at full height (controlled crackle, not an explosive burst).
  */
 function ElectricTrail({
   streakRef,
@@ -895,51 +904,36 @@ function ElectricTrail({
 }) {
   const mats = useMemo(
     () => ({
-      core: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
-      a: new THREE.MeshBasicMaterial({ color }),
-      b: new THREE.MeshBasicMaterial({ color: color2 }),
-      glow: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }),
+      core: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+      a: new THREE.MeshBasicMaterial({ color, toneMapped: false }),
+      b: new THREE.MeshBasicMaterial({ color: color2, toneMapped: false }),
     }),
     [color, color2],
   )
   const bolts = useMemo(
     () =>
       Array.from({ length: TRAIL_SEGS * TRAIL_STRANDS }, (_, i) => ({
-        thick: 0.055 + (i % 4) * 0.022,
-        glow: 0.1 + (i % 3) * 0.03,
-        jag: 0.07 + (i % 5) * 0.025,
+        thick: 0.012 + (i % 4) * 0.006,
       })),
     [],
   )
   return (
-    <group ref={streakRef} visible={false}>
+    <group
+      ref={(g) => {
+        if (g) g.frustumCulled = false
+        streakRef(g)
+      }}
+      visible={false}
+    >
       {bolts.map((b, i) => (
         <group key={i}>
-          {/* Hot white spine. */}
           <P
-            s={S.cyl(b.thick, b.thick * 0.2, TRAIL_BOLT_LEN, 5)}
-            m={mats.core}
+            s={S.cyl(b.thick, b.thick * 0.35, TRAIL_BOLT_LEN, 5)}
+            m={i % 4 === 0 ? mats.core : i % 2 ? mats.a : mats.b}
             line={false}
             shadow={false}
             p={[0, 0, -TRAIL_BOLT_LEN * 0.5]}
             r={[Math.PI / 2, 0, 0]}
-          />
-          {/* Colored glow shell. */}
-          <P
-            s={S.cyl(b.glow, b.glow * 0.35, TRAIL_BOLT_LEN * 0.95, 5)}
-            m={i % 2 ? mats.glow : i % 3 ? mats.a : mats.b}
-            line={false}
-            shadow={false}
-            p={[0, 0, -TRAIL_BOLT_LEN * 0.48]}
-            r={[Math.PI / 2, 0, 0]}
-          />
-          {/* Jagged fork shard for crackle silhouette. */}
-          <P
-            s={S.shard(b.jag * 0.55, b.jag, TRAIL_BOLT_LEN * 0.45)}
-            m={i % 2 ? mats.core : mats.a}
-            line={false}
-            shadow={false}
-            p={[b.jag * 0.35 * (i % 2 ? 1 : -1), b.jag * 0.2, -TRAIL_BOLT_LEN * 0.35]}
           />
         </group>
       ))}
@@ -1892,6 +1886,16 @@ export function HeroFighter({
           g.position.set(0, 0, 0)
           g.rotation.set(0, 0, 0)
           g.scale.setScalar(1)
+          g.frustumCulled = false
+
+          // Board fighters are UNIT_SCALE; Characters stage is ~1 — keep wake length consistent.
+          let wScale = 1
+          if (frame.current) {
+            frame.current.getWorldScale(_trailScale)
+            wScale = Math.max(0.05, Math.abs(_trailScale.x))
+          }
+          const minStep = TRAIL_LOCAL_STEP * wScale * (hasIceTrail ? 0.75 : 1)
+          const maxLen = TRAIL_LOCAL_LEN * wScale
 
           if (trailing && body) {
             body.getWorldPosition(_trailWorld)
@@ -1902,14 +1906,25 @@ export function HeroFighter({
               _trailDir.y = 0
               if (_trailDir.lengthSq() < 1e-6) _trailDir.set(0, 0, 1)
               else _trailDir.normalize()
-              const castDist = 0.55 + speed * 0.45
+              const castDist = (0.55 + speed * 0.45) * wScale
               _trailWorld.addScaledVector(_trailDir, castDist)
               const fy = frame.current.getWorldPosition(_trailLocalA).y
-              _trailWorld.y = fy + 0.04
+              _trailWorld.y = fy + 0.04 * wScale
             }
-            // Speedsters: sample the body path (feet origin); height is painted via vertical strands.
-            const step2 = (hasIceTrail ? TRAIL_MIN_STEP * 0.75 : TRAIL_MIN_STEP) ** 2
-            if (!path.hasLast || path.last.distanceToSquared(_trailWorld) >= step2) {
+            const step2 = minStep * minStep
+            if (!path.hasLast) {
+              // Seed two samples (current + ghost behind) so a segment paints on frame 1.
+              if (frame.current) {
+                frame.current.getWorldQuaternion(_trailQuat)
+                _trailDir.set(0, 0, -1).applyQuaternion(_trailQuat)
+              } else {
+                _trailDir.set(0, 0, -1)
+              }
+              path.pts[0].copy(_trailWorld).addScaledVector(_trailDir, minStep)
+              path.pts[1].copy(_trailWorld)
+              path.head = 1
+              path.count = 2
+            } else if (path.last.distanceToSquared(_trailWorld) >= step2) {
               path.head = (path.head + 1) % TRAIL_SAMPLES
               path.pts[path.head].copy(_trailWorld)
               if (path.count < TRAIL_SAMPLES) path.count++
@@ -1934,7 +1949,7 @@ export function HeroFighter({
               dr.t * (isShadow ? 14 : hasZenitsuTrail || hasFullCowl || hasIceTrail ? 42 : 38),
             )
             const nSeg = Math.min(TRAIL_SEGS, path.count - 1)
-            // World-space run length from the body backward — hide past one cell.
+            // Hide past ~1 board-cell of wake (scaled for Characters vs board).
             let runLen = 0
             let maxK = nSeg
             if (!hasIceTrail) {
@@ -1942,8 +1957,8 @@ export function HeroFighter({
                 const idxA = (path.head - k + TRAIL_SAMPLES) % TRAIL_SAMPLES
                 const idxB = (path.head - k - 1 + TRAIL_SAMPLES) % TRAIL_SAMPLES
                 runLen += path.pts[idxA].distanceTo(path.pts[idxB])
-                if (runLen > TRAIL_MAX_LEN) {
-                  maxK = k
+                if (runLen > maxLen) {
+                  maxK = Math.max(1, k)
                   break
                 }
               }
@@ -1996,21 +2011,17 @@ export function HeroFighter({
                   c.position.y = baseElev
                   c.position.addScaledVector(_trailSide, (r1 - 0.5) * 0.012)
                 } else {
-                  // Lightning: sharp forks leaping off the path across full height.
-                  const zig = (r1 - 0.5) * 0.28 + (r3 - 0.5) * 0.2
-                  const fork = (r2 - 0.5) * 0.22
+                  // Lightning: thin filaments locked to the path with a light crackle.
+                  const zig = (r1 - 0.5) * 0.045 + (r3 - 0.5) * 0.025
                   c.position.copy(_trailMid).addScaledVector(_trailSide, zig)
-                  c.position.y = baseElev + fork
-                  c.position.addScaledVector(_trailDir, (r3 - 0.5) * 0.12)
+                  c.position.y = baseElev + (r2 - 0.5) * 0.03
                 }
 
                 _trailQuat.setFromUnitVectors(_trailAxis, _trailDir)
                 c.quaternion.copy(_trailQuat)
                 if (isLightning) {
-                  // Wild crackle twist so bolts read as branching arcs, not tubes.
-                  c.rotateZ((r1 - 0.5) * 1.8)
-                  c.rotateX((r3 - 0.5) * 1.25)
-                  c.rotateY((r2 - 0.5) * 0.7)
+                  // Soft twist only — keep bolts reading as path filaments.
+                  c.rotateZ((r1 - 0.5) * 0.35)
                 }
 
                 if (hasIceTrail) {
@@ -2030,16 +2041,11 @@ export function HeroFighter({
                   c.scale.set(1.15 * taper, 1.05 * taper, stretch)
                   c.visible = true
                 } else {
-                  // Bold bolts — always chunky, brief flicker only.
-                  const stretch =
-                    Math.max(0.55, (dist / TRAIL_BOLT_LEN) * (1.1 + r2 * 0.5)) * Math.max(0.45, fade)
-                  const fat = 2.4 + r1 * 1.6
-                  c.scale.set(
-                    fat * (0.85 + r3 * 0.55),
-                    fat * (0.65 + r2 * 0.7),
-                    stretch * (1.05 + r3 * 0.5),
-                  )
-                  c.visible = r2 > 0.06
+                  // Thin controlled bolts — follow the path, light flicker.
+                  const stretch = Math.max(0.85, (dist / TRAIL_BOLT_LEN) * 1.15) * Math.max(0.4, fade)
+                  const thin = 0.85 + r1 * 0.35
+                  c.scale.set(thin, thin * 0.9, stretch)
+                  c.visible = r2 > 0.12
                 }
               }
             }
