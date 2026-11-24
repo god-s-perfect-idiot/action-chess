@@ -4828,39 +4828,7 @@ export function buildExtras(c: Ctx) {
       add(shin, <P s={S.cyl(0.048 * L, 0.044 * L, pr.shin * 0.72, 12)} m={M.trim} p={[0, -pr.shin * 0.55, 0]} />)
       add(foot, <P s={S.box(0.085 * Math.sqrt(L), 0.055, pr.footL + 0.1, 0.018)} m={M.trim} p={[0, -pr.ankle + 0.032, pr.footL * 0.3]} />)
     })
-
-    // Idle Dark Shadow — larger purple familiar emerging from the left of the cloak.
-    {
-      const sx = -cw * 0.72
-      const sy = ch * 0.55
-      const sz = -cd * 0.05
-      add('chest', <P s={S.sphere(0.14 * L, 12, 10)} m={M.glow} line={false} shadow={false} p={[sx, sy, sz]} sc={[1.5, 1.25, 1.6]} />)
-      add('chest', <P s={S.sphere(0.11 * L, 10, 8)} m={M.glow} line={false} shadow={false} p={[sx - 0.06, sy + 0.1, sz + 0.08]} sc={[1.3, 1.1, 1.4]} />)
-      // Bird-like shadow head + yellow eyes + open beak.
-      add('chest', <P s={S.sphere(0.09 * L, 10, 8)} m={M.glow} line={false} shadow={false} p={[sx - 0.12, sy + 0.2, sz + 0.14]} sc={[1.15, 1.05, 1.3]} />)
-      add('chest', <P s={S.cone(0.05 * L, 0.11 * L, 6)} m={M.glow} line={false} shadow={false} p={[sx - 0.14, sy + 0.14, sz + 0.26]} r={[Math.PI / 2 + 0.25, 0, 0]} />)
-      sides((s) => {
-        add('chest', <P s={S.sphere(0.022 * L, 6, 5)} m={M.metal} line={false} shadow={false} p={[sx - 0.1 + s * 0.04, sy + 0.24, sz + 0.22]} />)
-      })
-      // Clawed arms reaching past the host.
-      add('chest', <P s={S.cyl(0.032 * L, 0.04 * L, 0.22 * L, 8)} m={M.glow} line={false} shadow={false} p={[sx + 0.02, sy - 0.02, sz + 0.18]} r={[1.0, 0.35, -0.55]} />)
-      add('chest', <P s={S.sphere(0.05 * L, 8, 6)} m={M.glow} line={false} shadow={false} p={[sx + 0.08, sy - 0.12, sz + 0.32]} />)
-      for (let i = 0; i < 3; i++) {
-        add(
-          'chest',
-          <P
-            s={S.cone(0.014 * L, 0.055 * L, 4)}
-            m={M.glow}
-            line={false}
-            shadow={false}
-            p={[sx + 0.08 + (i - 1) * 0.025, sy - 0.15, sz + 0.4]}
-            r={[Math.PI / 2, 0, (i - 1) * 0.4]}
-          />,
-        )
-      }
-      add('chest', <P s={S.cyl(0.028 * L, 0.035 * L, 0.18 * L, 8)} m={M.glow} line={false} shadow={false} p={[sx - 0.08, sy + 0.05, sz - 0.08]} r={[0.6, -0.5, 0.8]} />)
-      add('chest', <P s={S.sphere(0.045 * L, 8, 6)} m={M.glow} line={false} shadow={false} p={[sx - 0.16, sy + 0.12, sz - 0.18]} />)
-    }
+    // Dark Shadow is a live familiar animated in HeroFighter (emerges / retracts).
   }
 
   if (has('endeavorSuit')) {

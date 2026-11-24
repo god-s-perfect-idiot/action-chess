@@ -1866,6 +1866,74 @@ function AnimaBirdMount({
   )
 }
 
+/** Tsukuyomi — Dark Shadow familiar that emerges from / retracts into the host. */
+function DarkShadowFamiliar({
+  mountRef,
+  color,
+  color2,
+}: {
+  mountRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      body: new THREE.MeshBasicMaterial({ color }),
+      dark: new THREE.MeshBasicMaterial({ color: '#14101c' }),
+      eye: new THREE.MeshBasicMaterial({ color: color2 }),
+    }),
+    [color, color2],
+  )
+  return (
+    <group ref={mountRef} visible={false}>
+      {/* Umbilical stump — stays near the chest exit. */}
+      <group name="shadowCord">
+        <P s={S.sphere(0.05, 10, 8)} m={mats.body} line={false} shadow={false} sc={[1.4, 1.0, 1.3]} />
+        <P s={S.sphere(0.04, 8, 6)} m={mats.dark} line={false} shadow={false} p={[0.04, 0.01, 0.02]} sc={[1.2, 0.9, 1.1]} />
+      </group>
+      {/* Bird-headed shadow body + claws — driven by HeroFighter update. */}
+      <group name="shadowBody" position={[-0.18, 0.08, 0.06]}>
+        <P s={S.sphere(0.1, 12, 10)} m={mats.body} line={false} shadow={false} sc={[1.45, 1.2, 1.55]} />
+        <P s={S.sphere(0.075, 10, 8)} m={mats.body} line={false} shadow={false} p={[-0.06, 0.08, 0.08]} sc={[1.25, 1.05, 1.35]} />
+        <P s={S.sphere(0.065, 10, 8)} m={mats.dark} line={false} shadow={false} p={[-0.1, 0.14, 0.12]} sc={[1.15, 1.0, 1.25]} />
+        <P s={S.cone(0.035, 0.09, 6)} m={mats.body} line={false} shadow={false} p={[-0.12, 0.1, 0.22]} r={[Math.PI / 2 + 0.25, 0, 0]} />
+        <P s={S.sphere(0.018, 6, 5)} m={mats.eye} line={false} shadow={false} p={[-0.08, 0.18, 0.2]} />
+        <P s={S.sphere(0.018, 6, 5)} m={mats.eye} line={false} shadow={false} p={[-0.14, 0.17, 0.18]} />
+        <group name="shadowArmL">
+          <P s={S.cyl(0.022, 0.028, 0.16, 8)} m={mats.body} line={false} shadow={false} p={[0.04, -0.02, 0.12]} r={[1.0, 0.35, -0.55]} />
+          <P s={S.sphere(0.04, 8, 6)} m={mats.body} line={false} shadow={false} p={[0.1, -0.1, 0.24]} />
+          {[0, 1, 2].map((i) => (
+            <P
+              key={i}
+              s={S.cone(0.012, 0.045, 4)}
+              m={mats.dark}
+              line={false}
+              shadow={false}
+              p={[0.1 + (i - 1) * 0.02, -0.13, 0.3]}
+              r={[Math.PI / 2, 0, (i - 1) * 0.4]}
+            />
+          ))}
+        </group>
+        <group name="shadowArmR">
+          <P s={S.cyl(0.02, 0.026, 0.14, 8)} m={mats.body} line={false} shadow={false} p={[-0.08, 0.04, -0.04]} r={[0.55, -0.55, 0.85]} />
+          <P s={S.sphere(0.036, 8, 6)} m={mats.body} line={false} shadow={false} p={[-0.16, 0.1, -0.12]} />
+          {[0, 1, 2].map((i) => (
+            <P
+              key={i}
+              s={S.cone(0.01, 0.038, 4)}
+              m={mats.dark}
+              line={false}
+              shadow={false}
+              p={[-0.18 + (i - 1) * 0.016, 0.08, -0.18]}
+              r={[Math.PI / 2 + 0.4, 0, (i - 1) * 0.35]}
+            />
+          ))}
+        </group>
+      </group>
+    </group>
+  )
+}
+
 /** Iron filings that snap into straight-line grid patterns around the railgun. */
 function MagFilings({
   fieldRef,
@@ -2019,6 +2087,8 @@ export function HeroFighter({
   const hasBakugoBlast = design.extras.includes('bakugoSuit')
   /** Anima — summoned bird mount underfoot while flying between pads. */
   const hasAnimaMount = design.extras.includes('animaSuit')
+  /** Tsukuyomi — Dark Shadow familiar that emerges / retracts from the host. */
+  const hasDarkShadow = design.extras.includes('tsukuyomiSuit')
 
   const bones = useRef<RigBones>({})
   const pose = useRef(restPose())
@@ -2041,6 +2111,8 @@ export function HeroFighter({
     limitless: 0,
     halfHot: 0,
     bakugo: 0,
+    /** 0 = inside Tokoyami, 1 = fully out. */
+    shadow: 0,
   })
   const jets = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
   const palmBlasts = useRef<{ l: THREE.Group | null; r: THREE.Group | null }>({ l: null, r: null })
@@ -2065,6 +2137,7 @@ export function HeroFighter({
   const warpMist = useRef<Record<string, THREE.Group | null>>({})
   const yunoPages = useRef<THREE.Group | null>(null)
   const animaBird = useRef<THREE.Group | null>(null)
+  const darkShadow = useRef<THREE.Group | null>(null)
   const kunaiMarks = useRef<THREE.Group | null>(null)
   const clapRings = useRef<THREE.Group | null>(null)
   const mobForms = useRef<{ purple: THREE.Mesh[]; black: THREE.Mesh[] } | null>(null)
@@ -3349,6 +3422,73 @@ export function HeroFighter({
           }
         }
 
+        if (hasDarkShadow && darkShadow.current) {
+          // Dark Shadow cycles: seep out of the cloak → fidget beside him → sink back in.
+          // Attack keeps him mostly out so the claw FX can take over the strike.
+          const cycle = 5.6
+          const phase = ((dr.t + seed * 1.7) % cycle) / cycle
+          let want = 0
+          if (anim.kind === 'attack' && anim.t < 0.92) {
+            want = 0.55 + Math.min(1, anim.t / 0.28) * 0.45
+          } else if (anim.kind === 'death' || anim.kind === 'hurt') {
+            want = 0
+          } else if (anim.kind === 'idle' || anim.kind === 'ready' || anim.kind === 'move') {
+            // 0–0.18 emerge, 0.18–0.62 out, 0.62–0.82 retract, 0.82–1 hidden inside.
+            if (phase < 0.18) want = phase / 0.18
+            else if (phase < 0.62) want = 1
+            else if (phase < 0.82) want = 1 - (phase - 0.62) / 0.2
+            else want = 0
+          }
+          dr.shadow += (want - dr.shadow) * (1 - Math.exp(-10 * Math.min(dt, 0.1)))
+          const out = dr.shadow
+          const g = darkShadow.current
+          const on = out > 0.04
+          g.visible = on
+          if (on) {
+            // Exit point — left of the chest under the cloak.
+            const exitX = -0.02
+            const exitY = pr.chestH * 0.45
+            const exitZ = pr.chestD * 0.15
+            // Fully out — float to Tokoyami's left / slightly ahead, restless.
+            const fidget = Math.sin(dr.t * 2.8 + seed)
+            const bob = Math.sin(dr.t * 3.6 + seed * 2) * 0.04
+            const outX = -0.28 - fidget * 0.05
+            const outY = pr.chestH * 0.55 + bob + 0.06
+            const outZ = 0.08 + Math.sin(dr.t * 2.1 + seed) * 0.05
+            const u = out * out * (3 - 2 * out) // smoothstep
+            g.position.set(
+              exitX + (outX - exitX) * u,
+              exitY + (outY - exitY) * u,
+              exitZ + (outZ - exitZ) * u,
+            )
+            // Shrink into the chest when entering / leaving.
+            const s = 0.2 + out * 0.9
+            g.scale.setScalar(s)
+            g.rotation.y = -0.35 + fidget * 0.35
+            g.rotation.z = fidget * 0.12
+            const body = g.getObjectByName('shadowBody')
+            if (body) {
+              body.position.set(-0.06 * out, 0.04 * out, 0.04 * out)
+              body.rotation.y = Math.sin(dr.t * 1.7 + seed) * 0.45
+              body.rotation.x = Math.sin(dr.t * 2.2) * 0.15
+            }
+            const armL = g.getObjectByName('shadowArmL')
+            const armR = g.getObjectByName('shadowArmR')
+            if (armL) armL.rotation.z = Math.sin(dr.t * 4.2 + seed) * 0.45 * out
+            if (armR) armR.rotation.z = Math.sin(dr.t * 3.6 + seed * 1.3) * 0.4 * out
+            const cord = g.getObjectByName('shadowCord')
+            if (cord) {
+              // Cord stays near the exit while the body drifts out.
+              cord.position.set(
+                (exitX - g.position.x) * 0.9,
+                (exitY - g.position.y) * 0.9,
+                (exitZ - g.position.z) * 0.9,
+              )
+              cord.scale.setScalar(0.55 + out * 0.7)
+            }
+          }
+        }
+
         if (hasGaaraSand && sandGrains.current) {
           const swirling =
             anim.kind === 'idle' ||
@@ -3753,6 +3893,15 @@ export function HeroFighter({
                   chestH={pr.chestH}
                   chestW={pr.chestW}
                   chestD={pr.chestD}
+                />
+              )}
+              {hasDarkShadow && (
+                <DarkShadowFamiliar
+                  mountRef={(g) => {
+                    darkShadow.current = g
+                  }}
+                  color={design.palette.glow ?? '#3a2858'}
+                  color2={design.palette.metal ?? '#e8c84a'}
                 />
               )}
               <group ref={bone('cape')} position={[0, pr.chestH * 0.92, -pr.chestD * 0.5]}>
