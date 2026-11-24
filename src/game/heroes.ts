@@ -704,6 +704,211 @@ export const HEROES: HeroDef[] = [
     look: 'Spiky black bell-hair, jagged eyepatch, face scar, ragged white captain haori over black shihakushō, bandage-wrapped notched katana',
     stats: { pwr: 5, spd: 4, sty: 4 },
   },
+
+  // --- MHA push ---
+  {
+    id: 'froppy',
+    codename: 'Froppy',
+    trueName: 'Tsuyu Asui',
+    piece: 'p',
+    color: 'b',
+    startSquare: 'a7',
+    blurb:
+      'Class 1-A’s deadpan amphibian — Frog lets her leap, cling, and lash with a tongue longer than a file. She bounds the pad on sticky pads, then snaps a tongue-hook that yanks and plants them for a ribbit-finish.',
+    gimmick: 'Frog',
+    look: 'Long dark-green hair, wide eyes, green/black frog suit, cream goggles and gloves',
+    stats: { pwr: 3, spd: 4, sty: 3 },
+  },
+  {
+    id: 'pinky',
+    codename: 'Pinky',
+    trueName: 'Mina Ashido',
+    piece: 'p',
+    color: 'w',
+    startSquare: 'b2',
+    blurb:
+      'Class 1-A’s acid dancer — she floods the pad with corrosive soles and slides the file on a green acid slick. Palms spray acid that melts whatever’s standing; the square dissolves under them.',
+    gimmick: 'Acid',
+    look: 'Pink skin/hair, yellow horns, white eye mask, purple/teal camo suit, tan fur-collar vest, purple boots',
+    stats: { pwr: 3, spd: 4, sty: 5 },
+  },
+  {
+    id: 'cellophane',
+    codename: 'Cellophane',
+    trueName: 'Hanta Sero',
+    piece: 'p',
+    color: 'b',
+    startSquare: 'b7',
+    blurb:
+      'Class 1-A’s tape artist — white pressure tape shoots from his elbows onto the next cell, then he yanks himself across. Captures zip him into the opponent for a slam, with a follow-up tape wrap.',
+    gimmick: 'Tape',
+    look: 'Yellow helmet with saw-tooth chin, tape-dispenser elbows, yellow pauldrons, black/white jagged suit',
+    stats: { pwr: 3, spd: 4, sty: 3 },
+  },
+  {
+    id: 'grape-juice',
+    codename: 'Grape Juice',
+    trueName: 'Minoru Mineta',
+    piece: 'p',
+    color: 'w',
+    startSquare: 'c2',
+    blurb:
+      'Class 1-A’s sticky-trap specialist — Pop Off peels adhesive grapes from his scalp and seeds the file. Targets lock down; he closes the gap and finishes whoever can’t peel free.',
+    gimmick: 'Pop Off',
+    look: 'Purple grape crown, half-mask, yellow cape-scarf, dark purple suit, grape-pod utility belt, yellow gauntlets/boots',
+    stats: { pwr: 2, spd: 4, sty: 3 },
+  },
+  {
+    id: 'anima',
+    codename: 'Anima',
+    trueName: 'Koji Koda',
+    piece: 'p',
+    color: 'b',
+    startSquare: 'c7',
+    blurb:
+      'Class 1-A’s quiet beast-speaker — Anivoice summons animals that fight for him. He rides a called bird between pads, then a living tide crashes the square on his command.',
+    gimmick: 'Anivoice',
+    look: 'Rock crest head, red/yellow mask, white shoulder pads, mouth-button emblem; summons birds to fight',
+    stats: { pwr: 3, spd: 3, sty: 2 },
+  },
+  
+  {
+    id: 'sugarman',
+    codename: 'Sugarman',
+    trueName: 'Rikido Sato',
+    piece: 'p',
+    color: 'b',
+    startSquare: 'd7',
+    blurb:
+      'Class 1-A’s sugar-powered heavy — he eats sugar, Sugar Rush pumps the bulk, then he sprints the file and throws a sugar-max haymaker that caves the capture.',
+    gimmick: 'Sugar Rush',
+    look: 'Mustard dome cowl, rear spikes, yellow jumpsuit, white gloves/boots, sugar-pouch belt',
+    stats: { pwr: 5, spd: 4, sty: 2 },
+  },
+
+  {
+    id: 'gang-orca',
+    codename: 'Gang Orca',
+    trueName: 'Kugo Sakamata',
+    piece: 'r',
+    color: 'b',
+    startSquare: 'a8',
+    blurb:
+      'The Orca Hero — ultrasonic assault and brute aquatic power. He owns the file with a charging crash, then a sonic scream blows the square apart.',
+    gimmick: 'Orcinus',
+    look: 'Orca head & dorsal fin, white eye patches, full white suit, pink tongue tie, sonic scream',
+    stats: { pwr: 4, spd: 3, sty: 4 },
+  },
+  
+  {
+    id: 'nejire-chan',
+    codename: 'Nejire Chan',
+    trueName: 'Nejire Hado',
+    piece: 'n',
+    color: 'b',
+    startSquare: 'g8',
+    blurb:
+      'U.A. Big Three spiral — Wave Motion converts stamina into golden spiraling blasts. She corkscrews the L on energy spirals and washes the square in a gold wave.',
+    gimmick: 'Wave Motion',
+    look: 'Long blue corkscrew hair, navy/mint spiral suit, gold gloves, golden Wave Motion',
+    stats: { pwr: 4, spd: 4, sty: 5 },
+  },
+  
+  {
+    id: 'kurogiri',
+    codename: 'Kurogiri',
+    trueName: 'Kurogiri',
+    piece: 'n',
+    color: 'b',
+    startSquare: 'b8',
+    blurb:
+      'The League’s warp butler — Warp Gate opens mist portals across the board. He never walks the L; he arrives already behind them, mist swallowing the square.',
+    gimmick: 'Warp Gate',
+    look: 'Dark purple warp mist head and hands, yellow eyes, bartender suit',
+    stats: { pwr: 3, spd: 5, sty: 4 },
+  },
+  {
+    id: 'uravity',
+    codename: 'Uravity',
+    trueName: 'Ochaco Uraraka',
+    piece: 'b',
+    color: 'w',
+    startSquare: 'c1',
+    blurb:
+      'Class 1-A’s zero-G ace — she floats the diagonal, fights in close, then five-finger touch lifts the target. Fingertips together — Release — and they fall to their death.',
+    gimmick: 'Zero Gravity',
+    look: 'Brown bob, dark-teal suit with white stripe/arms, pink collar and ear pads, white gauntlets and gravity boots',
+    stats: { pwr: 3, spd: 3, sty: 4 },
+  },
+  {
+    id: 'chargebolt',
+    codename: 'Chargebolt',
+    trueName: 'Denki Kaminari',
+    piece: 'b',
+    color: 'b',
+    startSquare: 'c8',
+    blurb:
+      'Class 1-A’s living battery — Electrification floods the diagonal until the square sparks. He runs in charged, then a discharge barrage fries everything in the lane — genius or short-circuit.',
+    gimmick: 'Electrification',
+    look: 'Blond black streak, black jacket with lightning motif, pointer shooter',
+    stats: { pwr: 4, spd: 3, sty: 3 },
+  },
+  {
+    id: 'tsukuyomi',
+    codename: 'Tsukuyomi',
+    trueName: 'Fumikage Tokoyami',
+    piece: 'b',
+    color: 'w',
+    startSquare: 'f1',
+    blurb:
+      'Class 1-A’s shadow host — Dark Shadow fights as a second body on the diagonal. He advances under the cloak while the shadow lunges and carves the square.',
+    gimmick: 'Dark Shadow',
+    look: 'Crow head, dark cloak, red choker, living shadow familiar',
+    stats: { pwr: 4, spd: 3, sty: 5 },
+  },
+  
+  {
+    id: 'earphone-jack',
+    codename: 'Earphone Jack',
+    trueName: 'Kyoka Jiro',
+    piece: 'b',
+    color: 'w',
+    startSquare: 'c1',
+    blurb:
+      'Class 1-A’s sound-jack rocker — plugs the jacks from her ears into her amp boots and kicks heartbeat sound waves through the square. She stalks the diagonal, jacks in, then a sonic amp-kick shatters the capture.',
+    gimmick: 'Earphone Jack',
+    look: 'Purple bob, pink ripped tee, cropped black jacket, jack-earlobes, white gauntlet, amp boots',
+    stats: { pwr: 3, spd: 3, sty: 5 },
+  },
+  
+  {
+    id: 'dabi',
+    codename: 'Dabi',
+    trueName: 'Toya Todoroki',
+    piece: 'b',
+    color: 'w',
+    startSquare: 'f1',
+    blurb:
+      'League blueflame — hotter than Endeavor and twice as bitter. He walks the diagonal trailing azure fire, then a blue inferno deletes the square.',
+    gimmick: 'Blueflame',
+    look: 'Purple stapled burns on half-face and arms, black spikes, navy overcoat, azure flames',
+    stats: { pwr: 5, spd: 2, sty: 4 },
+  },
+  
+  {
+    id: 'endeavor',
+    codename: 'Endeavor',
+    trueName: 'Enji Todoroki',
+    piece: 'q',
+    color: 'b',
+    startSquare: 'd8',
+    blurb:
+      'The flaming No. 1 — Hellflame turns the board into a kiln. He owns rank and file in a burning rush, then Prominence Burn cooks the square to glass.',
+    gimmick: 'Hellflame',
+    look: 'Flaming beard/hair, heavy hero armor, turquoise eyes',
+    stats: { pwr: 5, spd: 4, sty: 4 },
+  },
+
 ]
 
 const byId = new Map(HEROES.map((h) => [h.id, h]))

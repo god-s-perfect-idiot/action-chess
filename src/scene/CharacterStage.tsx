@@ -189,13 +189,14 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
   const rasengan = atk.fx === 'rasengan'
   const sakura = atk.fx === 'sakura'
   const babylon = atk.fx === 'babylon'
-  const portal = atk.fx === 'portal'
+  const warpGate = d.extras.includes('kurogiriSuit') && atk.fx === 'portal'
+  const portal = atk.fx === 'portal' || warpGate
   const inferno = atk.fx === 'inferno'
   const megaShock = atk.fx === 'megaShockwave'
   const airShock = atk.fx === 'airShockwave'
   out.push({
     id: fxSeq++,
-    kind: atk.fx,
+    kind: warpGate ? 'warpGate' : atk.fx,
     start:
       attackAbsStart +
       (atk.ranged || babylon || portal ? atk.release : rasengan ? atk.fxAt - 0.16 : atk.fxAt),
@@ -216,23 +217,45 @@ function makeAttackFx(d: HeroDesign, attackAbsStart: number): FxEvent[] {
           ? 0.95
           : atk.fx === 'rasengan'
             ? 0.75
-            : inferno || megaShock
-              ? 1.35
-              : portal
-                ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
-                : sakura || babylon
-                  ? 0.95
-                  : airShock
-                    ? 0.75
-                    : 0.6,
+            : atk.fx === 'darkShadow'
+              ? 0.85
+              : inferno || megaShock
+                ? 1.35
+                : portal
+                  ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
+                  : sakura || babylon
+                    ? 0.95
+                    : airShock
+                      ? 0.75
+                      : 0.6,
     from: rasengan ? new THREE.Vector3(0, up * 1.85, vz) : from,
     to: rasengan
       ? new THREE.Vector3(0, up * 0.85, vz)
       : inferno
         ? new THREE.Vector3(0, up * 0.35, vz)
         : to,
-    color: sakura ? '#ff8ec8' : babylon ? '#f0d050' : inferno ? '#ff6a18' : c1,
-    color2: sakura ? '#ff4aa0' : babylon ? '#ffe060' : inferno ? '#ffd24a' : c2,
+    color: sakura
+      ? '#ff8ec8'
+      : babylon
+        ? '#f0d050'
+        : inferno
+          ? '#ff6a18'
+          : warpGate
+            ? '#5a2e78'
+            : atk.fx === 'darkShadow'
+              ? '#2a1a48'
+              : c1,
+    color2: sakura
+      ? '#ff4aa0'
+      : babylon
+        ? '#ffe060'
+        : inferno
+          ? '#ffd24a'
+          : warpGate
+            ? '#6a3888'
+            : atk.fx === 'darkShadow'
+              ? '#e8c84a'
+              : c2,
     size:
       d.attack === 'emberFlick'
         ? FX_SIZE * 0.55

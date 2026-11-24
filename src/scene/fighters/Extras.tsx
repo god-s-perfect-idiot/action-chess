@@ -11,16 +11,10 @@ export function buildExtras(c: Ctx) {
   const cw = pr.chestW
   const L = pr.limb
 
-  if (has('scarf') || has('longScarf')) {
+  if (has('scarf')) {
     add('neck', <P s={S.torus(0.045 * Math.sqrt(L), 0.022, Math.PI * 2, 14)} m={M.accent} p={[0, 0.012, 0]} r={[Math.PI / 2 - 0.15, 0, 0]} />)
     add('neck', <P s={S.torus(0.04 * Math.sqrt(L), 0.02, Math.PI * 2, 14)} m={M.accent} p={[0, 0.035, 0.004]} r={[Math.PI / 2 + 0.1, 0, 0]} />)
-    if (has('longScarf')) {
-      add('cape', <P s={S.panel(0.06, 0.42, 0.012, 0.01)} m={M.accent} p={[0.03, -0.18, -0.01]} r={[0.25, 0, -0.08]} />)
-      add('cape', <P s={S.panel(0.055, 0.34, 0.012, 0.01)} m={M.accent} p={[-0.035, -0.14, -0.02]} r={[0.35, 0, 0.12]} />)
-      add('cape', <P s={S.box(0.065, 0.02, 0.016, 0.006)} m={M.trim} line={false} p={[0.03 + 0.045, -0.385, -0.06]} r={[0.25, 0, -0.08]} />)
-    } else {
-      add('chest', <P s={S.panel(0.05, 0.16, 0.012)} m={M.accent} p={[0.04, ch * 0.78, cd * 0.55]} r={[-0.15, 0, 0.15]} />)
-    }
+    add('chest', <P s={S.panel(0.05, 0.16, 0.012)} m={M.accent} p={[0.04, ch * 0.78, cd * 0.55]} r={[-0.15, 0, 0.15]} />)
   }
   if (has('featherScarf')) {
     for (let i = 0; i < 10; i++) {
@@ -4349,6 +4343,1214 @@ export function buildExtras(c: Ctx) {
     arcs.forEach(([b, x, y, z, w, h, rot], i) => {
       add(b, <P s={S.shard(w, h, 0.005)} m={i % 2 ? M.glow : M.glowAlt} line={false} shadow={false} p={[x, y, z]} r={[0.2, 0.15, rot]} />)
       add(b, <P s={S.shard(w * 0.5, h * 0.5, 0.004)} m={M.glowAlt} line={false} shadow={false} p={[x + 0.008, y - h * 0.25, z + 0.004]} r={[-0.2, -0.15, rot + 0.9]} />)
+    })
+  }
+
+  if (has('grapeBalls')) {
+    // Grape Juice (fixed) — Pop Off crown, half-mask, yellow cape-scarf, grape-pod utility belt.
+    const r = pr.headR
+    const front = cd * 0.52
+
+    // Purple scalp plate under the orbs.
+    add('head', <P s={S.sphere(r * 0.95, 14, 12)} m={M.hair} p={[0, r * 0.15, -r * 0.05]} sc={[1.05, 0.75, 1.05]} />)
+    // Half-mask over the upper face.
+    add('head', <P s={S.box(r * 1.15, r * 0.42, r * 0.55, r * 0.12)} m={M.secondary} p={[0, r * 0.12, r * 0.42]} />)
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.12, 8, 6)} m={M.dark} line={false} p={[s * r * 0.32, r * 0.1, r * 0.72]} sc={[1.1, 0.85, 0.35]} />)
+    })
+
+    // Sticky Pop Off spheres + yellow sprout on the crown orb.
+    ;[
+      [0, 1.15, 0.05, 0.42],
+      [0.55, 0.85, 0.35, 0.36],
+      [-0.55, 0.85, 0.35, 0.36],
+      [0.35, 0.95, -0.45, 0.34],
+      [-0.35, 0.95, -0.45, 0.34],
+    ].forEach(([x, y, z, s], i) => {
+      add('head', <P s={S.sphere(r * s, 12, 10)} m={M.hair} p={[x * r, y * r, z * r]} />)
+      add(
+        'head',
+        <P
+          s={S.sphere(r * s * 0.28, 8, 6)}
+          m={M.glow}
+          line={false}
+          shadow={false}
+          p={[x * r + r * 0.08, y * r + r * 0.1, z * r + r * 0.12]}
+        />,
+      )
+      if (i === 0) {
+        add('head', <P s={S.cone(r * 0.06, r * 0.22, 6)} m={M.accent} p={[0, y * r + r * s * 0.85, z * r]} />)
+        add('head', <P s={S.sphere(r * 0.05, 6, 5)} m={M.accent} p={[0, y * r + r * s * 1.05, z * r]} sc={[1.4, 0.55, 0.9]} />)
+      }
+    })
+
+    // Yellow cape-scarf — thick collar wrap + trailing panels.
+    add('neck', <P s={S.torus(0.055 * Math.sqrt(L), 0.028, Math.PI * 2, 14)} m={M.accent} p={[0, 0.01, 0]} r={[Math.PI / 2 - 0.12, 0, 0]} />)
+    add('neck', <P s={S.torus(0.05 * Math.sqrt(L), 0.024, Math.PI * 2, 14)} m={M.accent} p={[0, 0.032, 0.004]} r={[Math.PI / 2 + 0.08, 0, 0]} />)
+    add('cape', <P s={S.panel(cw * 0.95, ch * 1.15, 0.02, -cw * 0.2)} m={M.accent} p={[0, -ch * 0.35, -0.04]} r={[0.12, 0, 0]} />)
+    add('cape', <P s={S.panel(cw * 0.55, ch * 0.85, 0.016, -cw * 0.12)} m={M.accent} p={[cw * 0.18, -ch * 0.22, -0.02]} r={[0.2, 0.15, -0.12]} />)
+
+    // Bodysuit chest panel + grape emblem.
+    add('chest', <P s={S.box(cw * 1.02, ch * 0.88, cd * 1.02, 0.018)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    add('chest', <P s={S.sphere(0.045 * L, 10, 8)} m={M.hair} p={[0, ch * 0.62, front]} />)
+    add('chest', <P s={S.sphere(0.018 * L, 8, 6)} m={M.glow} line={false} shadow={false} p={[0.01 * L, ch * 0.64, front + 0.02]} />)
+
+    // Grape-pod utility belt — ammo spheres on a strap, not a diaper bowl.
+    add('pelvis', <P s={S.box(pr.pelvisW * 1.12, 0.04, pr.pelvisD * 1.15, 0.012)} m={M.accent} p={[0, 0.02, 0]} />)
+    add('pelvis', <P s={S.box(pr.pelvisW * 1.08, 0.018, pr.pelvisD * 1.1, 0.008)} m={M.trim} p={[0, 0.02, 0]} />)
+    ;[
+      [-0.38, 0.02, 0.42],
+      [0.38, 0.02, 0.42],
+      [-0.22, -0.01, -0.4],
+      [0.22, -0.01, -0.4],
+      [0, 0.01, 0.48],
+    ].forEach(([x, y, z], i) => {
+      add(
+        'pelvis',
+        <P
+          s={S.sphere(0.028 + (i % 2) * 0.006, 10, 8)}
+          m={M.hair}
+          p={[x * pr.pelvisW, y, z * pr.pelvisD]}
+        />,
+      )
+    })
+  }
+
+  if (has('cellophaneSuit')) {
+    const front = cd * 0.52
+    const r = pr.headR
+    // Tape-dispenser helmet — yellow drum shell + black visor + cutter chin; rear hair peeks out.
+    add('head', <P s={S.cyl(r * 1.02, r * 1.02, r * 1.55, 16)} m={M.accent} p={[0, r * 0.02, -r * 0.02]} />)
+    add('head', <P s={S.cyl(r * 1.05, r * 1.05, r * 0.12, 16)} m={M.accent} p={[0, r * 0.82, -r * 0.02]} />)
+    add('head', <P s={S.cyl(r * 1.05, r * 1.05, r * 0.1, 16)} m={M.accent} p={[0, -r * 0.72, -r * 0.02]} />)
+    add('head', <P s={S.box(r * 1.05, r * 0.72, r * 0.28, r * 0.06)} m={M.dark} p={[0, r * 0.02, r * 0.78]} />)
+    add('head', <P s={S.box(r * 0.78, r * 0.42, r * 0.08, r * 0.02)} m={M.ink} line={false} p={[0, r * 0.04, r * 0.92]} />)
+    add('head', <P s={S.box(r * 0.95, r * 0.22, r * 0.32, r * 0.05)} m={M.accent} p={[0, -r * 0.55, r * 0.55]} />)
+    for (let i = 0; i < 5; i++) {
+      add('head', <P s={S.shard(r * 0.055, r * 0.11, r * 0.028)} m={M.accent} p={[(i - 2) * r * 0.13, -r * 0.78, r * 0.72]} r={[0.35, 0, 0]} />)
+    }
+    sides((s) => {
+      add('head', <P s={S.cyl(r * 0.22, r * 0.22, r * 0.18, 12)} m={M.accent} p={[s * r * 1.05, r * 0.05, 0]} r={[0, 0, Math.PI / 2]} />)
+      add('head', <P s={S.cyl(0.012, 0.012, 0.01, 8)} m={M.metal} p={[s * r * 1.12, r * 0.05, r * 0.08]} r={[Math.PI / 2, 0, 0]} />)
+    })
+    // Chin-length black spikes out the back of the drum.
+    for (const [sx, sy, sz, sc] of [
+      [0, 0.15, -0.95, 0.55],
+      [0.35, 0.05, -0.9, 0.48],
+      [-0.35, 0.05, -0.9, 0.48],
+      [0.55, -0.2, -0.75, 0.4],
+      [-0.55, -0.2, -0.75, 0.4],
+    ] as const) {
+      add('head', <P s={S.shard(r * 0.1 * sc, r * 0.38 * sc, r * 0.06 * sc)} m={M.hair} p={[sx * r, sy * r, sz * r]} r={[-0.85, sx * 0.35, 0]} />)
+    }
+    // Black turtleneck seal into the helmet.
+    add('neck', <P s={S.cyl(0.045 * Math.sqrt(L), 0.05 * Math.sqrt(L), pr.neck * 0.95, 12)} m={M.primary} p={[0, pr.neck * 0.35, 0]} />)
+    add('chest', <P s={S.box(cw * 1.06, ch * 0.95, cd * 1.04, 0.02)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    // White jagged mid-torso tape pattern + chest strap to the pauldrons.
+    add('chest', <P s={S.box(cw * 0.52, ch * 0.38, 0.016, 0.006)} m={M.secondary} p={[0, ch * 0.55, front]} />)
+    for (let i = 0; i < 7; i++) {
+      add('chest', <P s={S.shard(0.028, 0.055, 0.01)} m={M.secondary} p={[(i - 3) * cw * 0.1, ch * 0.36, front]} r={[0.25, 0, (i - 3) * 0.12]} />)
+    }
+    add('chest', <P s={S.box(cw * 1.15, 0.028, 0.022, 0.008)} m={M.secondary} p={[0, ch * 0.82, front * 0.35]} />)
+    add('spine', <P s={S.box(pr.waistW * 1.15, 0.035, pr.chestD * 1.05, 0.01)} m={M.secondary} p={[0, pr.abdomen * 0.12, 0]} />)
+    sides((s, l) => {
+      const up = `${l}Upper` as BoneName
+      const fore = `${l}Fore` as BoneName
+      // Yellow tape-dispenser pauldrons.
+      add(up, <P s={S.cyl(0.07 * L, 0.07 * L, 0.09 * L, 14)} m={M.accent} p={[s * 0.02, 0.04, 0.01]} r={[0, 0, Math.PI / 2]} />)
+      add(up, <P s={S.cyl(0.018, 0.018, 0.012, 10)} m={M.metal} p={[s * 0.02, 0.04, 0.065 * L]} r={[Math.PI / 2, 0, 0]} />)
+      // Yellow sleeve cuff + cylindrical elbow tape roll (skin quirk joint).
+      add(fore, <P s={S.cyl(0.032 * L, 0.034 * L, 0.028, 10)} m={M.accent} p={[0, -0.02, 0]} />)
+      add(fore, <P s={S.cyl(0.058 * L, 0.062 * L, pr.forearm * 0.5, 14)} m={M.skin} p={[0, -pr.forearm * 0.32, 0]} />)
+      add(fore, <P s={S.torus(0.058 * L, 0.01, Math.PI * 2, 14)} m={M.trim} p={[0, -pr.forearm * 0.32, 0]} r={[Math.PI / 2, 0, 0]} />)
+      add(fore, <P s={S.cyl(0.02, 0.02, 0.018, 10)} m={M.dark} line={false} p={[0, -pr.forearm * 0.32, 0.058 * L]} r={[Math.PI / 2, 0, 0]} />)
+      add(`${l}Thigh` as BoneName, <P s={S.box(0.048, 0.038, 0.018, 0.006)} m={M.secondary} p={[s * 0.042, -pr.thigh * 0.42, 0.038]} />)
+      add(`${l}Shin` as BoneName, <P s={S.cyl(0.032 * L, 0.034 * L, 0.12, 12)} m={M.secondary} p={[0, -pr.shin + 0.08, 0]} />)
+      add(`${l}Foot` as BoneName, <P s={S.box(0.085 * Math.sqrt(L), 0.042, pr.footL + 0.08, 0.016)} m={M.secondary} p={[0, -pr.ankle + 0.028, pr.footL * 0.28]} />)
+      add(`${l}Foot` as BoneName, <P s={S.box(0.072 * Math.sqrt(L), 0.016, pr.footL + 0.04, 0.006)} m={M.accent} p={[0, -pr.ankle + 0.01, pr.footL * 0.3]} />)
+    })
+  }
+
+
+  if (has('animaSuit')) {
+    // Anima — rock-crest head, red/yellow mask, white shoulder pads, mouth-button emblem.
+    // Bird mount is a runtime prop (move-only) — never baked onto the chest button.
+    const front = cd * 0.52
+    const r = pr.headR
+    // Rock head shell — tall pointed crest.
+    add('head', <P s={S.sphere(r * 1.15, 14, 12)} m={M.skin} p={[0, r * 0.08, -r * 0.04]} sc={[1.08, 1.22, 1.12]} />)
+    add('head', <P s={S.cone(r * 0.42, r * 0.55, 7)} m={M.skin} p={[0, r * 1.15, -r * 0.05]} r={[0.15, 0, 0]} />)
+    add('head', <P s={S.shard(r * 0.28, r * 0.35, r * 0.12)} m={M.skinShade} p={[0, r * 0.85, -r * 0.35]} r={[-0.55, 0, 0]} />)
+    // Yellow upper mask + red lower vent mask.
+    add('head', <P s={S.box(r * 1.12, r * 0.42, r * 0.32, r * 0.08)} m={M.secondary} p={[0, r * 0.18, r * 0.52]} />)
+    add('head', <P s={S.box(r * 0.95, r * 0.28, r * 0.22, r * 0.06)} m={M.primary} p={[0, -r * 0.18, r * 0.68]} />)
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.11, 8, 6)} m={M.dark} line={false} p={[s * r * 0.32, r * 0.2, r * 0.68]} />)
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 2; j++) {
+          add(
+            'head',
+            <P
+              s={S.sphere(r * 0.035, 6, 5)}
+              m={M.dark}
+              line={false}
+              p={[s * r * (0.12 + i * 0.14), -r * (0.08 + j * 0.14), r * 0.82]}
+            />,
+          )
+        }
+      }
+    })
+    // Red torso + yellow side panels.
+    add('chest', <P s={S.box(cw * 1.04, ch * 0.92, cd * 1.02, 0.02)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    sides((s) => {
+      add('chest', <P s={S.box(cw * 0.28, ch * 0.88, cd * 1.0, 0.016)} m={M.secondary} p={[s * cw * 0.38, ch * 0.48, 0]} />)
+    })
+    // Mouth-button emblem — white oval with teeth bars (not a perched bird).
+    add('chest', <P s={S.cyl(0.055, 0.055, 0.016, 16)} m={M.accent} p={[0, ch * 0.72, front + 0.01]} r={[Math.PI / 2, 0, 0]} />)
+    add('chest', <P s={S.cyl(0.042, 0.042, 0.01, 14)} m={M.light} line={false} p={[0, ch * 0.72, front + 0.018]} r={[Math.PI / 2, 0, 0]} />)
+    for (let i = 0; i < 4; i++) {
+      add(
+        'chest',
+        <P
+          s={S.box(0.008, 0.028, 0.006, 0.002)}
+          m={M.accent}
+          line={false}
+          p={[(i - 1.5) * 0.016, ch * 0.72, front + 0.024]}
+        />,
+      )
+    }
+    // White padded shoulder straps.
+    sides((s) => {
+      add('chest', <P s={S.box(0.07, 0.055, 0.14, 0.02)} m={M.accent} p={[s * cw * 0.42, ch * 0.92, 0]} r={[0.15, 0, s * -0.35]} />)
+      add('chest', <P s={S.box(0.06, 0.045, 0.1, 0.016)} m={M.light} p={[s * cw * 0.38, ch * 0.78, cd * 0.15]} r={[0.35, 0, s * -0.2]} />)
+      add('chest', <P s={S.box(0.055, 0.04, 0.08, 0.014)} m={M.accent} p={[s * cw * 0.32, ch * 0.62, cd * 0.28]} r={[0.55, 0, s * -0.1]} />)
+    })
+    // Yellow sleeves + dark red forearm bands; chunky yellow boots.
+    sides((_s, l) => {
+      add(`${l}Upper` as BoneName, <P s={S.cyl(0.052 * L, 0.048 * L, pr.upperArm * 0.9, 10)} m={M.secondary} p={[0, -pr.upperArm * 0.48, 0]} />)
+      add(`${l}Fore` as BoneName, <P s={S.cyl(0.046 * L, 0.05 * L, pr.forearm * 0.55, 10)} m={M.secondary} p={[0, -pr.forearm * 0.42, 0]} />)
+      add(`${l}Fore` as BoneName, <P s={S.cyl(0.052 * L, 0.054 * L, 0.055, 10)} m={M.trim} p={[0, -pr.forearm * 0.78, 0]} />)
+      const foot = `${l}Foot` as BoneName
+      add(foot, <P s={S.box(0.095 * Math.sqrt(L), 0.055, pr.footL + 0.1, 0.018)} m={M.secondary} p={[0, -pr.ankle + 0.03, pr.footL * 0.28]} />)
+      add(foot, <P s={S.box(0.08 * Math.sqrt(L), 0.022, pr.footL + 0.06, 0.01)} m={M.accent} p={[0, -pr.ankle + 0.01, pr.footL * 0.3]} />)
+      add(foot, <P s={S.box(0.07 * Math.sqrt(L), 0.016, 0.04, 0.006)} m={M.accent} p={[0, -pr.ankle + 0.045, pr.footL * 0.05]} />)
+      add(foot, <P s={S.box(0.07 * Math.sqrt(L), 0.016, 0.04, 0.006)} m={M.accent} p={[0, -pr.ankle + 0.045, pr.footL * 0.35]} />)
+    })
+    // Yellow shorts waist band.
+    add('spine', <P s={S.box(pr.waistW * 1.28, 0.055, pr.chestD * 1.08, 0.014)} m={M.secondary} p={[0, pr.abdomen * 0.08, 0]} />)
+    add('pelvis', <P s={S.box(pr.pelvisW * 1.15, 0.12, pr.pelvisD * 1.08, 0.03)} m={M.secondary} p={[0, -0.02, 0]} />)
+  }
+
+
+  if (has('sugarmanSuit')) {
+    // Sugarman — mustard dome cowl, rear spikes, sugar-pouch belt, white gloves/boots.
+    const front = cd * 0.52
+    const r = pr.headR
+    const my = -r * 0.52
+    const mz = r * 0.78
+
+    // Open-face dome cowl (suit yellow) — covers scalp + sides, leaves the face open.
+    add('head', <P s={S.sphere(r * 1.12, 18, 14)} m={M.primary} p={[0, r * 0.1, -r * 0.04]} sc={[1.05, 0.95, 1.08]} />)
+    add('head', <P s={S.sphere(r * 1.08, 16, 12)} m={M.primary} p={[0, r * 0.38, -r * 0.08]} sc={[0.98, 0.55, 1.0]} />)
+    sides((s) => {
+      add('head', <P s={S.box(r * 0.42, r * 0.95, r * 0.72, r * 0.12)} m={M.primary} p={[s * r * 0.78, r * 0.02, -r * 0.04]} r={[0.08, s * 0.1, s * 0.04]} />)
+      add('head', <P s={S.box(r * 0.28, r * 0.55, r * 0.4, r * 0.1)} m={M.primary} p={[s * r * 0.88, r * 0.2, -r * 0.28]} r={[0.2, s * 0.3, s * -0.1]} />)
+    })
+    add('head', <P s={S.sphere(r * 0.82, 12, 10)} m={M.primary} p={[0, -r * 0.42, -r * 0.08]} sc={[0.9, 0.5, 0.85]} />)
+    add('neck', <P s={S.cyl(0.048 * Math.sqrt(L), 0.052 * Math.sqrt(L), pr.neck * 0.95, 12)} m={M.primary} p={[0, pr.neck * 0.32, 0]} />)
+
+    // Dark spiked crest out the back of the dome.
+    for (const [sx, sy, sz, sc, yaw] of [
+      [0, 0.55, -0.85, 0.7, 0],
+      [0.22, 0.42, -0.9, 0.58, 0.25],
+      [-0.22, 0.42, -0.9, 0.58, -0.25],
+      [0.4, 0.2, -0.82, 0.48, 0.45],
+      [-0.4, 0.2, -0.82, 0.48, -0.45],
+      [0.12, 0.7, -0.65, 0.42, 0.1],
+      [-0.12, 0.7, -0.65, 0.42, -0.1],
+    ] as const) {
+      add(
+        'head',
+        <P
+          s={S.shard(r * 0.1 * sc, r * 0.42 * sc, r * 0.055 * sc)}
+          m={M.hair}
+          p={[sx * r, sy * r, sz * r]}
+          r={[-0.95, yaw, 0]}
+        />,
+      )
+    }
+
+    // Signature thick fleshy lips.
+    add('head', <P s={S.sphere(r * 0.24, 12, 8)} m={M.skin} line={false} p={[0, my + r * 0.04, mz]} sc={[1.5, 0.5, 0.42]} />)
+    add('head', <P s={S.sphere(r * 0.2, 10, 8)} m={M.skinShade} line={false} p={[0, my - r * 0.04, mz + r * 0.01]} sc={[1.4, 0.42, 0.38]} />)
+
+    // Chest seam + collar ring (jumpsuit read).
+    add('chest', <P s={S.box(0.014, ch * 0.85, 0.012, 0.004)} m={M.trim} line={false} p={[0, ch * 0.48, front]} />)
+    add('chest', <P s={S.torus(0.05, 0.014, Math.PI * 2, 14)} m={M.primary} p={[0, ch * 1.0, 0]} r={[Math.PI / 2, 0, 0]} />)
+
+    // Off-white sugar utility belt + dark rectangular buckle + pouches.
+    add('spine', <P s={S.box(pr.waistW * 1.32, 0.055, pr.chestD * 1.12, 0.014)} m={M.accent} p={[0, pr.abdomen * 0.1, 0]} />)
+    add('spine', <P s={S.box(0.09, 0.06, 0.035, 0.01)} m={M.trim} p={[0, pr.abdomen * 0.1, pr.chestD * 0.56]} />)
+    add('spine', <P s={S.box(0.06, 0.04, 0.02, 0.006)} m={M.metal} line={false} p={[0, pr.abdomen * 0.1, pr.chestD * 0.58]} />)
+    sides((s) => {
+      add('spine', <P s={S.box(0.045, 0.05, 0.04, 0.01)} m={M.accent} p={[s * pr.waistW * 0.42, pr.abdomen * 0.08, pr.chestD * 0.35]} />)
+      add('spine', <P s={S.box(0.038, 0.042, 0.032, 0.008)} m={M.accent} p={[s * pr.waistW * 0.55, pr.abdomen * 0.06, pr.chestD * 0.05]} />)
+      add('spine', <P s={S.box(0.01, 0.018, 0.008, 0.002)} m={M.trim} line={false} p={[s * pr.waistW * 0.42, pr.abdomen * 0.1, pr.chestD * 0.42]} />)
+    })
+
+    // White mid-forearm gloves.
+    sides((s, l) => {
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      const h = pr.hand
+      const hw = h * 2.15
+      add(fore, <P s={S.cyl(0.034 * L, 0.038 * L, pr.forearm * 0.72, 12)} m={M.light} p={[0, -pr.forearm * 0.55, 0]} />)
+      add(fore, <P s={S.cyl(0.04 * L, 0.04 * L, 0.02, 12)} m={M.accent} p={[0, -pr.forearm * 0.26, 0]} />)
+      add(hand, <P s={S.box(hw, h * 2.4, h * 1.8, h * 0.6)} m={M.light} p={[0, -h * 1.05, 0.002]} />)
+      add(hand, <P s={S.capsule(h * 0.42, h * 0.7)} m={M.light} p={[-s * hw * 0.5, -h * 0.75, h * 0.55]} r={[0.4, 0, s * 0.4]} />)
+    })
+
+    // Matching white mid-calf boots.
+    sides((_s, l) => {
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      const A = pr.ankle
+      const FL = pr.footL
+      const fw = 0.078 * Math.sqrt(L)
+      add(shin, <P s={S.cyl(0.042 * L, 0.048 * L, pr.shin * 0.55, 12)} m={M.light} p={[0, -pr.shin * 0.62, 0]} />)
+      add(shin, <P s={S.cyl(0.05 * L, 0.05 * L, 0.02, 12)} m={M.accent} p={[0, -pr.shin * 0.4, 0]} />)
+      add(foot, <P s={S.box(fw, 0.028, FL + 0.05, 0.01)} m={M.trim} p={[0, -A + 0.014, FL * 0.3]} />)
+      add(foot, <P s={S.box(fw * 0.94, 0.052, FL + 0.02, 0.016)} m={M.light} p={[0, -A + 0.04, FL * 0.26]} />)
+    })
+  }
+
+  if (has('froppySuit')) {
+  // Tsuyu — green bodysuit, black striped legs, cream goggles/gloves/belt, flipper boots.
+    const front = cd * 0.52
+    const r = pr.headR
+    add('chest', <P s={S.box(cw * 1.05, ch * 0.92, cd * 1.05, 0.022)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    add('chest', <P s={S.box(cw * 0.55, ch * 0.35, 0.018, 0.008)} m={M.primary} p={[0, ch * 0.72, front * 0.85]} r={[0, 0, 0.08]} />)
+    sides((s) => {
+      add('chest', <P s={S.sphere(0.07, 12, 10)} m={M.secondary} p={[s * cw * 0.24, ch * 0.62, front]} sc={[1.1, 0.9, 0.65]} />)
+    })
+    add('head', <P s={S.box(r * 1.05, r * 0.2, r * 0.22, r * 0.06)} m={M.trim} p={[0, r * 1.05, r * 0.35]} r={[0.35, 0, 0]} />)
+    sides((s) => {
+      add('head', <P s={S.cyl(r * 0.2, r * 0.22, r * 0.12, 12)} m={M.primary} line={false} p={[s * r * 0.35, r * 1.08, r * 0.45]} r={[0.5, s * 0.3, 0]} />)
+      add('head', <P s={S.sphere(r * 0.16, 10, 8)} m={M.glow} line={false} p={[s * r * 0.35, r * 1.08, r * 0.52]} />)
+    })
+    add('spine', <P s={S.cyl(pr.waistW * 0.92, pr.waistW * 0.95, 0.05, 14)} m={M.trim} p={[0, pr.abdomen * 0.12, pr.chestD * 0.42]} />)
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2
+      add('spine', <P s={S.sphere(0.012, 8, 6)} m={M.dark} line={false} p={[Math.cos(a) * pr.waistW * 0.4, pr.abdomen * 0.12, pr.chestD * 0.44 + Math.sin(a) * pr.chestD * 0.38]} />)
+    }
+    sides((_s, l) => {
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      const thigh = `${l}Thigh` as BoneName
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      add(fore, <P s={S.cyl(0.05 * L, 0.054 * L, pr.forearm * 0.82, 12)} m={M.trim} p={[0, -pr.forearm * 0.45, 0]} />)
+      add(fore, <P s={S.cyl(0.056 * L, 0.06 * L, 0.035, 12)} m={M.primary} p={[0, -pr.forearm * 0.88, 0]} />)
+      add(hand, <P s={S.box(pr.hand * 2.8, pr.hand * 3.0, pr.hand * 2.2, pr.hand * 0.85)} m={M.trim} p={[0, -pr.hand * 1.1, 0]} />)
+      add(hand, <P s={S.cyl(0.05 * L, 0.052 * L, 0.025, 12)} m={M.primary} p={[0, -pr.hand * 0.35, 0]} />)
+      add(thigh, <P s={S.cyl(0.054 * L, 0.05 * L, pr.thigh * 0.92, 12)} m={M.secondary} p={[0, -pr.thigh * 0.48, 0]} />)
+      add(thigh, <P s={S.box(0.014, pr.thigh * 0.85, 0.01, 0.004)} m={M.accent} line={false} p={[0.044 * L, -pr.thigh * 0.48, 0.038 * L]} />)
+      const A = pr.ankle
+      const FL = pr.footL
+      add(shin, <P s={S.cyl(0.048 * L, 0.044 * L, pr.shin * 0.88, 12)} m={M.secondary} p={[0, -pr.shin * 0.52, 0]} />)
+      add(foot, <P s={S.box(0.1 * Math.sqrt(L), 0.035, FL + 0.1, 0.014)} m={M.primary} p={[0, -A + 0.02, FL * 0.28]} />)
+      add(foot, <P s={S.box(0.08 * Math.sqrt(L), 0.022, FL + 0.12, 0.01)} m={M.secondary} p={[0, -A + 0.012, FL * 0.42]} />)
+      for (let t = 0; t < 3; t++) {
+        add(foot, <P s={S.sphere(0.024, 8, 6)} m={M.trim} p={[(t - 1) * 0.03, -A + 0.008, FL + 0.05]} />)
+      }
+    })
+  }
+
+  if (has('uravitySuit')) {
+    // Uravity — dark-teal bodysuit, white center stripe + arms, pink collar/ears/trim,
+    // bulky white bracer-gauntlets, white belt pods, oversized white gravity boots.
+    const front = cd * 0.52
+    const r = pr.headR
+    const A = pr.ankle
+    const FL = pr.footL
+    const fw = 0.1 * Math.sqrt(L)
+
+    // Teal torso shell + thick white belly/chest stripe.
+    add('chest', <P s={S.box(cw * 1.02, ch * 0.92, cd * 1.02, 0.02)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    add('chest', <P s={S.box(cw * 0.28, ch * 0.92, 0.018, 0.006)} m={M.accent} p={[0, ch * 0.48, front]} />)
+    add('spine', <P s={S.box(pr.waistW * 0.42, pr.abdomen * 0.95, 0.016, 0.006)} m={M.accent} p={[0, pr.abdomen * 0.48, pr.chestD * 0.48]} />)
+
+    // Chunky pink neck collar.
+    add('neck', <P s={S.cyl(0.048 * L, 0.055 * L, 0.055, 14)} m={M.secondary} p={[0, 0.012, 0.01]} />)
+    add('neck', <P s={S.torus(0.052 * L, 0.014, Math.PI * 2, 16)} m={M.secondary} p={[0, 0.038, 0.008]} r={[Math.PI / 2, 0, 0]} />)
+
+    // White headband + pink ear-pad semicircles on the temples.
+    add('head', <P s={S.box(r * 1.15, r * 0.14, r * 0.22, r * 0.05)} m={M.accent} p={[0, r * 0.95, r * 0.28]} r={[0.35, 0, 0]} />)
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.22, 12, 10)} m={M.secondary} p={[s * r * 0.72, r * 0.92, r * 0.18]} sc={[0.55, 1.05, 0.85]} />)
+      add('head', <P s={S.cyl(r * 0.06, r * 0.06, r * 0.12, 8)} m={M.accent} p={[s * r * 0.55, r * 0.98, r * 0.22]} r={[0, 0, s * 0.9]} />)
+    })
+
+    // White sleeves + pink bicep bands; teal thighs under the belt.
+    sides((_s, l) => {
+      const up = `${l}Upper` as BoneName
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      const thigh = `${l}Thigh` as BoneName
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      const h = pr.hand
+
+      add(up, <P s={S.cyl(0.036 * L, 0.032 * L, pr.upperArm * 0.95, 12)} m={M.accent} p={[0, -pr.upperArm * 0.48, 0]} />)
+      add(up, <P s={S.cyl(0.042 * L, 0.044 * L, 0.032, 12)} m={M.secondary} p={[0, -pr.upperArm * 0.28, 0]} />)
+      add(fore, <P s={S.cyl(0.032 * L, 0.03 * L, pr.forearm * 0.55, 12)} m={M.accent} p={[0, -pr.forearm * 0.28, 0]} />)
+
+      // Bulky circular white gauntlets + pink rim / top handle.
+      add(fore, <P s={S.sphere(0.078 * L, 14, 12)} m={M.accent} p={[0, -pr.forearm * 0.62, 0]} sc={[1.2, 1.35, 1.05]} />)
+      add(fore, <P s={S.cyl(0.082 * L, 0.082 * L, 0.028, 14)} m={M.secondary} p={[0, -pr.forearm * 0.38, 0]} />)
+      add(fore, <P s={S.cyl(0.082 * L, 0.082 * L, 0.022, 14)} m={M.secondary} p={[0, -pr.forearm * 0.86, 0]} />)
+      add(fore, <P s={S.torus(0.055 * L, 0.012, Math.PI * 1.6, 14)} m={M.accent} p={[0, -pr.forearm * 0.55, 0.02]} r={[Math.PI / 2, 0, 0]} />)
+
+      // Soft pink fingertip pads (Zero Gravity contact points).
+      add(hand, <P s={S.box(h * 2.1, h * 2.25, h * 1.7, h * 0.55)} m={M.accent} p={[0, -h * 1.05, 0]} />)
+      add(hand, <P s={S.sphere(h * 0.35, 8, 6)} m={M.secondary} line={false} p={[0, -h * 1.55, h * 0.35]} />)
+      add(hand, <P s={S.sphere(h * 0.22, 6, 5)} m={M.secondary} line={false} p={[h * 0.55, -h * 1.45, h * 0.2]} />)
+      add(hand, <P s={S.sphere(h * 0.22, 6, 5)} m={M.secondary} line={false} p={[-h * 0.55, -h * 1.45, h * 0.2]} />)
+
+      add(thigh, <P s={S.cyl(0.054 * L, 0.048 * L, pr.thigh * 0.92, 12)} m={M.primary} p={[0, -pr.thigh * 0.48, 0]} />)
+
+      // Oversized bulbous white boots + pink soles.
+      add(shin, <P s={S.cyl(0.048 * L, 0.055 * L, pr.shin * 0.72, 12)} m={M.accent} p={[0, -pr.shin * 0.55, 0]} />)
+      add(shin, <P s={S.sphere(0.07 * L, 12, 10)} m={M.accent} p={[0, -pr.shin * 0.85, 0.02]} sc={[1.15, 0.95, 1.25]} />)
+      add(foot, <P s={S.box(fw, 0.055, FL + 0.14, 0.022)} m={M.accent} p={[0, -A + 0.04, FL * 0.3]} />)
+      add(foot, <P s={S.sphere(0.055 * L, 10, 8)} m={M.accent} p={[0, -A + 0.045, FL * 0.55]} sc={[1.3, 0.85, 1.1]} />)
+      add(foot, <P s={S.box(fw * 0.92, 0.022, FL + 0.1, 0.01)} m={M.secondary} p={[0, -A + 0.01, FL * 0.32]} />)
+    })
+
+    // White utility belt + pink side capsules.
+    add('spine', <P s={S.box(pr.waistW * 1.42, 0.06, pr.chestD * 1.15, 0.018)} m={M.accent} p={[0, pr.abdomen * 0.06, 0]} />)
+    add('spine', <P s={S.box(0.05, 0.045, 0.03, 0.01)} m={M.secondary} p={[0, pr.abdomen * 0.06, pr.chestD * 0.55]} />)
+    sides((s) => {
+      add('spine', <P s={S.cyl(0.028, 0.028, 0.055, 10)} m={M.secondary} p={[s * pr.waistW * 0.48, pr.abdomen * 0.06, pr.chestD * 0.35]} r={[0, 0, Math.PI / 2]} />)
+      add('spine', <P s={S.sphere(0.024, 8, 6)} m={M.accent} line={false} p={[s * pr.waistW * 0.55, pr.abdomen * 0.06, pr.chestD * 0.35]} />)
+    })
+  }
+
+
+  if (has('tsukuyomiSuit')) {
+    // Jet-Black Hero: Tsukuyomi — literal crow head, red choker, black cloak; Dark Shadow peeks from the cape.
+    const r = pr.headR
+    const front = cd * 0.52
+
+    // ── Crow head (replaces human skull) — elongated raven skull + big yellow beak ──
+    add('head', <P s={S.sphere(r * 0.95, 16, 14)} m={M.hair} p={[0, r * 0.02, -r * 0.12]} sc={[1.05, 1.0, 1.35]} />)
+    add('head', <P s={S.sphere(r * 0.55, 12, 10)} m={M.hair} p={[0, -r * 0.05, r * 0.35]} sc={[0.95, 0.8, 1.15]} />)
+    // Hooked yellow beak — thick wedge reading clearly from the front.
+    add('head', <P s={S.box(r * 0.42, r * 0.28, r * 0.85, r * 0.08)} m={M.metal} p={[0, -r * 0.12, r * 0.95]} />)
+    add('head', <P s={S.cone(r * 0.26, r * 0.55, 8)} m={M.metal} p={[0, -r * 0.14, r * 1.45]} r={[Math.PI / 2 - 0.35, 0, 0]} />)
+    add('head', <P s={S.box(r * 0.28, r * 0.1, r * 0.35, r * 0.04)} m={M.metal} p={[0, -r * 0.28, r * 1.15]} />)
+    add('head', <P s={S.box(r * 0.12, r * 0.05, r * 0.12, r * 0.02)} m={M.trim} p={[0, -r * 0.18, r * 1.7]} />)
+    // Thin red eyes on the sides + white pupils (unmissable).
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.16, 10, 8)} m={M.accent} line={false} shadow={false} p={[s * r * 0.48, r * 0.08, r * 0.42]} sc={[0.5, 0.78, 0.45]} />)
+      add('head', <P s={S.sphere(r * 0.055, 6, 5)} m={M.white} line={false} shadow={false} p={[s * r * 0.55, r * 0.08, r * 0.52]} />)
+      add('head', <P s={S.sphere(r * 0.022, 5, 4)} m={M.ink} line={false} shadow={false} p={[s * r * 0.58, r * 0.08, r * 0.56]} />)
+    })
+    // Spiky crow crest / nape feathers.
+    for (let i = 0; i < 12; i++) {
+      const a = ((i - 5.5) / 5.5) * 1.05
+      const h = r * (0.32 + (i % 3) * 0.14)
+      add(
+        'head',
+        <P
+          s={S.shard(r * 0.11, h, r * 0.045)}
+          m={i % 2 ? M.hair : M.trim}
+          p={[Math.sin(a) * r * 0.5, r * (0.5 + Math.abs(Math.sin(a)) * 0.2), -r * (0.4 + Math.abs(Math.sin(a)) * 0.4)]}
+          r={[-0.85 - Math.abs(a) * 0.15, a * 0.35, a * 0.4]}
+        />,
+      )
+    }
+    sides((s) => {
+      add('head', <P s={S.shard(r * 0.09, r * 0.32, r * 0.04)} m={M.hair} p={[s * r * 0.7, r * 0.12, -r * 0.2]} r={[-0.35, s * 0.55, s * 0.75]} />)
+      add('head', <P s={S.shard(r * 0.08, r * 0.24, r * 0.035)} m={M.trim} p={[s * r * 0.62, -r * 0.08, -r * 0.4]} r={[0.25, s * 0.4, s * 0.55]} />)
+    })
+
+    // Signature red choker sealing bird head to human neck.
+    add('neck', <P s={S.cyl(0.05 * L, 0.058 * L, 0.05, 14)} m={M.accent} p={[0, 0.01, 0.008]} />)
+    add('neck', <P s={S.torus(0.052 * L, 0.01, Math.PI * 2, 16)} m={M.accent} p={[0, -0.005, 0.01]} r={[Math.PI / 2, 0, 0]} />)
+
+    // Cloak — full black robe silhouette to mid-shin (hero costume).
+    {
+      const len = pr.hipH * 1.35 + ch * 1.05
+      add('cape', <P s={S.panel(cw * 1.7, len, 0.03, -cw * 0.42)} m={M.primary} p={[0, -len / 2 + 0.02, -0.04]} r={[0.08, 0, 0]} />)
+      add('cape', <P s={S.panel(cw * 1.55, len * 0.96, 0.02, -cw * 0.4)} m={M.secondary} line={false} p={[0, -len / 2 + 0.06, -0.015]} r={[0.08, 0, 0]} />)
+      // Front drape panels so the cloak wraps the torso.
+      sides((s) => {
+        add('chest', <P s={S.panel(cw * 0.38, ch * 0.95, 0.02)} m={M.primary} p={[s * cw * 0.4, ch * 0.32, front * 0.28]} r={[0.05, s * 0.6, s * 0.06]} />)
+      })
+      for (let i = 0; i < 8; i++) {
+        sides((s) => {
+          add(
+            'cape',
+            <P
+              s={S.shard(0.048, len * (0.12 + (i % 3) * 0.05), 0.012)}
+              m={M.trim}
+              p={[s * cw * (0.35 + (i % 4) * 0.1), -len * (0.1 + i * 0.09), -0.02]}
+              r={[0.18, 0, s * (0.2 + i * 0.12)]}
+            />,
+          )
+        })
+      }
+    }
+
+    // Utility belt (visible under cloak split).
+    add('spine', <P s={S.box(pr.waistW * 1.35, 0.05, pr.chestD * 1.1, 0.014)} m={M.trim} p={[0, pr.abdomen * 0.08, 0]} />)
+    add('spine', <P s={S.box(0.055, 0.045, 0.022, 0.008)} m={M.metal} p={[0, pr.abdomen * 0.08, pr.chestD * 0.55]} />)
+    sides((s) => {
+      for (let i = 0; i < 2; i++) {
+        add('spine', <P s={S.box(0.04, 0.055, 0.035, 0.01)} m={M.secondary} p={[s * (0.08 + i * 0.07), pr.abdomen * 0.05, pr.chestD * 0.42]} />)
+      }
+    })
+
+    // Dark wristbands on bare forearms.
+    sides((_s, l) => {
+      const fore = `${l}Fore` as BoneName
+      add(fore, <P s={S.cyl(0.04 * L, 0.042 * L, 0.04, 12)} m={M.trim} p={[0, -pr.forearm * 0.82, 0]} />)
+      add(fore, <P s={S.cyl(0.038 * L, 0.038 * L, 0.012, 12)} m={M.secondary} p={[0, -pr.forearm * 0.68, 0]} />)
+    })
+
+    // Baggy dark pants + knee-high boots.
+    sides((_s, l) => {
+      const thigh = `${l}Thigh` as BoneName
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      add(thigh, <P s={S.cyl(0.055 * L, 0.048 * L, pr.thigh * 0.92, 12)} m={M.secondary} p={[0, -pr.thigh * 0.48, 0]} />)
+      add(shin, <P s={S.cyl(0.048 * L, 0.044 * L, pr.shin * 0.72, 12)} m={M.trim} p={[0, -pr.shin * 0.55, 0]} />)
+      add(foot, <P s={S.box(0.085 * Math.sqrt(L), 0.055, pr.footL + 0.1, 0.018)} m={M.trim} p={[0, -pr.ankle + 0.032, pr.footL * 0.3]} />)
+    })
+
+    // Idle Dark Shadow — larger purple familiar emerging from the left of the cloak.
+    {
+      const sx = -cw * 0.72
+      const sy = ch * 0.55
+      const sz = -cd * 0.05
+      add('chest', <P s={S.sphere(0.14 * L, 12, 10)} m={M.glow} line={false} shadow={false} p={[sx, sy, sz]} sc={[1.5, 1.25, 1.6]} />)
+      add('chest', <P s={S.sphere(0.11 * L, 10, 8)} m={M.glow} line={false} shadow={false} p={[sx - 0.06, sy + 0.1, sz + 0.08]} sc={[1.3, 1.1, 1.4]} />)
+      // Bird-like shadow head + yellow eyes + open beak.
+      add('chest', <P s={S.sphere(0.09 * L, 10, 8)} m={M.glow} line={false} shadow={false} p={[sx - 0.12, sy + 0.2, sz + 0.14]} sc={[1.15, 1.05, 1.3]} />)
+      add('chest', <P s={S.cone(0.05 * L, 0.11 * L, 6)} m={M.glow} line={false} shadow={false} p={[sx - 0.14, sy + 0.14, sz + 0.26]} r={[Math.PI / 2 + 0.25, 0, 0]} />)
+      sides((s) => {
+        add('chest', <P s={S.sphere(0.022 * L, 6, 5)} m={M.metal} line={false} shadow={false} p={[sx - 0.1 + s * 0.04, sy + 0.24, sz + 0.22]} />)
+      })
+      // Clawed arms reaching past the host.
+      add('chest', <P s={S.cyl(0.032 * L, 0.04 * L, 0.22 * L, 8)} m={M.glow} line={false} shadow={false} p={[sx + 0.02, sy - 0.02, sz + 0.18]} r={[1.0, 0.35, -0.55]} />)
+      add('chest', <P s={S.sphere(0.05 * L, 8, 6)} m={M.glow} line={false} shadow={false} p={[sx + 0.08, sy - 0.12, sz + 0.32]} />)
+      for (let i = 0; i < 3; i++) {
+        add(
+          'chest',
+          <P
+            s={S.cone(0.014 * L, 0.055 * L, 4)}
+            m={M.glow}
+            line={false}
+            shadow={false}
+            p={[sx + 0.08 + (i - 1) * 0.025, sy - 0.15, sz + 0.4]}
+            r={[Math.PI / 2, 0, (i - 1) * 0.4]}
+          />,
+        )
+      }
+      add('chest', <P s={S.cyl(0.028 * L, 0.035 * L, 0.18 * L, 8)} m={M.glow} line={false} shadow={false} p={[sx - 0.08, sy + 0.05, sz - 0.08]} r={[0.6, -0.5, 0.8]} />)
+      add('chest', <P s={S.sphere(0.045 * L, 8, 6)} m={M.glow} line={false} shadow={false} p={[sx - 0.16, sy + 0.12, sz - 0.18]} />)
+    }
+  }
+
+  if (has('endeavorSuit')) {
+    // Hellflame head (beard + mask) is animated live in HeroFighter — suit is navy armor only.
+    const front = cd * 0.52
+    add('chest', <P s={S.box(cw * 1.02, ch * 0.92, cd * 1.02, 0.022)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    sides((s) => {
+      add('chest', <P s={S.box(0.07 * s, ch * 0.32, 0.022, 0.008)} m={M.glow} line={false} p={[s * cw * 0.24, ch * 0.72, front]} sc={[1.2, 1, 0.85]} />)
+      add('chest', <P s={S.box(0.1 * s, 0.085, 0.12, 0.028)} m={M.metal} p={[s * 0.03, ch * 0.88, -0.02]} r={[0.15, 0, s * -0.28]} />)
+      for (let i = 0; i < 3; i++) {
+        add('chest', <P s={S.cyl(0.008, 0.008, 0.012, 8)} m={M.trim} line={false} p={[s * 0.06, ch * (0.8 - i * 0.08), 0.06]} r={[Math.PI / 2, 0, 0]} />)
+      }
+    })
+    add('spine', <P s={S.box(pr.waistW * 1.28, 0.062, pr.chestD * 1.08, 0.018)} m={M.accent} p={[0, pr.abdomen * 0.1, 0]} />)
+    add('spine', <P s={S.box(0.065, 0.055, 0.024, 0.01)} m={M.metal} p={[0, pr.abdomen * 0.1, pr.chestD * 0.54]} />)
+    sides((_s, l) => {
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      add(fore, <P s={S.cyl(0.058 * L, 0.062 * L, pr.forearm * 0.95, 12)} m={M.light} p={[0, -pr.forearm * 0.48, 0]} />)
+      add(fore, <P s={S.cyl(0.062 * L, 0.062 * L, 0.022, 12)} m={M.metal} p={[0, -pr.forearm * 0.1, 0]} />)
+      add(hand, <P s={S.box(pr.hand * 2.3, pr.hand * 2.4, pr.hand * 2.0, pr.hand * 0.7)} m={M.light} p={[0, -pr.hand * 1.05, 0]} />)
+      add(`${l}Thigh` as BoneName, <P s={S.box(0.085 * L, 0.12, 0.045, 0.014)} m={M.glow} line={false} p={[0, -pr.thigh * 0.45, 0.042 * L]} />)
+      add(`${l}Foot` as BoneName, <P s={S.box(0.085 * Math.sqrt(L), 0.04, pr.footL + 0.08, 0.016)} m={M.glow} line={false} p={[0, -pr.ankle + 0.022, pr.footL * 0.3]} />)
+      add(`${l}Foot` as BoneName, <P s={S.cone(0.04, 0.1, 6)} m={M.accent} line={false} shadow={false} p={[0, -pr.ankle - 0.015, -0.05]} r={[Math.PI, 0, 0]} />)
+    })
+  }
+
+
+  if (has('kurogiriSuit')) {
+    // Warp butler — full bartender suit; head + hands are smoky purple void (not solid flesh).
+    const r = pr.headR
+
+    // Dark void core — densest center of the warp head.
+    add('head', <P s={S.sphere(r * 0.62, 14, 12)} m={M.dark} line={false} shadow={false} p={[0, r * 0.06, 0]} sc={[1.05, 1.0, 1.1]} />)
+    // Irregular mist volumes — lumpy purple warp, no outlines so it reads as gas.
+    const mist: Array<{ p: [number, number, number]; sc: [number, number, number]; s: number; glow: boolean }> = [
+      { p: [0, r * 0.08, -r * 0.05], sc: [1.55, 1.35, 1.45], s: r * 0.72, glow: true },
+      { p: [r * 0.35, r * 0.22, r * 0.1], sc: [1.1, 1.35, 1.0], s: r * 0.42, glow: true },
+      { p: [-r * 0.32, r * 0.18, r * 0.05], sc: [1.05, 1.4, 0.95], s: r * 0.4, glow: true },
+      { p: [0, -r * 0.15, r * 0.2], sc: [1.35, 0.9, 1.15], s: r * 0.48, glow: false },
+      { p: [r * 0.22, -r * 0.05, -r * 0.28], sc: [1.0, 1.15, 1.2], s: r * 0.38, glow: true },
+      { p: [-r * 0.2, r * 0.35, -r * 0.15], sc: [1.15, 1.0, 1.05], s: r * 0.36, glow: false },
+      { p: [0, r * 0.42, r * 0.08], sc: [1.25, 0.85, 1.1], s: r * 0.34, glow: true },
+      { p: [r * 0.45, r * 0.02, -r * 0.05], sc: [0.85, 1.2, 0.9], s: r * 0.28, glow: true },
+      { p: [-r * 0.48, r * 0.05, 0], sc: [0.8, 1.15, 0.85], s: r * 0.27, glow: true },
+    ]
+    for (const m of mist) {
+      add('head', <P s={S.sphere(m.s, 12, 10)} m={m.glow ? M.glow : M.skin} line={false} shadow={false} p={m.p} sc={m.sc} />)
+    }
+    // Yellow warp eyes — elongated glowing slits.
+    sides((s) => {
+      add('head', <P s={S.box(r * 0.14, r * 0.055, r * 0.04, r * 0.018)} m={M.accent} line={false} shadow={false} p={[s * r * 0.28, r * 0.06, r * 0.62]} r={[0.1, s * 0.15, s * -0.35]} />)
+      add('head', <P s={S.sphere(r * 0.04, 8, 6)} m={M.accent} line={false} shadow={false} p={[s * r * 0.3, r * 0.07, r * 0.68]} />)
+    })
+
+    // Metal neck brace with rivets.
+    add('neck', <P s={S.cyl(0.07, 0.074, 0.13, 14)} m={M.metal} p={[0, -0.02, 0]} />)
+    sides((s) => {
+      for (let i = 0; i < 5; i++) {
+        add('neck', <P s={S.sphere(0.008, 6, 5)} m={M.trim} line={false} p={[s * 0.055, -0.01 + (i - 2) * 0.018, 0.045]} />)
+      }
+    })
+
+    // Teal double-breasted waistcoat over the white vest shirt.
+    add('chest', <P s={S.box(cw * 0.98, ch * 0.72, 0.05, 0.016)} m={M.primary} p={[0, ch * 0.48, cd * 0.32]} />)
+    sides((s) => {
+      for (let i = 0; i < 3; i++) {
+        add('chest', <P s={S.sphere(0.011, 8, 6)} m={M.metal} line={false} p={[s * cw * 0.14, ch * (0.72 - i * 0.14), cd * 0.56]} />)
+      }
+    })
+    // Slim dark necktie.
+    add('chest', <P s={S.box(0.038, 0.055, 0.016, 0.008)} m={M.trim} p={[0, ch * 0.92, cd * 0.52]} />)
+    add('chest', <P s={S.box(0.028, ch * 0.42, 0.012, 0.005)} m={M.trim} p={[0, ch * 0.58, cd * 0.54]} />)
+
+    // White long sleeves — bartender shirt under the vest.
+    sides((_s, l) => {
+      const upper = `${l}Upper` as BoneName
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      add(upper, <P s={S.cyl(0.048 * L, 0.044 * L, pr.upperArm * 0.92, 12)} m={M.secondary} p={[0, -pr.upperArm * 0.48, 0]} />)
+      add(fore, <P s={S.cyl(0.042 * L, 0.04 * L, pr.forearm * 0.78, 12)} m={M.secondary} p={[0, -pr.forearm * 0.38, 0]} />)
+      // Cuff ring where flesh becomes warp mist.
+      add(fore, <P s={S.cyl(0.044 * L, 0.044 * L, 0.022, 12)} m={M.secondary} p={[0, -pr.forearm * 0.72, 0]} />)
+      // Smoky purple hands — layered irregular blobs, not solid gloves.
+      add(fore, <P s={S.sphere(0.048, 12, 10)} m={M.glow} line={false} shadow={false} p={[0, -pr.forearm * 0.88, 0]} sc={[1.3, 1.05, 1.2]} />)
+      add(hand, <P s={S.sphere(0.05, 12, 10)} m={M.dark} line={false} shadow={false} p={[0, -pr.hand * 0.55, 0]} sc={[1.15, 0.9, 1.05]} />)
+      add(hand, <P s={S.sphere(0.055, 10, 8)} m={M.glow} line={false} shadow={false} p={[0, -pr.hand * 0.75, 0.01]} sc={[1.35, 0.95, 1.2]} />)
+      add(hand, <P s={S.sphere(0.038, 10, 8)} m={M.skin} line={false} shadow={false} p={[0.02, -pr.hand * 1.05, 0.02]} sc={[1.1, 0.85, 1.0]} />)
+      add(hand, <P s={S.sphere(0.034, 8, 6)} m={M.glow} line={false} shadow={false} p={[-0.025, -pr.hand * 0.95, -0.015]} sc={[1.0, 0.9, 1.15]} />)
+      add(hand, <P s={S.sphere(0.03, 8, 6)} m={M.glow} line={false} shadow={false} p={[0.01, -pr.hand * 1.2, 0.015]} sc={[1.2, 0.75, 1.05]} />)
+    })
+
+    // Dark dress shoes (Outfit skips default footwear for this suit).
+    sides((_s, l) => {
+      const foot = `${l}Foot` as BoneName
+      add(foot, <P s={S.box(0.078 * Math.sqrt(L), 0.038, pr.footL + 0.06, 0.014)} m={M.trim} p={[0, -pr.ankle + 0.022, pr.footL * 0.28]} />)
+      add(foot, <P s={S.box(0.07 * Math.sqrt(L), 0.02, pr.footL * 0.55, 0.008)} m={M.dark} p={[0, -pr.ankle + 0.04, pr.footL * 0.42]} />)
+    })
+  }
+
+  if (has('gangOrcaSuit')) {
+    // Aqua Hero: Gang Orca — orca head on tooth-collar, full white suit, tongue tie, cape.
+    const r = pr.headR
+    const front = cd * 0.58
+    // Forward snout, mild uptilt so the muzzle reads in the default showcase cam.
+    const snoutPitch = 1.22
+
+    // ── Orca head — wide muzzle reads from the front; cone tip faces +Z ──
+    add('head', <P s={S.sphere(r * 1.15, 16, 14)} m={M.skin} p={[0, -r * 0.02, -r * 0.12]} sc={[1.25, 1.05, 1.2]} />)
+    // Broad forward muzzle (box) so it can't collapse into a ball silhouette.
+    add('head', <P s={S.box(r * 1.05, r * 0.7, r * 1.15, r * 0.28)} m={M.skin} p={[0, -r * 0.08, r * 0.75]} />)
+    add('head', <P s={S.cone(r * 0.42, r * 0.85, 10)} m={M.skin} p={[0, -r * 0.02, r * 1.45]} r={[snoutPitch, 0, 0]} />)
+    // White jaw / belly under the muzzle.
+    add('head', <P s={S.box(r * 0.95, r * 0.35, r * 1.2, r * 0.14)} m={M.light} p={[0, -r * 0.48, r * 0.75]} />)
+    add('head', <P s={S.sphere(r * 0.36, 10, 8)} m={M.light} p={[0, -r * 0.28, r * 1.35]} sc={[1.0, 0.5, 1.1]} />)
+    // White eye patches wrapping forward + pale eyes.
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.4, 12, 10)} m={M.light} p={[s * r * 0.5, r * 0.08, r * 0.4]} sc={[0.75, 0.95, 0.6]} />)
+      add('head', <P s={S.sphere(r * 0.2, 10, 8)} m={M.light} p={[s * r * 0.38, r * 0.06, r * 0.7]} sc={[0.7, 0.85, 0.45]} />)
+      add('head', <P s={S.sphere(r * 0.12, 8, 6)} m={M.white} line={false} p={[s * r * 0.42, r * 0.1, r * 0.72]} />)
+      add('head', <P s={S.sphere(r * 0.055, 6, 4)} m={M.glow} line={false} p={[s * r * 0.44, r * 0.11, r * 0.8]} />)
+    })
+    // Dorsal fin on crown.
+    add('head', <P s={S.shard(r * 0.12, r * 0.62, r * 0.06)} m={M.skin} p={[0, r * 1.12, -r * 0.2]} r={[-0.4, 0, 0]} />)
+    add('head', <P s={S.cone(r * 0.15, r * 0.45, 6)} m={M.skin} p={[0, r * 0.92, -r * 0.15]} r={[-0.28, 0, 0]} />)
+    // Mouth + teeth.
+    add('head', <P s={S.box(r * 0.58, r * 0.08, r * 0.6, r * 0.02)} m={M.dark} p={[0, -r * 0.22, r * 1.0]} />)
+    for (let i = 0; i < 5; i++) {
+      add(
+        'head',
+        <P
+          s={S.cone(r * 0.04, r * 0.1, 4)}
+          m={M.white}
+          line={false}
+          p={[(i - 2) * r * 0.1, -r * 0.16, r * (0.88 + (i % 2) * 0.1)]}
+          r={[Math.PI, 0, 0]}
+        />,
+      )
+    }
+    // Black orca neck seal into the collar.
+    add('neck', <P s={S.cyl(0.048 * Math.sqrt(L), 0.055 * Math.sqrt(L), pr.neck * 1.4, 12)} m={M.skin} p={[0, pr.neck * 0.35, 0]} />)
+
+    // Full white suit jacket.
+    add('chest', <P s={S.box(cw * 1.06, ch * 0.98, cd * 1.06, 0.022)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    sides((s) => {
+      add('chest', <P s={S.box(0.048, ch * 0.42, 0.014, 0.006)} m={M.light} p={[s * cw * 0.2, ch * 0.72, front]} r={[0, 0, s * 0.35]} />)
+      for (let i = 0; i < 3; i++) {
+        add('chest', <P s={S.sphere(0.011, 8, 6)} m={M.trim} line={false} p={[s * cw * 0.14, ch * (0.78 - i * 0.14), front]} />)
+      }
+    })
+    add('chest', <P s={S.box(cw * 0.2, ch * 0.65, 0.014, 0.005)} m={M.light} p={[0, ch * 0.5, front * 0.88]} />)
+
+    // High white collar with diamond tooth trim.
+    add('chest', <P s={S.cyl(cw * 0.38, cw * 0.42, ch * 0.2, 14)} m={M.primary} p={[0, ch * 0.98, 0.01]} />)
+    add('chest', <P s={S.box(cw * 0.5, ch * 0.18, cd * 0.4, 0.016)} m={M.primary} p={[0, ch * 1.02, cd * 0.2]} />)
+    for (let i = 0; i < 6; i++) {
+      const x = (i - 2.5) * cw * 0.1
+      add('chest', <P s={S.box(0.028, 0.042, 0.014, 0.006)} m={M.light} p={[x, ch * 1.12, front * 0.55]} r={[0.35, 0, 0]} />)
+    }
+
+    // Pink tongue necktie.
+    add('chest', <P s={S.box(0.075, 0.055, 0.03, 0.014)} m={M.accent} p={[0, ch * 0.88, front + 0.02]} />)
+    add('chest', <P s={S.panel(0.058, ch * 0.55, 0.018)} m={M.accent} p={[0, ch * 0.52, front + 0.025]} />)
+    add('chest', <P s={S.box(0.05, 0.045, 0.016, 0.01)} m={M.accent} p={[0, ch * 0.22, front + 0.02]} sc={[1.2, 0.65, 1]} />)
+
+    // Long white sleeves + cuffs.
+    sides((_s, l) => {
+      const upper = `${l}Upper` as BoneName
+      const fore = `${l}Fore` as BoneName
+      add(upper, <P s={S.cyl(0.052 * L, 0.048 * L, pr.upperArm * 0.98, 12)} m={M.primary} p={[0, -pr.upperArm * 0.48, 0]} />)
+      add(fore, <P s={S.cyl(0.044 * L, 0.042 * L, pr.forearm * 0.95, 12)} m={M.primary} p={[0, -pr.forearm * 0.48, 0]} />)
+      add(fore, <P s={S.cyl(0.046 * L, 0.046 * L, 0.03, 12)} m={M.light} p={[0, -pr.forearm * 0.9, 0]} />)
+    })
+
+    // White suit pants + waist bridge (no midriff gap).
+    sides((_s, l) => {
+      add(`${l}Thigh` as BoneName, <P s={S.cyl(0.06 * L, 0.052 * L, pr.thigh * 0.98, 12)} m={M.primary} p={[0, -pr.thigh * 0.48, 0]} />)
+      add(`${l}Shin` as BoneName, <P s={S.cyl(0.046 * L, 0.042 * L, pr.shin * 0.92, 12)} m={M.primary} p={[0, -pr.shin * 0.48, 0]} />)
+    })
+    add('pelvis', <P s={S.box(pr.pelvisW * 1.08, 0.12, pr.pelvisD * 1.08, 0.04)} m={M.primary} p={[0, 0.01, 0]} />)
+    add('spine', <P s={S.box(pr.waistW * 1.15, 0.06, pr.chestD * 1.05, 0.018)} m={M.primary} p={[0, pr.abdomen * 0.05, 0]} />)
+
+    // Black orca cape — shoulder pads into jagged back flukes.
+    {
+      const len = pr.hipH * 0.85 + ch * 0.7
+      add('cape', <P s={S.panel(cw * 1.15, len, 0.02, -cw * 0.2)} m={M.skin} p={[0, -len / 2 + 0.04, -0.04]} r={[0.08, 0, 0]} />)
+      sides((s) => {
+        add('chest', <P s={S.sphere(0.075 * L, 10, 8)} m={M.skin} p={[s * cw * 0.5, ch * 0.95, -cd * 0.12]} sc={[1.35, 0.9, 1.15]} />)
+        for (let i = 0; i < 4; i++) {
+          add(
+            'cape',
+            <P
+              s={S.shard(0.055, len * (0.18 + (i % 3) * 0.06), 0.014)}
+              m={M.skin}
+              p={[s * cw * (0.28 + (i % 3) * 0.12), -len * (0.15 + i * 0.12), -0.03]}
+              r={[0.25, 0, s * (0.3 + i * 0.12)]}
+            />,
+          )
+        }
+      })
+      add('cape', <P s={S.box(cw * 0.55, 0.08, 0.02, 0.008)} m={M.light} p={[0, -0.02, -0.02]} />)
+    }
+
+    // Black clawed hands.
+    sides((_s, l) => {
+      const hand = `${l}Hand` as BoneName
+      add(hand, <P s={S.box(pr.hand * 2.4, pr.hand * 2.6, pr.hand * 2.1, pr.hand * 0.75)} m={M.trim} p={[0, -pr.hand * 1.05, 0]} />)
+      for (let c = 0; c < 3; c++) {
+        add(hand, <P s={S.cone(0.012, 0.045, 5)} m={M.metal} p={[(c - 1) * 0.024, -pr.hand * 1.15, pr.hand * 0.55]} r={[0.4, 0, (c - 1) * 0.35]} />)
+      }
+    })
+
+    // Black dress shoes.
+    sides((_s, l) => {
+      const foot = `${l}Foot` as BoneName
+      add(foot, <P s={S.box(0.078 * Math.sqrt(L), 0.038, pr.footL + 0.06, 0.014)} m={M.trim} p={[0, -pr.ankle + 0.022, pr.footL * 0.28]} />)
+      add(foot, <P s={S.box(0.07 * Math.sqrt(L), 0.02, pr.footL * 0.55, 0.008)} m={M.dark} p={[0, -pr.ankle + 0.04, pr.footL * 0.42]} />)
+    })
+  }
+
+  if (has('chargeboltSuit')) {
+    // Chargebolt — black open jacket, white lightning trim, blue forehead visor,
+    // pointer shooter gauntlet (R), white belt + tan packs, black boots.
+    const front = cd * 0.52
+    const r = pr.headR
+    const h = pr.hand
+
+    // Blue forehead visor + black strap + right ear communicator.
+    add('head', <P s={S.box(r * 0.95, r * 0.16, r * 0.14, r * 0.05)} m={M.accent} p={[0, r * 0.72, r * 0.58]} />)
+    add('head', <P s={S.box(r * 0.7, r * 0.06, r * 0.05, r * 0.02)} m={M.light} line={false} p={[0, r * 0.72, r * 0.68]} />)
+    sides((s) => {
+      add('head', <P s={S.box(r * 0.08, r * 0.1, r * 0.55, r * 0.03)} m={M.trim} p={[s * r * 0.72, r * 0.55, r * 0.05]} r={[0.15, s * 0.1, 0]} />)
+    })
+    add('head', <P s={S.cyl(r * 0.1, r * 0.1, r * 0.08, 10)} m={M.light} p={[r * 0.78, r * 0.35, r * 0.15]} r={[0, 0, Math.PI / 2]} />)
+    add('head', <P s={S.cyl(r * 0.05, r * 0.05, r * 0.04, 8)} m={M.accent} line={false} p={[r * 0.86, r * 0.35, r * 0.15]} r={[0, 0, Math.PI / 2]} />)
+
+    // Black lightning bolt streak in the bangs (left).
+    add('head', <P s={S.shard(r * 0.09, r * 0.38, r * 0.035)} m={M.hairShade} p={[-r * 0.28, r * 0.88, r * 0.22]} r={[-0.35, 0, 0.45]} />)
+    add('head', <P s={S.shard(r * 0.06, r * 0.22, r * 0.025)} m={M.hairShade} p={[-r * 0.18, r * 0.72, r * 0.32]} r={[-0.15, 0.2, -0.55]} />)
+
+    // Thin black choker.
+    add('neck', <P s={S.cyl(0.034 * Math.sqrt(L), 0.036 * Math.sqrt(L), 0.018, 12)} m={M.trim} p={[0, pr.neck * 0.55, 0.008]} />)
+
+    // Open black jacket collar + white V-neck tee + lightning lapels.
+    add('chest', <P s={S.box(cw * 1.1, ch * 0.38, cd * 1.1, 0.022)} m={M.primary} p={[0, ch * 0.82, 0]} r={[0.12, 0, 0]} />)
+    sides((s) => {
+      add('chest', <P s={S.box(0.05, 0.07, 0.045, 0.014)} m={M.primary} p={[s * cw * 0.22, ch * 1.02, -0.01]} r={[0.35, 0, s * -0.35]} />)
+      // Circular shoulder studs.
+      add('chest', <P s={S.cyl(0.018, 0.018, 0.01, 10)} m={M.light} line={false} p={[s * cw * 0.42, ch * 0.92, cd * 0.2]} r={[Math.PI / 2, 0, 0]} />)
+    })
+    add('chest', <P s={S.box(cw * 0.38, ch * 0.72, 0.018, 0.006)} m={M.secondary} p={[0, ch * 0.42, front * 0.88]} />)
+    add('spine', <P s={S.box(pr.waistW * 0.32, pr.abdomen * 0.95, 0.016, 0.005)} m={M.secondary} p={[0, pr.abdomen * 0.48, pr.chestD * 0.48]} />)
+    sides((s) => {
+      add('chest', <P s={S.shard(0.032, ch * 0.42, 0.014)} m={M.secondary} p={[s * cw * 0.2, ch * 0.62, front]} r={[0, 0, s * 0.55]} />)
+      add('chest', <P s={S.shard(0.022, ch * 0.22, 0.01)} m={M.secondary} p={[s * cw * 0.28, ch * 0.42, front]} r={[0, 0, s * -0.75]} />)
+    })
+
+    // White jacket cuff rings; left forearm bare, right arm = pointer gauntlet.
+    sides((_s, l) => {
+      add(`${l}Fore` as BoneName, <P s={S.cyl(0.032 * L, 0.034 * L, 0.028, 12)} m={M.secondary} p={[0, -pr.forearm * 0.92, 0]} />)
+    })
+    add('lFore', <P s={S.cyl(0.03 * L, 0.028 * L, pr.forearm * 0.88, 12)} m={M.skin} p={[0, -pr.forearm * 0.48, 0]} />)
+
+    // Sharpshooting gear — pale mechanical shell + dial + dual pointer barrels.
+    add('rFore', <P s={S.cyl(0.058 * L, 0.062 * L, pr.forearm * 0.95, 12)} m={M.light} p={[0, -pr.forearm * 0.48, 0]} />)
+    add('rFore', <P s={S.cyl(0.066 * L, 0.066 * L, 0.032, 12)} m={M.trim} p={[0, -pr.forearm * 0.1, 0]} />)
+    add('rFore', <P s={S.cyl(0.02, 0.02, 0.012, 10)} m={M.accent} line={false} p={[0.03 * L, -pr.forearm * 0.35, 0.04 * L]} r={[Math.PI / 2, 0, 0]} />)
+    add('rFore', <P s={S.box(0.035, 0.02, 0.012, 0.004)} m={M.trim} p={[0, -pr.forearm * 0.55, 0.05 * L]} />)
+    add('rFore', <P s={S.cone(0.016, 0.09, 6)} m={M.light} p={[0.012, -pr.forearm * 0.95, 0.04]} r={[1.15, 0, 0.15]} />)
+    add('rFore', <P s={S.cone(0.014, 0.08, 6)} m={M.light} p={[-0.012, -pr.forearm * 0.95, 0.035]} r={[1.15, 0, -0.15]} />)
+
+    // Bare hands (buildHands is skipped for this suit).
+    sides((s, l) => {
+      const hand = `${l}Hand` as BoneName
+      const hw = h * 2
+      add(hand, <P s={S.box(hw, h * 2.3, h * 1.7, h * 0.6)} m={M.skin} p={[0, -h * 1.05, 0.002]} />)
+      add(hand, <P s={S.capsule(h * 0.42, h * 0.7)} m={M.skin} p={[-s * hw * 0.5, -h * 0.75, h * 0.55]} r={[0.4, 0, s * 0.4]} />)
+    })
+
+    // White utility belt + tan battery packs (asym: larger shooter pack on right).
+    add('spine', <P s={S.box(pr.waistW * 1.32, 0.05, pr.chestD * 1.1, 0.014)} m={M.secondary} p={[0, pr.abdomen * 0.1, 0]} />)
+    add('spine', <P s={S.box(0.06, 0.04, 0.02, 0.006)} m={M.trim} p={[0, pr.abdomen * 0.1, pr.chestD * 0.55]} />)
+    add('spine', <P s={S.box(0.07, 0.085, 0.055, 0.014)} m={M.metal} p={[-pr.waistW * 0.52, pr.abdomen * 0.05, pr.chestD * 0.28]} />)
+    add('spine', <P s={S.box(0.055, 0.065, 0.045, 0.012)} m={M.metal} p={[-pr.waistW * 0.58, pr.abdomen * 0.02, -0.02]} />)
+    add('spine', <P s={S.box(0.085, 0.1, 0.07, 0.016)} m={M.light} p={[pr.waistW * 0.52, pr.abdomen * 0.04, pr.chestD * 0.22]} />)
+    add('spine', <P s={S.box(0.04, 0.03, 0.025, 0.008)} m={M.trim} p={[pr.waistW * 0.52, pr.abdomen * 0.08, pr.chestD * 0.32]} />)
+
+    // White lightning bolts up the outer pant legs.
+    sides((s, l) => {
+      const thigh = `${l}Thigh` as BoneName
+      const shin = `${l}Shin` as BoneName
+      add(thigh, <P s={S.shard(0.022, pr.thigh * 0.55, 0.012)} m={M.secondary} line={false} p={[s * 0.048, -pr.thigh * 0.55, 0.035]} r={[0.15, 0, s * 0.2]} />)
+      add(shin, <P s={S.shard(0.018, pr.shin * 0.45, 0.01)} m={M.secondary} line={false} p={[s * 0.04, -pr.shin * 0.55, 0.032]} r={[0.1, 0, s * -0.35]} />)
+      add(shin, <P s={S.shard(0.014, pr.shin * 0.22, 0.008)} m={M.secondary} line={false} p={[s * 0.038, -pr.shin * 0.28, 0.03]} r={[0.05, 0, s * 0.7]} />)
+    })
+
+    // Dark boots with thick soles.
+    sides((_s, l) => {
+      const foot = `${l}Foot` as BoneName
+      const shin = `${l}Shin` as BoneName
+      add(shin, <P s={S.cyl(0.038 * L, 0.042 * L, 0.08, 12)} m={M.trim} p={[0, -pr.shin + 0.04, 0]} />)
+      add(foot, <P s={S.box(0.085 * Math.sqrt(L), 0.045, pr.footL + 0.09, 0.016)} m={M.trim} p={[0, -pr.ankle + 0.028, pr.footL * 0.28]} />)
+      add(foot, <P s={S.box(0.072 * Math.sqrt(L), 0.02, pr.footL + 0.05, 0.01)} m={M.dark} p={[0, -pr.ankle + 0.01, pr.footL * 0.3]} />)
+    })
+  }
+
+
+
+  if (has('pinkySuit')) {
+    // Pinky — purple/teal camo leotard, tan cropped vest, white fur collar, zigzag horns, white eye mask, purple boots.
+    const front = cd * 0.52
+    const r = pr.headR
+
+    // Zigzag yellow horns (two stacked cones per side).
+    sides((s) => {
+      add('head', <P s={S.cone(r * 0.12, r * 0.38, 6)} m={M.accent} p={[s * r * 0.48, r * 1.15, r * 0.2]} r={[-0.55, 0, s * 0.35]} />)
+      add('head', <P s={S.cone(r * 0.08, r * 0.28, 5)} m={M.accent} p={[s * r * 0.58, r * 1.38, r * 0.08]} r={[-0.85, 0, s * 0.55]} />)
+    })
+
+    // White jagged eye mask across the temples.
+    sides((s) => {
+      add('head', <P s={S.box(r * 0.42, r * 0.16, r * 0.07, r * 0.028)} m={M.light} p={[s * r * 0.28, r * 0.1, r * 0.74]} r={[0.08, s * 0.22, s * 0.12]} />)
+      add('head', <P s={S.shard(r * 0.1, r * 0.12, r * 0.035)} m={M.light} p={[s * r * 0.52, r * 0.14, r * 0.58]} r={[0.15, s * 0.4, s * -0.3]} />)
+    })
+    add('head', <P s={S.box(r * 0.16, r * 0.07, r * 0.05, r * 0.018)} m={M.light} p={[0, r * 0.12, r * 0.8]} />)
+
+    // Camo leotard shell + teal splotches.
+    add('chest', <P s={S.box(cw * 1.02, ch * 0.95, cd * 1.02, 0.02)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    for (let i = 0; i < 6; i++) {
+      const sx = (i % 2 ? 1 : -1) * cw * (0.12 + (i % 3) * 0.14)
+      const sy = ch * (0.28 + (i % 4) * 0.16)
+      add(
+        'chest',
+        <P
+          s={S.sphere(0.04 + (i % 3) * 0.012, 10, 8)}
+          m={M.secondary}
+          line={false}
+          p={[sx, sy, front * (0.7 + (i % 2) * 0.15)]}
+          sc={[1.4, 0.85, 0.55]}
+        />,
+      )
+    }
+    sides((_s, l) => {
+      add(`${l}Thigh` as BoneName, <P s={S.cyl(0.054 * L, 0.048 * L, pr.thigh * 0.92, 12)} m={M.primary} p={[0, -pr.thigh * 0.48, 0]} />)
+      add(`${l}Thigh` as BoneName, <P s={S.sphere(0.035 * L, 8, 6)} m={M.secondary} line={false} p={[0.02 * L, -pr.thigh * 0.4, 0.04 * L]} sc={[1.3, 0.8, 0.7]} />)
+      add(`${l}Shin` as BoneName, <P s={S.cyl(0.04 * L, 0.036 * L, pr.shin * 0.55, 12)} m={M.primary} p={[0, -pr.shin * 0.28, 0]} />)
+    })
+
+    // Tan cropped sleeveless vest + black side studs.
+    add('chest', <P s={S.box(cw * 1.12, ch * 0.42, cd * 1.1, 0.022)} m={M.trim} p={[0, ch * 0.72, 0]} />)
+    sides((s) => {
+      for (let i = 0; i < 3; i++) {
+        add(
+          'chest',
+          <P
+            s={S.sphere(0.012, 8, 6)}
+            m={M.dark}
+            line={false}
+            p={[s * cw * 0.52, ch * (0.58 + i * 0.1), cd * 0.15]}
+          />,
+        )
+      }
+    })
+
+    // Shaggy white faux-fur collar.
+    add('chest', <P s={S.torus(cw * 0.48, 0.055, Math.PI * 1.7, 18)} m={M.light} p={[0, ch * 1.0, -0.01]} r={[Math.PI / 2 + 0.2, 0, Math.PI * 0.05]} />)
+    add('chest', <P s={S.torus(cw * 0.42, 0.04, Math.PI * 1.5, 16)} m={M.white} p={[0, ch * 0.96, 0.01]} r={[Math.PI / 2 + 0.35, 0, Math.PI * 0.05]} />)
+    sides((s) => {
+      add('chest', <P s={S.sphere(0.055, 10, 8)} m={M.light} p={[s * cw * 0.38, ch * 0.95, cd * 0.15]} sc={[1.2, 0.85, 1.1]} />)
+      add('chest', <P s={S.sphere(0.04, 8, 6)} m={M.light} p={[s * cw * 0.28, ch * 1.05, -cd * 0.1]} sc={[1.1, 0.7, 1]} />)
+    })
+
+    // Purple mid-calf boots + tan cuff / sole.
+    sides((_s, l) => {
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      const A = pr.ankle
+      const FL = pr.footL
+      add(shin, <P s={S.cyl(0.048 * L, 0.052 * L, pr.shin * 0.55, 12)} m={M.primary} p={[0, -pr.shin * 0.68, 0]} />)
+      add(shin, <P s={S.cyl(0.056 * L, 0.058 * L, 0.045, 12)} m={M.trim} p={[0, -pr.shin * 0.42, 0]} />)
+      add(foot, <P s={S.box(0.09 * Math.sqrt(L), 0.05, FL + 0.1, 0.018)} m={M.primary} p={[0, -A + 0.032, FL * 0.28]} />)
+      add(foot, <P s={S.box(0.078 * Math.sqrt(L), 0.02, FL + 0.06, 0.01)} m={M.trim} p={[0, -A + 0.01, FL * 0.3]} />)
+    })
+  }
+
+
+
+  if (has('dabiSuit')) {
+    // Classic navy overcoat — purple burned arms/neck, open white shirt, burner cuffs, black boots.
+    const front = cd * 0.52
+    const burn = M.skinShade
+    // Purple burned neck + upper chest peeking from the open coat.
+    add('neck', <P s={S.cyl(0.034 * Math.sqrt(L), 0.038 * Math.sqrt(L), pr.neck * 1.15, 12)} m={burn} p={[0, pr.neck * 0.35, 0]} />)
+    add('chest', <P s={S.box(cw * 0.55, ch * 0.35, 0.02, 0.008)} m={burn} p={[0, ch * 0.78, front * 0.7]} />)
+    add('chest', <P s={S.box(cw * 1.08, ch * 0.88, cd * 1.08, 0.022)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    add('chest', <P s={S.box(cw * 0.4, ch * 0.7, 0.02, 0.008)} m={M.light} p={[0, ch * 0.42, front * 0.82]} />)
+    sides((s) => {
+      add('chest', <P s={S.box(0.07, 0.018, 0.012, 0.004)} m={M.metal} p={[s * cw * 0.3, ch * 0.88, front * 0.65]} r={[0, 0, s * 0.25]} />)
+      add('chest', <P s={S.box(0.018, 0.05, 0.01, 0.003)} m={M.metal} p={[s * cw * 0.22, ch * 0.72, front]} />)
+      // Collar staples where purple neck meets pale jawline.
+      add('neck', <P s={S.box(0.022, 0.03, 0.01, 0.004)} m={M.metal} p={[s * 0.028, pr.neck * 0.7, 0.03]} />)
+    })
+    for (let i = 0; i < 5; i++) {
+      add('chest', <P s={S.shard(0.03, 0.07, 0.01)} m={M.metal} p={[cw * (0.08 + (i % 2) * 0.12), ch * (0.38 + i * 0.1), front]} r={[0.2, 0, (i % 2 ? 1 : -1) * 0.3]} />)
+    }
+    // Tattered coattail strips.
+    for (let i = 0; i < 4; i++) {
+      add(
+        'cape',
+        <P
+          s={S.shard(0.05, ch * (0.28 + (i % 2) * 0.1), 0.012)}
+          m={M.primary}
+          p={[(i % 2 ? 1 : -1) * cw * (0.22 + (i % 3) * 0.1), -ch * (0.15 + i * 0.08), -0.04]}
+          r={[0.25, 0, (i % 2 ? 1 : -1) * 0.35]}
+        />,
+      )
+    }
+    sides((_s, l) => {
+      const upper = `${l}Upper` as BoneName
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      // Gas-burner metal cuff at the rolled elbow.
+      add(upper, <P s={S.cyl(0.05 * L, 0.054 * L, 0.055, 12)} m={M.metal} p={[0, -pr.upperArm * 0.9, 0]} />)
+      add(upper, <P s={S.cyl(0.044 * L, 0.046 * L, 0.018, 12)} m={M.trim} p={[0, -pr.upperArm * 0.98, 0]} />)
+      // Purple burned forearm + hand under rolled sleeves.
+      add(fore, <P s={S.cyl(0.03 * L, 0.026 * L, pr.forearm * 0.98, 12)} m={burn} p={[0, -pr.forearm * 0.48, 0]} />)
+      add(fore, <P s={S.box(0.028, 0.012, 0.008, 0.003)} m={M.metal} p={[0, -pr.forearm * 0.28, 0.032 * L]} />)
+      add(fore, <P s={S.box(0.028, 0.012, 0.008, 0.003)} m={M.metal} p={[0, -pr.forearm * 0.48, 0.03 * L]} />)
+      add(fore, <P s={S.box(0.028, 0.012, 0.008, 0.003)} m={M.metal} p={[0, -pr.forearm * 0.68, 0.028 * L]} />)
+      const hh = pr.hand
+      add(hand, <P s={S.box(hh * 2.05, hh * 2.35, hh * 1.75, hh * 0.62)} m={burn} p={[0, -hh * 1.05, 0.002]} />)
+      // Navy pant shaft + stitch accents.
+      add(`${l}Thigh` as BoneName, <P s={S.cyl(0.052 * L, 0.048 * L, pr.thigh * 0.88, 12)} m={M.secondary} p={[0, -pr.thigh * 0.48, 0]} />)
+      add(`${l}Thigh` as BoneName, <P s={S.box(0.04, 0.035, 0.012, 0.004)} m={M.metal} p={[0, -pr.thigh * 0.35, 0.045 * L]} />)
+      // Black boots (Outfit skips default shoes for this suit).
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      add(shin, <P s={S.cyl(0.032 * L, 0.034 * L, 0.14, 12)} m={M.trim} p={[0, -pr.shin + 0.07, 0]} />)
+      add(foot, <P s={S.box(0.07 * L, 0.028, 0.12 * L, 0.012)} m={M.trim} p={[0, -0.02, 0.035 * L]} />)
+      add(foot, <P s={S.box(0.065 * L, 0.05, 0.1 * L, 0.014)} m={M.dark} p={[0, 0.01, 0.03 * L]} />)
+    })
+  }
+
+
+  if (has('earphoneJackSuit')) {
+    // Earphone Jack — pink ripped tee, cropped black jacket, blue cans, long jack cords,
+    // white R gauntlet, black pants, teal amp boots with jack ports.
+    const front = cd * 0.52
+    const r = pr.headR
+    const h = pr.hand
+    const A = pr.ankle
+    const FL = pr.footL
+    const fw = 0.092 * Math.sqrt(L)
+
+    // Red triangle marks under each eye.
+    sides((s) => {
+      const x = s * r * 0.34
+      const y = -r * 0.28
+      add(
+        'head',
+        <P
+          s={S.cone(r * 0.055, r * 0.1, 3)}
+          m={M.accent}
+          line={false}
+          shadow={false}
+          p={[x, y, r * 0.78]}
+          r={[Math.PI, 0, s * 0.15]}
+        />,
+      )
+    })
+
+    // Blue headphone cans + red accents + dark headband.
+    add('head', <P s={S.torus(r * 0.78, r * 0.055, Math.PI * 1.25, 16)} m={M.trim} p={[0, r * 0.55, -r * 0.05]} r={[Math.PI / 2, 0, Math.PI * 0.85]} />)
+    sides((s) => {
+      add('head', <P s={S.cyl(r * 0.28, r * 0.28, r * 0.16, 14)} m={M.secondary} p={[s * r * 0.82, r * 0.12, r * 0.08]} r={[0, 0, Math.PI / 2]} />)
+      add('head', <P s={S.cyl(r * 0.18, r * 0.18, r * 0.06, 12)} m={M.accent} line={false} p={[s * r * 0.92, r * 0.12, r * 0.08]} r={[0, 0, Math.PI / 2]} />)
+      add('head', <P s={S.box(r * 0.08, r * 0.14, r * 0.06, r * 0.02)} m={M.accent} p={[s * r * 0.78, r * 0.28, r * 0.05]} />)
+    })
+
+    // Long flesh-tone earphone jacks hanging from earlobes → silver plugs.
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.055, 8, 6)} m={M.skin} p={[s * r * 0.78, -r * 0.05, r * 0.15]} />)
+      for (let i = 0; i < 5; i++) {
+        const t = i / 4
+        add(
+          'head',
+          <P
+            s={S.cyl(r * 0.028, r * 0.026, r * 0.22, 8)}
+            m={M.skin}
+            p={[s * r * (0.55 - t * 0.2), -r * (0.2 + t * 0.55), r * (0.12 - t * 0.08)]}
+            r={[0.35 + t * 0.25, 0, s * (0.35 - t * 0.15)]}
+          />,
+        )
+      }
+      // Cord continues onto the chest so the plugs read as reachable to the boots.
+      add(
+        'chest',
+        <P
+          s={S.cyl(0.01, 0.009, ch * 0.55, 8)}
+          m={M.skin}
+          p={[s * cw * 0.28, ch * 0.55, front * 0.55]}
+          r={[0.15, 0, s * 0.12]}
+        />,
+      )
+      add(
+        'chest',
+        <P
+          s={S.cyl(0.012, 0.014, 0.04, 8)}
+          m={M.metal}
+          p={[s * cw * 0.32, ch * 0.22, front * 0.62]}
+          r={[0.4, 0, s * 0.1]}
+        />,
+      )
+      add('chest', <P s={S.sphere(0.012, 8, 6)} m={M.metal} p={[s * cw * 0.34, ch * 0.12, front * 0.68]} />)
+    })
+
+    // Black choker.
+    add('neck', <P s={S.cyl(0.034 * Math.sqrt(L), 0.036 * Math.sqrt(L), 0.02, 12)} m={M.trim} p={[0, pr.neck * 0.55, 0.008]} />)
+
+    // Salmon/pink ripped tee (long torso + ragged hem shards).
+    add('chest', <P s={S.box(cw * 0.92, ch * 0.95, cd * 0.95, 0.018)} m={M.accent} p={[0, ch * 0.42, 0]} />)
+    add('spine', <P s={S.box(pr.waistW * 0.95, pr.abdomen * 0.95, pr.chestD * 0.9, 0.016)} m={M.accent} p={[0, pr.abdomen * 0.48, 0]} />)
+    for (let i = 0; i < 5; i++) {
+      add(
+        'spine',
+        <P
+          s={S.shard(0.028, 0.055 + (i % 2) * 0.02, 0.01)}
+          m={M.accent}
+          p={[(i - 2) * 0.028, pr.abdomen * 0.02, pr.chestD * 0.42]}
+          r={[0.35, 0, (i - 2) * 0.15]}
+        />,
+      )
+    }
+    // Torn collar fringe.
+    sides((s) => {
+      add('chest', <P s={S.shard(0.03, 0.05, 0.01)} m={M.accent} p={[s * cw * 0.18, ch * 0.95, front * 0.7]} r={[-0.4, 0, s * 0.4]} />)
+    })
+
+    // Cropped high-collar black leather jacket (sleeves to elbow).
+    add('chest', <P s={S.box(cw * 1.12, ch * 0.48, cd * 1.12, 0.022)} m={M.primary} p={[0, ch * 0.72, 0]} />)
+    add('chest', <P s={S.cyl(0.055, 0.06, 0.07, 14, true)} m={M.primary} p={[0, ch * 1.02, -0.01]} />)
+    sides((s) => {
+      add('chest', <P s={S.box(0.045, 0.07, 0.04, 0.014)} m={M.primary} p={[s * cw * 0.22, ch * 1.02, -0.01]} r={[0.35, 0, s * -0.35]} />)
+      add('chest', <P s={S.box(0.02, ch * 0.38, 0.012, 0.005)} m={M.trim} p={[s * cw * 0.38, ch * 0.72, front * 0.55]} />)
+    })
+    // Open front so the pink tee shows.
+    add('chest', <P s={S.box(cw * 0.32, ch * 0.42, 0.02, 0.006)} m={M.accent} p={[0, ch * 0.68, front * 0.92]} />)
+    sides((_s, l) => {
+      const up = `${l}Upper` as BoneName
+      const fore = `${l}Fore` as BoneName
+      // Rolled black sleeves to the elbow; bare forearms under the cuff.
+      add(up, <P s={S.cyl(0.048 * L, 0.052 * L, pr.upperArm * 0.72, 12)} m={M.primary} p={[0, -pr.upperArm * 0.35, 0]} />)
+      add(up, <P s={S.cyl(0.054 * L, 0.054 * L, 0.028, 12)} m={M.trim} p={[0, -pr.upperArm * 0.68, 0]} />)
+      add(fore, <P s={S.cyl(0.03 * L, 0.026 * L, pr.forearm * 0.98, 12)} m={M.skin} p={[0, -pr.forearm * 0.48, 0]} />)
+    })
+
+    // White fingerless gloves; bulky white mechanical gauntlet on the right forearm.
+    sides((s, l) => {
+      const hand = `${l}Hand` as BoneName
+      const fore = `${l}Fore` as BoneName
+      const hw = h * 2
+      add(hand, <P s={S.box(hw, h * 2.15, h * 1.65, h * 0.55)} m={M.light} p={[0, -h * 1.0, 0.002]} />)
+      add(hand, <P s={S.capsule(h * 0.38, h * 0.55)} m={M.skin} p={[-s * hw * 0.45, -h * 1.55, h * 0.35]} r={[0.35, 0, s * 0.35]} />)
+      add(hand, <P s={S.cyl(0.022 * L, 0.022 * L, 0.018, 10)} m={M.trim} p={[0, -h * 0.15, 0]} />)
+      if (l === 'r') {
+        add(fore, <P s={S.cyl(0.048 * L, 0.055 * L, pr.forearm * 0.72, 12)} m={M.light} p={[0, -pr.forearm * 0.55, 0]} />)
+        add(fore, <P s={S.cyl(0.058 * L, 0.058 * L, 0.03, 12)} m={M.trim} p={[0, -pr.forearm * 0.22, 0]} />)
+        add(fore, <P s={S.box(0.04, 0.035, 0.02, 0.008)} m={M.metal} p={[0, -pr.forearm * 0.5, 0.045 * L]} />)
+        add(fore, <P s={S.cyl(0.012, 0.012, 0.01, 8)} m={M.glow} line={false} p={[0.03 * L, -pr.forearm * 0.45, 0.04 * L]} r={[Math.PI / 2, 0, 0]} />)
+      } else {
+        add(fore, <P s={S.cyl(0.028 * L, 0.03 * L, 0.035, 10)} m={M.light} p={[0, -pr.forearm * 0.88, 0]} />)
+      }
+    })
+
+    // Teal/charcoal amp boots — chunky shafts, dual straps, speaker jack ports on the shins.
+    sides((s, l) => {
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      add(shin, <P s={S.cyl(0.048 * L, 0.055 * L, pr.shin * 0.62, 12)} m={M.secondary} p={[0, -pr.shin * 0.62, 0]} />)
+      add(shin, <P s={S.box(0.07 * L, 0.028, 0.055 * L, 0.012)} m={M.trim} p={[0, -pr.shin * 0.42, 0.02]} />)
+      add(shin, <P s={S.box(0.07 * L, 0.028, 0.055 * L, 0.012)} m={M.trim} p={[0, -pr.shin * 0.62, 0.02]} />)
+      // Amp speaker / jack port — where the earphone plugs inject.
+      add(shin, <P s={S.cyl(0.028 * L, 0.028 * L, 0.016, 12)} m={M.trim} p={[s * 0.01, -pr.shin * 0.52, 0.045 * L]} r={[Math.PI / 2, 0, 0]} />)
+      add(shin, <P s={S.cyl(0.016 * L, 0.016 * L, 0.01, 10)} m={M.metal} line={false} p={[s * 0.01, -pr.shin * 0.52, 0.055 * L]} r={[Math.PI / 2, 0, 0]} />)
+      add(shin, <P s={S.cyl(0.01 * L, 0.01 * L, 0.006, 8)} m={M.glow} line={false} shadow={false} p={[s * 0.01, -pr.shin * 0.52, 0.06 * L]} r={[Math.PI / 2, 0, 0]} />)
+      add(foot, <P s={S.box(fw, 0.055, FL + 0.12, 0.02)} m={M.secondary} p={[0, -A + 0.038, FL * 0.28]} />)
+      add(foot, <P s={S.box(fw * 0.92, 0.022, FL + 0.08, 0.01)} m={M.trim} p={[0, -A + 0.01, FL * 0.3]} />)
+      add(foot, <P s={S.box(fw * 0.7, 0.04, 0.04, 0.012)} m={M.secondary} p={[0, -A + 0.05, -FL * 0.15]} />)
+    })
+  }
+
+
+
+
+
+
+  if (has('nejireSuit')) {
+    // Nejire Chan — navy/mint bodysuit, spiral mint gauntlets, gold gloves, corkscrew hair horns.
+    const front = cd * 0.52
+    const r = pr.headR
+
+    // Corkscrew hair horns (two twisted spirals on top).
+    sides((s) => {
+      add('head', <P s={S.sphere(r * 0.16, 10, 8)} m={M.hair} p={[s * r * 0.28, r * 1.05, r * 0.15]} />)
+      for (let i = 0; i < 4; i++) {
+        const t = i / 3
+        add(
+          'head',
+          <P
+            s={S.torus(r * (0.12 - t * 0.02), r * 0.035, Math.PI * 2, 12)}
+            m={i % 2 ? M.hair : M.hairShade}
+            p={[s * r * (0.32 + t * 0.08), r * (1.18 + t * 0.22), r * (0.12 - t * 0.08)]}
+            r={[0.55 + t * 0.35, s * (0.4 + t * 0.5), s * (0.8 + t * 0.4)]}
+          />,
+        )
+      }
+      add(
+        'head',
+        <P
+          s={S.cone(r * 0.07, r * 0.22, 8)}
+          m={M.hair}
+          p={[s * r * 0.42, r * 1.55, r * 0.02]}
+          r={[-0.7, 0, s * 0.45]}
+        />,
+      )
+    })
+
+    // Navy shell + mint center panel.
+    add('chest', <P s={S.box(cw * 1.02, ch * 0.92, cd * 1.02, 0.02)} m={M.primary} p={[0, ch * 0.48, 0]} />)
+    add('chest', <P s={S.box(cw * 0.42, ch * 0.88, 0.018, 0.006)} m={M.secondary} p={[0, ch * 0.5, front]} />)
+    add('spine', <P s={S.box(pr.waistW * 0.55, pr.abdomen * 0.95, 0.016, 0.006)} m={M.secondary} p={[0, pr.abdomen * 0.48, pr.chestD * 0.48]} />)
+    // Soft gold energy seams along the mint panel.
+    add('chest', <P s={S.box(0.01, ch * 0.7, 0.008, 0.003)} m={M.glow} line={false} shadow={false} p={[cw * 0.14, ch * 0.52, front + 0.006]} />)
+    add('chest', <P s={S.box(0.01, ch * 0.7, 0.008, 0.003)} m={M.glow} line={false} shadow={false} p={[-cw * 0.14, ch * 0.52, front + 0.006]} />)
+
+    // Spiral mint gauntlets + gold gloves.
+    sides((_s, l) => {
+      const fore = `${l}Fore` as BoneName
+      const hand = `${l}Hand` as BoneName
+      const h = pr.hand
+      for (let i = 0; i < 5; i++) {
+        const t = i / 4
+        add(
+          fore,
+          <P
+            s={S.torus(0.042 * L + t * 0.012 * L, 0.014 * L, Math.PI * 2, 16)}
+            m={M.secondary}
+            p={[0, -pr.forearm * (0.25 + t * 0.55), 0]}
+            r={[Math.PI / 2 + (i % 2 ? 0.25 : -0.2), i * 0.35, 0]}
+          />,
+        )
+      }
+      add(fore, <P s={S.cyl(0.036 * L, 0.038 * L, pr.forearm * 0.55, 12)} m={M.secondary} p={[0, -pr.forearm * 0.55, 0]} />)
+      add(fore, <P s={S.torus(0.05 * L, 0.008, Math.PI * 2, 14)} m={M.glow} line={false} shadow={false} p={[0, -pr.forearm * 0.72, 0]} r={[Math.PI / 2, 0, 0]} />)
+      add(hand, <P s={S.box(h * 2.15, h * 2.35, h * 1.75, h * 0.55)} m={M.accent} p={[0, -h * 1.05, 0.002]} />)
+      add(hand, <P s={S.capsule(h * 0.4, h * 0.65)} m={M.accent} p={[0, -h * 0.7, h * 0.55]} r={[0.4, 0, 0]} />)
+    })
+
+    // Navy thighs + dark utility straps.
+    sides((_s, l) => {
+      const thigh = `${l}Thigh` as BoneName
+      add(thigh, <P s={S.cyl(0.054 * L, 0.048 * L, pr.thigh * 0.92, 12)} m={M.primary} p={[0, -pr.thigh * 0.48, 0]} />)
+      add(thigh, <P s={S.cyl(0.058 * L, 0.058 * L, 0.028, 12)} m={M.trim} p={[0, -pr.thigh * 0.28, 0]} />)
+      add(thigh, <P s={S.box(0.018, 0.045, 0.012, 0.004)} m={M.metal} p={[0.04 * L, -pr.thigh * 0.28, 0.03 * L]} />)
+    })
+
+    // Mint shin fronts + spiral ankle rings + mint boots.
+    sides((_s, l) => {
+      const shin = `${l}Shin` as BoneName
+      const foot = `${l}Foot` as BoneName
+      const A = pr.ankle
+      const FL = pr.footL
+      const fw = 0.088 * Math.sqrt(L)
+      add(shin, <P s={S.cyl(0.04 * L, 0.036 * L, pr.shin * 0.55, 12)} m={M.primary} p={[0, -pr.shin * 0.28, 0]} />)
+      add(shin, <P s={S.box(0.055 * L, pr.shin * 0.7, 0.02, 0.008)} m={M.secondary} p={[0, -pr.shin * 0.55, 0.032 * L]} />)
+      for (let i = 0; i < 3; i++) {
+        add(
+          shin,
+          <P
+            s={S.torus(0.04 * L + i * 0.006 * L, 0.01 * L, Math.PI * 2, 14)}
+            m={M.secondary}
+            p={[0, -pr.shin * (0.78 + i * 0.08), 0]}
+            r={[Math.PI / 2 + (i % 2 ? 0.2 : -0.15), i * 0.4, 0]}
+          />,
+        )
+      }
+      add(shin, <P s={S.torus(0.048 * L, 0.007, Math.PI * 2, 14)} m={M.glow} line={false} shadow={false} p={[0, -pr.shin * 0.88, 0]} r={[Math.PI / 2, 0, 0]} />)
+      add(shin, <P s={S.cyl(0.05 * L, 0.054 * L, pr.shin * 0.42, 12)} m={M.secondary} p={[0, -pr.shin * 0.78, 0]} />)
+      add(foot, <P s={S.box(fw, 0.048, FL + 0.1, 0.018)} m={M.secondary} p={[0, -A + 0.032, FL * 0.28]} />)
+      add(foot, <P s={S.box(fw * 0.9, 0.02, FL + 0.06, 0.01)} m={M.trim} p={[0, -A + 0.01, FL * 0.3]} />)
     })
   }
 

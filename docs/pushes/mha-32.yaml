@@ -1,0 +1,358 @@
+# MHA push — 32 NEW heroes only (approved piece types).
+# Existing MHA left alone: deku, all-might, ingenium, red-riot, lemillion,
+# todoroki, bakugo, hawks, overhaul.
+source: My Hero Academia
+version: 1
+heroes:
+  # --- Pawns ---
+  - id: froppy
+    codename: Froppy
+    trueName: Tsuyu Asui
+    piece: p
+    gimmick: Frog
+    look: Dark green bob, wide mouth, green frog-suit with pink accents, flipper boots
+    blurb: Class 1-A’s deadpan amphibian — Frog lets her leap, cling, and lash with a tongue longer than a file. She bounds the pad on sticky pads, then snaps a tongue-hook that yanks and plants them for a ribbit-finish.
+    stats: { pwr: 3, spd: 4, sty: 3 }
+    motion:
+      move: Bounding frog leaps between pads — hang time, then sticky land.
+      fight: Tongue lash → pull-in → palm/kick plant.
+      idle: Low crouch, head tilted, occasional blink — lookout perch.
+    kit:
+      locomotion: leap
+      idle: lookout
+      attack: pounce
+      death: faceplant
+      extras: [kneePads]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/4/4a/Tsuyu_Asui_Hero_Costume_Action_2.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/8/8a/Tsuyu_Asui_Portrait.png
+    needsSuit: true
+
+  - id: pinky
+    codename: Pinky
+    trueName: Mina Ashido
+    piece: p
+    gimmick: Acid
+    look: Pink skin/hair, yellow horns, white eye mask, purple/teal camo suit, tan fur-collar vest, purple boots
+    blurb: Class 1-A’s acid dancer — she melts footholds and slides the file on corrosive soles. Acid spray softens the square; a spinning kick finishes whatever’s left standing.
+    stats: { pwr: 3, spd: 4, sty: 5 }
+    motion:
+      move: Acid-slide run — corrosive slick cast ahead, skating strides.
+      fight: Palm acid spray → melt dissolve.
+      idle: Bouncy hip sway, horns tipped cocky.
+    kit:
+      locomotion: run
+      idle: cocky
+      attack: acidMelt
+      death: dissolve
+      extras: [pinkySuit]
+    refs:
+      photo: local:assets/image-9859386f-4d90-4549-9fcf-d00dc2b1e1ed.png
+      art: public/roster/pinky.png
+    needsSuit: true
+
+  - id: cellophane
+    codename: Cellophane
+    trueName: Hanta Sero
+    piece: p
+    gimmick: Tape
+    look: Black elbow-tape dispensers, yellow/black suit, taped smile
+    blurb: Class 1-A’s tape artist — Cellophane shoots pressure tape from his elbows to swing the file and bind a capture. He zip-lines in, wraps the target, then yanks them into a tape-sling slam.
+    stats: { pwr: 3, spd: 4, sty: 3 }
+    motion:
+      move: White elbow tape shot onto the next cell, yank-pull zip.
+      fight: Tape yank-in slam → binding wrap.
+      idle: Elbows out, tape tip twitching.
+    kit:
+      locomotion: leap
+      idle: coolStand
+      attack: tapeYank
+      death: spinOut
+      extras: [cellophaneSuit]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/5/5a/Hanta_Sero_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/1/1a/Hanta_Sero_Portrait.png
+    needsSuit: true
+
+  - id: grape-juice
+    codename: Grape Juice
+    trueName: Minoru Mineta
+    piece: p
+    gimmick: Pop Off
+    look: Purple grape crown, half-mask, yellow cape-scarf, dark purple suit, grape-pod utility belt, yellow gauntlets/boots
+    blurb: Class 1-A’s sticky-trap specialist — Pop Off peels adhesive grapes from his scalp and seeds the file. Targets lock down; he closes the gap and finishes whoever can’t peel free.
+    stats: { pwr: 2, spd: 4, sty: 3 }
+    motion:
+      move: Short scurrying run, bouncing hops.
+      fight: Sticky scalp-grape barrage → trap → close finish.
+      idle: Boxer ready stance, hands near scalp orbs.
+    kit:
+      locomotion: run
+      idle: boxer
+      attack: grapePop
+      death: crumple
+      extras: [grapeBalls]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/3/3d/Minoru_Mineta_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/9/9a/Minoru_Mineta_Portrait.png
+    needsSuit: false
+
+  - id: anima
+    codename: Anima
+    trueName: Koji Koda
+    piece: p
+    gimmick: Anivoice
+    look: Rock crest head, red/yellow mask, white shoulder pads, mouth-button emblem; summons birds to fight
+    blurb: Class 1-A’s quiet beast-speaker — Anivoice summons animals that fight for him. He rides a called bird between pads, then a living tide crashes the square on his command.
+    stats: { pwr: 3, spd: 3, sty: 2 }
+    motion:
+      move: Summons a bird and flies on it between pads.
+      fight: Anivoice call → bird flock crashes the square.
+      idle: Shy stance, mask tipped down.
+    kit:
+      locomotion: fly
+      idle: shy
+      attack: anivoice
+      death: crumple
+      extras: [animaSuit]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/4/4c/Koji_Koda_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/2/2b/Koji_Koda_Portrait.png
+    needsSuit: false
+
+  - id: sugarman
+    codename: Sugarman
+    trueName: Rikido Sato
+    piece: p
+    gimmick: Sugar Rush
+    look: Mustard dome cowl, rear spikes, yellow jumpsuit, white gloves/boots, sugar-pouch belt
+    blurb: Class 1-A’s sugar-powered heavy — he eats sugar, Sugar Rush pumps the bulk, then he sprints the file and throws a sugar-max haymaker that caves the capture.
+    stats: { pwr: 5, spd: 4, sty: 2 }
+    motion:
+      move: Sugar Rush sprint — buffed bulk, fast lane.
+      fight: Sugar-boosted power punch (faster haymaker).
+      idle: Boxing bounce, chewing.
+    kit:
+      locomotion: sprint
+      idle: boxer
+      attack: powerPunch
+      death: fallBack
+      extras: [sugarmanSuit]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/1/1d/Rikido_Sato_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/5/5c/Rikido_Sato_Portrait.png
+    needsSuit: true
+
+  # --- Rooks ---
+  - id: gang-orca
+    codename: Gang Orca
+    trueName: Kugo Sakamata
+    piece: r
+    gimmick: Orcinus
+    look: Orca heteromorph, suit jacket, hypersonic scream presence
+    blurb: The Orca Hero — ultrasonic assault and brute aquatic power. He owns the file with a charging crash, then a sonic scream blows the square apart.
+    stats: { pwr: 4, spd: 3, sty: 4 }
+    motion:
+      move: Heavy shoulder dash.
+      fight: Ultrasonic scream blast.
+      idle: Commander posture, arms folded.
+    kit:
+      locomotion: dash
+      idle: commander
+      attack: soundBlast
+      death: launched
+      extras: [pauldrons]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/0/0a/Gang_Orca_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/7/7b/Gang_Orca_Portrait.png
+    needsSuit: true
+
+  # --- Knights ---
+  - id: nejire-chan
+    codename: Nejire Chan
+    trueName: Nejire Hado
+    piece: n
+    gimmick: Wave Motion
+    look: Long blue corkscrew hair, navy/mint spiral suit, gold gloves, golden Wave Motion
+    blurb: U.A. Big Three spiral — Wave Motion converts stamina into golden spiraling blasts. She corkscrews the L on energy spirals and washes the square in a gold wave.
+    stats: { pwr: 4, spd: 4, sty: 5 }
+    motion:
+      move: Spiral hop / flutter leap on wave trails.
+      fight: Spiral wave blast.
+      idle: Flutter curiosity lean.
+    kit:
+      locomotion: leap
+      idle: flutter
+      attack: whirlwind
+      death: launched
+      extras: [nejireSuit]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/6/6f/Nejire_Hado_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/9/9d/Nejire_Hado_Portrait.png
+    needsSuit: false
+
+  - id: kurogiri
+    codename: Kurogiri
+    trueName: Kurogiri
+    piece: n
+    gimmick: Warp Gate
+    look: Mist body, yellow eyes, waistcoat and cravat
+    blurb: The League’s warp butler — Warp Gate opens mist portals across the board. He never walks the L; he arrives already behind them, mist swallowing the square.
+    stats: { pwr: 3, spd: 5, sty: 4 }
+    motion:
+      move: Teleport mist — no travel arc.
+      fight: Portal drop / mist pull.
+      idle: Portal-ready mist hover.
+    kit:
+      locomotion: teleport
+      idle: portalReady
+      attack: portalGate
+      death: dissolve
+      extras: [qMask]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/1/1c/Kurogiri_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/5/5a/Kurogiri_Portrait.png
+    needsSuit: true
+
+  # --- Bishops ---
+  - id: uravity
+    codename: Uravity
+    trueName: Ochaco Uraraka
+    piece: b
+    gimmick: Zero Gravity
+    look: Brown bob, dark-teal suit with white stripe/arms, pink collar and ear pads, white gauntlets and gravity boots
+    blurb: Class 1-A’s zero-G ace — she floats the diagonal, fights in close, then five-finger touch lifts the target. Fingertips together — Release — and they fall to their death.
+    stats: { pwr: 3, spd: 3, sty: 4 }
+    motion:
+      move: Float / fly along the diagonal.
+      fight: Fight in → touch → float → Release fall.
+      idle: Soft float bob, palms ready.
+    kit:
+      locomotion: fly
+      idle: float
+      attack: gravitySlam
+      death: launched
+      extras: [gravityRings, helmet]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/2/2a/Ochaco_Uraraka_Hero_Costume_Action_2.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/c/c5/Ochaco_Uraraka_Portrait.png
+    needsSuit: true
+
+  - id: chargebolt
+    codename: Chargebolt
+    trueName: Denki Kaminari
+    piece: b
+    gimmick: Electrification
+    look: Blond black streak, black jacket with lightning motif, pointer shooter
+    blurb: Class 1-A’s living battery — Electrification floods the diagonal until the square sparks. He runs in charged, then a discharge barrage fries everything in the lane — genius or short-circuit.
+    stats: { pwr: 4, spd: 3, sty: 3 }
+    motion:
+      move: Charged run with spark trail.
+      fight: Indiscriminate electric discharge.
+      idle: Crackle jitter, finger guns.
+    kit:
+      locomotion: run
+      idle: crackle
+      attack: zap
+      death: spinOut
+      extras: [sparkCuffs]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/9/9b/Denki_Kaminari_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/7/7c/Denki_Kaminari_Portrait.png
+    needsSuit: true
+
+  - id: tsukuyomi
+    codename: Tsukuyomi
+    trueName: Fumikage Tokoyami
+    piece: b
+    gimmick: Dark Shadow
+    look: Crow head, dark cloak, red choker, living shadow familiar
+    blurb: Class 1-A’s shadow host — Dark Shadow fights as a second body on the diagonal. He advances under the cloak while the shadow lunges and carves the square.
+    stats: { pwr: 4, spd: 3, sty: 5 }
+    motion:
+      move: Cloaked run; shadow stretches ahead.
+      fight: Dark Shadow summons and claws the square.
+      idle: Perched stillness, shadow fidgets.
+    kit:
+      locomotion: run
+      idle: perch
+      attack: darkShadow
+      death: dissolve
+      extras: [tsukuyomiSuit]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/3/3f/Fumikage_Tokoyami_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/1/1b/Fumikage_Tokoyami_Portrait.png
+    needsSuit: true
+
+  - id: earphone-jack
+    codename: Earphone Jack
+    trueName: Kyoka Jiro
+    piece: b
+    gimmick: Earphone Jack
+    look: Purple bob, pink ripped tee, cropped black jacket, jack-earlobes, white gauntlet, amp boots
+    blurb: Class 1-A’s sound-jack rocker — plugs the jacks from her ears into her amp boots and kicks heartbeat sound waves through the square. She stalks the diagonal, jacks in, then a sonic amp-kick shatters the capture.
+    stats: { pwr: 3, spd: 3, sty: 5 }
+    motion:
+      move: Cool run, jacks trailing.
+      fight: Jacks plug into amp boots → heartbeat sonic kick.
+      idle: Music bob, jack twirl.
+    kit:
+      locomotion: run
+      idle: musicBob
+      attack: ampKick
+      death: launched
+      extras: [earphoneJackSuit]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/5/5e/Kyoka_Jiro_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/4/4c/Kyoka_Jiro_Portrait.png
+    needsSuit: true
+
+  - id: dabi
+    codename: Dabi
+    trueName: Toya Todoroki
+    piece: b
+    gimmick: Blueflame
+    look: Stapled burns, black spikes, navy overcoat with burner cuffs, azure flames
+    blurb: League blueflame — hotter than Endeavor and twice as bitter. He walks the diagonal trailing azure fire, then a blue inferno deletes the square.
+    stats: { pwr: 5, spd: 2, sty: 4 }
+    motion:
+      move: Slow scorched walk; coat drag.
+      fight: Blueflame inferno wave.
+      idle: Arms hanging, stapled grin.
+    kit:
+      locomotion: walk
+      idle: armsCrossed
+      attack: hellfire
+      death: dissolve
+      extras: [dabiSuit]
+    # design.top should be longcoat — classic blue coat / black hair
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/a/af/Dabi_Anime_Action.png/revision/latest
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/a/af/Dabi_Anime_Action.png/revision/latest
+    needsSuit: true
+
+  # --- Queens ---
+  - id: endeavor
+    codename: Endeavor
+    trueName: Enji Todoroki
+    piece: q
+    gimmick: Hellflame
+    look: Flaming beard/hair, heavy hero armor, turquoise eyes
+    blurb: The flaming No. 1 — Hellflame turns the board into a kiln. He owns rank and file in a burning rush, then Prominence Burn cooks the square to glass.
+    stats: { pwr: 5, spd: 4, sty: 4 }
+    motion:
+      move: Heavy flame-boosted run / jet steps.
+      fight: Prominence hellfire finisher.
+      idle: Commander stance, flames breathing.
+    kit:
+      locomotion: run
+      idle: commander
+      attack: hellfire
+      death: launched
+      extras: [pauldrons, harness]
+    refs:
+      photo: https://static.wikia.nocookie.net/bokunoheroacademia/images/4/4d/Endeavor_Hero_Costume_Action.png
+      art: https://static.wikia.nocookie.net/bokunoheroacademia/images/9/9e/Endeavor_Portrait.png
+    needsSuit: true
+
+  # --- Kings ---

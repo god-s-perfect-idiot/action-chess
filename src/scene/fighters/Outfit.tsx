@@ -68,7 +68,10 @@ export function buildBody(c: Ctx) {
       : M.trim
 
   // ── Pelvis ──
-  const pelvisMat = robeLegs || voltSplit ? M.primary : M.secondary
+  const pelvisMat =
+    robeLegs || voltSplit || has('cellophaneSuit') || has('gangOrcaSuit') || has('chargeboltSuit')
+      ? M.primary
+      : M.secondary
   add(
     'pelvis',
     <P s={S.box(pr.pelvisW, 0.11, pr.pelvisD, 0.04)} m={pelvisMat} p={[0, -0.005, 0]} />,
@@ -91,7 +94,20 @@ export function buildBody(c: Ctx) {
     !has('ichigoSuit') &&
     !has('ichigoMugetsu') &&
     !has('bakugoSuit') &&
-    !has('killuaSuit')
+    !has('killuaSuit') &&
+    !has('froppySuit') &&
+    !has('uravitySuit') &&
+    !has('endeavorSuit') &&
+    !has('chargeboltSuit') &&
+    !has('earphoneJackSuit') &&
+    !has('tsukuyomiSuit') &&
+    !has('kurogiriSuit') &&
+    !has('gangOrcaSuit') &&
+    !has('cellophaneSuit') &&
+    !has('sugarmanSuit') &&
+    !has('grapeBalls') &&
+    !has('animaSuit') &&
+    !has('nejireSuit')
   ) {
     add(
       'pelvis',
@@ -108,7 +124,15 @@ export function buildBody(c: Ctx) {
   const flare =
     robeLegs ? 0.07 : d.bottom === 'hakama' ? 0.06 : d.bottom === 'baggy' ? 0.025 : 0
   const legMatBase =
-    robeLegs || voltSplit || has('bakugoSuit') ? M.primary : M.secondary
+    robeLegs ||
+    voltSplit ||
+    has('bakugoSuit') ||
+    has('cellophaneSuit') ||
+    has('gangOrcaSuit') ||
+    has('chargeboltSuit') ||
+    has('earphoneJackSuit')
+      ? M.primary
+      : M.secondary
 
   sides((s, l) => {
     const thigh = `${l}Thigh` as BoneName
@@ -178,7 +202,9 @@ export function buildBody(c: Ctx) {
         !has('dekuAwaken') &&
         !has('allMightSuit') &&
         !has('allMightTruth') &&
-        !has('kanekiSuit')
+        !has('kanekiSuit') &&
+        !has('cellophaneSuit') &&
+        !has('uravitySuit')
       ) {
         add(
           thigh,
@@ -280,7 +306,7 @@ function buildTop(c: Ctx, tb: number) {
       if (!c.has('killuaSuit')) {
         add('chest', <P s={S.torus(0.04, 0.008, Math.PI * 2, 14)} m={M.trim} p={[0, ch * 0.99, 0.008]} r={[Math.PI / 2 - 0.2, 0, 0]} />)
       }
-      if (!c.has('vectorTee') && !c.has('gohanSuit') && !c.has('killuaSuit')) {
+      if (!c.has('vectorTee') && !c.has('gohanSuit') && !c.has('killuaSuit') && !c.has('tsukuyomiSuit')) {
         add('chest', <P s={S.box(cw * 0.5, ch * 0.3, 0.012, 0.006)} m={M.accent} line={false} p={[0, ch * 0.55, front + 0.002]} />)
       }
       break
@@ -300,14 +326,17 @@ function buildTop(c: Ctx, tb: number) {
     }
     case 'jacket':
     case 'labcoat': {
-      add('chest', <P s={S.box(cw * 0.3, ch * 0.92, 0.02, 0.008)} m={M.secondary} p={[0, ch * 0.47, front + 0.002]} />)
-      add('spine', <P s={S.box(pr.waistW * tb * 0.3, pr.abdomen, 0.02, 0.008)} m={M.secondary} p={[0, pr.abdomen * 0.5, pr.chestD * 0.86 * tb * 0.5 + 0.002]} />)
-      sides((s) => {
-        add('chest', <P s={S.box(0.03, ch * 0.5, 0.012, 0.005)} m={M.primary} p={[s * cw * 0.17, ch * 0.72, front + 0.01]} r={[0, 0, s * 0.35]} />)
-        add('chest', <P s={S.box(0.04, 0.06, 0.04, 0.012)} m={M.primary} p={[s * cw * 0.2, ch * 1.0, -0.01]} r={[0.3, 0, s * -0.3]} />)
-      })
-      if (d.top === 'labcoat') addCoatTails(c, M.primary, 0.95, true)
-      else add('spine', <P s={S.box(pr.waistW * tb * 1.08, 0.05, pr.chestD * 0.92 * tb, 0.015)} m={M.primary} p={[0, 0.0, 0]} />)
+      // Chargebolt / Earphone Jack build open jackets in extras.
+      if (!c.has('chargeboltSuit') && !c.has('earphoneJackSuit')) {
+        add('chest', <P s={S.box(cw * 0.3, ch * 0.92, 0.02, 0.008)} m={M.secondary} p={[0, ch * 0.47, front + 0.002]} />)
+        add('spine', <P s={S.box(pr.waistW * tb * 0.3, pr.abdomen, 0.02, 0.008)} m={M.secondary} p={[0, pr.abdomen * 0.5, pr.chestD * 0.86 * tb * 0.5 + 0.002]} />)
+        sides((s) => {
+          add('chest', <P s={S.box(0.03, ch * 0.5, 0.012, 0.005)} m={M.primary} p={[s * cw * 0.17, ch * 0.72, front + 0.01]} r={[0, 0, s * 0.35]} />)
+          add('chest', <P s={S.box(0.04, 0.06, 0.04, 0.012)} m={M.primary} p={[s * cw * 0.2, ch * 1.0, -0.01]} r={[0.3, 0, s * -0.3]} />)
+        })
+        if (d.top === 'labcoat') addCoatTails(c, M.primary, 0.95, true)
+        else add('spine', <P s={S.box(pr.waistW * tb * 1.08, 0.05, pr.chestD * 0.92 * tb, 0.015)} m={M.primary} p={[0, 0.0, 0]} />)
+      }
       break
     }
     case 'bomber':
@@ -357,7 +386,14 @@ function buildTop(c: Ctx, tb: number) {
         !c.has('dekuSuit') &&
         !c.has('dekuAwaken') &&
         !c.has('allMightSuit') &&
-        !c.has('allMightTruth')
+        !c.has('allMightTruth') &&
+        !c.has('froppySuit') &&
+        !c.has('uravitySuit') &&
+        !c.has('endeavorSuit') &&
+        !c.has('chargeboltSuit') &&
+        !c.has('nejireSuit') &&
+        !c.has('pinkySuit') &&
+        !c.has('animaSuit')
       ) {
         sides((s) =>
           add('chest', <P s={S.box(0.01, ch * 0.95, 0.012, 0.004)} m={M.accent} line={false} p={[s * cw * 0.49, ch * 0.5, 0]} />),
@@ -480,7 +516,21 @@ function buildShoes(c: Ctx) {
     has('shukakuAwaken') ||
     has('bakugoSuit') ||
     has('silverSurferSuit') ||
-    has('killuaSuit')
+    has('killuaSuit') ||
+    has('froppySuit') ||
+    has('uravitySuit') ||
+    has('endeavorSuit') ||
+    has('chargeboltSuit') ||
+    has('earphoneJackSuit') ||
+    has('tsukuyomiSuit') ||
+    has('kurogiriSuit') ||
+    has('gangOrcaSuit') ||
+    has('dabiSuit') ||
+    has('pinkySuit') ||
+    has('cellophaneSuit') ||
+    has('sugarmanSuit') ||
+    has('animaSuit') ||
+    has('nejireSuit')
   )
     return
 
@@ -601,7 +651,16 @@ function buildHands(c: Ctx) {
     has('todorokiSuit') ||
     has('allMightSuit') ||
     has('allMightTruth') ||
-    has('bakugoSuit')
+    has('bakugoSuit') ||
+    has('froppySuit') ||
+    has('uravitySuit') ||
+    has('chargeboltSuit') ||
+    has('earphoneJackSuit') ||
+    has('endeavorSuit') ||
+    has('kurogiriSuit') ||
+    has('gangOrcaSuit') ||
+    has('sugarmanSuit') ||
+    has('nejireSuit')
   )
     return
   sides((s, l) => {
@@ -615,7 +674,7 @@ function buildHands(c: Ctx) {
         ? M.metal
         : voltGauntlets
           ? M.primary
-          : has('engineVents')
+          : has('engineVents') || has('cellophaneSuit')
             ? M.secondary
             : has('overhaulSuit')
               ? M.light

@@ -98,7 +98,7 @@ function shade(hex: string, f: number): string {
 export function fighterMaterials(p: HeroPalette): FighterMaterials {
   return {
     skin: celMaterial(p.skin),
-    skinShade: celMaterial(shade(p.skin, 0.82)),
+    skinShade: celMaterial(p.skinAlt ?? shade(p.skin, 0.82)),
     hair: celMaterial(p.hair),
     hairShade: celMaterial(p.hairAlt ?? shade(p.hair, 0.7)),
     primary: celMaterial(p.primary),

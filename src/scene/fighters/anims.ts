@@ -324,6 +324,36 @@ function flyPose(p: number, t: number): Pose {
   })
 }
 
+/** Anima — crouched ride on a summoned bird; hands grip the plumage. */
+function birdRidePose(p: number, t: number): Pose {
+  const plant = 1 - smooth(min(1, max(0, p) / 0.1))
+  const settle = smooth(max(0, (p - 0.88) / 0.12))
+  const flight = (1 - plant) * (1 - settle)
+  const bob = sin(t * 4.4) * 0.025 * flight
+  const flap = 0.55 + 0.45 * abs(sin(t * 7.2))
+  return P({
+    root: [0, 0.05 * plant + 0.2 * flight + bob + 0.05 * settle, 0],
+    hipY: -0.16 * plant - 0.2 * flight,
+    hips: [0.2 * plant + 0.32 * flight, -0.12 * flight, 0.05],
+    spine: [0.22 * plant + 0.12 * flight, 0.1 * flight, 0],
+    chest: [0.06 * plant + 0.04 * flight, 0.05 * flight, 0],
+    head: [-0.2 * plant - 0.08 * flight, 0.18 * flight, 0.04],
+    // Hands down on the bird's back.
+    lArm: [-0.75 - 0.1 * flight, 0.35, 0.55 + 0.1 * flight],
+    lElbow: [-1.25 - 0.15 * flight, 0, 0],
+    lHand: [0.3, 0.15, 0.15],
+    rArm: [-0.75 - 0.1 * flight, -0.35, 0.55 + 0.1 * flight],
+    rElbow: [-1.25 - 0.15 * flight, 0, 0],
+    rHand: [0.3, -0.15, -0.15],
+    lFoot: [0.03, 0.04 * plant + 0.1 * flight, 0.08 - 0.02 * flight],
+    rFoot: [0.04, 0.04 * plant + 0.12 * flight, -0.06 - 0.02 * flight],
+    lToe: 0.35 + 0.4 * flight,
+    rToe: 0.3 + 0.45 * flight,
+    flap: flap * flight,
+    blink: 0,
+  })
+}
+
 /** Silver Surfer — low crouch on the board, leaning into a board whiz. */
 function surfFlyPose(p: number, t: number): Pose {
   const plant = 1 - smooth(min(1, max(0, p) / 0.08))
@@ -678,6 +708,23 @@ const KUNAI_LEAP = clip(
     [0.66, { vis: 1, root: [0, 0, 0], hipY: -0.16, hips: [0.18, 0.35, 0], spine: [0.22, -0.3, 0], lFoot: [0.05, 0.02, 0.12], rFoot: [0.06, 0.02, -0.1], rArm: [-1.3, 0, 0.18], rElbow: [-0.25, 0, 0], lArm: [0.28, 0, 0.5], lElbow: [-1.25, 0, 0], head: [-0.15, -0.12, 0] }, 'snap'],
     [0.82, { hipY: -0.18, hips: [0.25, 0.12, 0], spine: [0.28, -0.08, 0], lFoot: [0.05, 0, 0.1], rFoot: [0.05, 0, -0.08], rArm: [-1.0, 0, 0.28], rElbow: [-0.45, 0, 0], lArm: [-0.85, 0, 0.35], lElbow: [-0.55, 0, 0] }],
     [1.0, { hipY: -0.16, hips: [0.22, 0, 0], spine: [0.25, 0, 0], lFoot: [0.05, 0, 0.08], rFoot: [0.05, 0, -0.06], lArm: [-0.95, 0, 0.32], rArm: [0.45, 0, 0.35], lElbow: [-0.45, 0, 0], rElbow: [-0.55, 0, 0] }],
+  ],
+  REST,
+)
+
+/** Cellophane travel — shoot elbow tape onto the next pad, yank-pull across. */
+const TAPE_LEAP = clip(
+  [
+    // Plant — elbows cocked to fire.
+    [0, { hipY: -0.16, hips: [0.15, 0, 0], spine: [0.2, 0.1, 0], head: [-0.1, -0.1, 0], lFoot: [0.04, 0, 0.06], rFoot: [0.04, 0, -0.06], lArm: [0.25, -0.85, 0.55], rArm: [0.25, 0.85, 0.55], lElbow: [-1.55, 0, 0], rElbow: [-1.55, 0, 0] }],
+    // Fire white tape forward.
+    [0.12, { hipY: -0.1, spine: [0.15, -0.25, 0], chest: [0.05, -0.1, 0], lArm: [-1.5, -0.35, 0.15], rArm: [-1.5, 0.35, 0.15], lElbow: [-0.1, 0, 0], rElbow: [-0.1, 0, 0], lHand: [-0.35, 0, 0], rHand: [-0.35, 0, 0], head: [0.05, -0.15, 0] }, 'snap'],
+    // Yank — body lifts and rides the tape line.
+    [0.28, { hipY: 0.02, root: [0, 0.12, 0.08], hips: [-0.1, 0, 0], spine: [-0.05, 0, 0], lFoot: [0, 0.18, 0.1], rFoot: [0, 0.16, -0.05], lToe: 0.55, rToe: 0.55, lArm: [-1.55, -0.2, 0.1], rArm: [-1.55, 0.2, 0.1], lElbow: [0, 0, 0], rElbow: [0, 0, 0] }],
+    [0.55, { hipY: 0, root: [0, 0.08, 0.2], hips: [0.05, 0.15, 0], spine: [0.15, -0.2, 0], lFoot: [0, 0.22, 0.12], rFoot: [0, 0.18, -0.02], lArm: [-1.45, -0.15, 0.2], rArm: [-1.45, 0.15, 0.2], lElbow: [-0.15, 0, 0], rElbow: [-0.15, 0, 0] }],
+    // Land — pull finishes, feet plant.
+    [0.78, { hipY: -0.18, root: [0, 0, 0.06], hips: [0.25, 0.1, 0], spine: [0.4, -0.1, 0], head: [-0.2, 0, 0], lFoot: [0.04, 0, 0.1], rFoot: [0.04, 0, -0.06], lArm: [-0.8, -0.35, 0.55], rArm: [-0.8, 0.35, 0.55], lElbow: [-0.7, 0, 0], rElbow: [-0.7, 0, 0] }],
+    [1.0, { hipY: -0.08, hips: [0.1, 0, 0], spine: [0.12, 0, 0], lFoot: [0.03, 0, 0.06], rFoot: [0.03, 0, -0.04], lArm: [-0.45, 0, 0.4], rArm: [-0.45, 0, 0.4], lElbow: [-0.7, 0, 0], rElbow: [-0.7, 0, 0] }],
   ],
   REST,
 )
@@ -1063,9 +1110,14 @@ export type FxKind =
   | 'pierce'
   | 'beam'
   | 'darkBeam'
+  /** Tsukuyomi — Dark Shadow lunges and claws the pad. */
+  | 'darkShadow'
   | 'rings'
   | 'chain'
+  | 'tape'
   | 'cards'
+  | 'acid'
+  | 'grapes'
   | 'lightning'
   | 'voltBeam'
   | 'voltBarrage'
@@ -1083,10 +1135,14 @@ export type FxKind =
   | 'speed'
   | 'phase'
   | 'portal'
+  /** Kurogiri — purple warp-mist gate (same body language as his head/hands). */
+  | 'warpGate'
   | 'kunai'
   | 'rasengan'
   | 'bullet'
   | 'feather'
+  /** Anima — summoned bird flock that crashes the square. */
+  | 'birds'
   | 'ratioSlash'
   | 'sakura'
   | 'murasaki'
@@ -1112,8 +1168,8 @@ export type FxKind =
   /** Kenpachi — big vertical arch slash from blade through the lane to the target. */
   | 'archSlash'
 
-/** `true` / `'trap'` = floor trap; `'portal'` = dragged into a gate behind them. */
-export type HoldKind = boolean | 'trap' | 'portal'
+/** `true` / `'trap'` = floor trap; `'portal'` = dragged into a gate; `'float'` = zero-G lift. */
+export type HoldKind = boolean | 'trap' | 'portal' | 'float'
 
 type SigHit = number | { t: number; zone?: HitZone; /** Keep the victim reaction until the next blow. */ hold?: HoldKind }
 
@@ -1205,6 +1261,29 @@ const SIGS: Record<AttackStyle, Sig> = {
       [0.8, { hipY: -0.08, spine: [0.25, 0, 0], root: [0, 0, 0.06], lArm: [-1.5, 0, 0.2], rArm: [-1.5, 0, 0.2], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.3, 0, 0], rHand: [-1.3, 0, 0] }],
       [1.05, P({ hips: [0, 0, 0.12], lArm: [-2.7, 0, 0.4], lElbow: [-0.3, 0, 0], head: [0, 0, 0.2] }, REST)],
     ]),
+  },
+  ampKick: {
+    // Earphone Jack — grab jacks → plug into amp boots → heartbeat sonic kick.
+    hit: 0.62,
+    release: 0.48,
+    ranged: true,
+    fx: 'rings',
+    clip: clip(
+      [
+        [0, P({}, IDLES.musicBob(0))],
+        // Hands to earlobes — pull the jack cords.
+        [0.16, { hipY: -0.06, spine: [-0.08, 0, 0], head: [-0.15, 0, 0], lArm: [-2.2, 0, 1.1], rArm: [-2.2, 0, 1.1], lElbow: [-1.4, 0, 0], rElbow: [-1.4, 0, 0], lHand: [0.6, 0, 0.3], rHand: [0.6, 0, -0.3], lFoot: [0.04, 0, 0.06], rFoot: [0.05, 0, -0.06] }],
+        // Guide plugs down into the boot amp ports.
+        [0.34, { hipY: -0.16, spine: [0.35, 0, 0], head: [0.25, 0, 0], lArm: [0.35, 0, 0.55], rArm: [0.35, 0, 0.55], lElbow: [-1.8, 0, 0], rElbow: [-1.8, 0, 0], lHand: [0.8, 0, 0], rHand: [0.8, 0, 0], lFoot: [0.06, 0, 0.1], rFoot: [0.06, 0, -0.08] }],
+        // Chamber the amp kick — plugs locked in the shins.
+        [0.48, { hipY: -0.08, root: [0, 0, 0.08], hips: [0.1, -0.15, 0], spine: [0.08, 0.1, 0], head: [-0.05, 0, 0], lArm: [-0.55, 0, 0.7], rArm: [0.25, 0, 0.55], lElbow: [-1.2, 0, 0], rElbow: [-1.0, 0, 0], lFoot: [0.04, 0, 0.06], rFoot: [0.02, 0.32, 0.12], rToe: 0.45 }],
+        // Heartbeat blast — sonic rings fire from the kicking boot.
+        [0.62, { hipY: -0.04, root: [0, 0, 0.28], hips: [-0.2, -0.05, 0], spine: [-0.18, 0.08, 0], head: [0.2, 0, 0], lArm: [-0.5, 0, 0.65], rArm: [0.3, 0, 0.55], lElbow: [-1.4, 0, 0], rElbow: [-1.1, 0, 0], lFoot: [0.04, 0, 0.04], lToe: 0.15, rFoot: [0, 0.28, 0.55], rToe: 1.05 }, 'snap'],
+        [0.88, { hipY: -0.08, root: [0, 0, 0.18], hips: [0, -0.08, 0], spine: [0.05, 0.05, 0], lArm: [-0.65, 0, 0.45], rArm: [-0.45, 0, 0.4], lFoot: [0.04, 0, 0.06], rFoot: [0.04, 0.12, 0.1], rToe: 0.25 }],
+        [1.12, P({}, IDLES.musicBob(0))],
+      ],
+      REST,
+    ),
   },
   shoulderCharge: {
     hit: 0.32,
@@ -1613,6 +1692,36 @@ const SIGS: Record<AttackStyle, Sig> = {
       REST,
     ),
   },
+  anivoice: {
+    // Anima — cup hands to call fauna, then a summoned bird flock crashes the square.
+    hit: 0.58,
+    hits: [
+      { t: 0.38, zone: 'low', hold: true },
+      { t: 0.48, zone: 'mid', hold: true },
+      { t: 0.58, zone: 'high' },
+    ],
+    zone: 'mid',
+    release: 0.28,
+    ranged: true,
+    fx: 'birds',
+    throwFx: { kind: 'birds', release: 0.28, arrive: 0.48 },
+    clip: clip(
+      [
+        [0, P({}, IDLES.shy(0))],
+        // Hands to mouth — Anivoice shout.
+        [0.16, { hipY: -0.06, spine: [-0.12, 0, 0], head: [-0.35, 0, 0], lArm: [-1.55, -0.35, 0.85], rArm: [-1.55, 0.35, 0.85], lElbow: [-0.35, 0, 0], rElbow: [-0.35, 0, 0], lHand: [0.35, 0, 0.15], rHand: [0.35, 0, -0.15], blink: 0 }],
+        [0.28, { hipY: -0.08, spine: [0.15, 0, 0], head: [0.15, 0, 0], root: [0, 0, 0.04], lArm: [-1.45, -0.25, 0.55], rArm: [-1.45, 0.25, 0.55], lElbow: [-0.15, 0, 0], rElbow: [-0.15, 0, 0], lHand: [-0.4, 0, 0.1], rHand: [-0.4, 0, -0.1] }, 'snap'],
+        // Point — birds rush the pad.
+        [0.38, { hipY: -0.1, root: [0, 0, 0.12], hips: [0, -0.25, 0], spine: [0.12, 0.2, 0], lArm: [-1.5, -0.45, 0.35], rArm: [-0.55, 0.2, 0.55], lElbow: [-0.1, 0, 0], rElbow: [-1.2, 0, 0], lHand: [-0.85, 0, 0.15], head: [0.05, -0.15, 0] }, 'snap'],
+        [0.48, { hipY: -0.1, root: [0, 0, 0.18], hips: [0, 0.2, 0], spine: [0.15, -0.2, 0], lArm: [-0.55, -0.2, 0.55], rArm: [-1.5, 0.45, 0.35], lElbow: [-1.2, 0, 0], rElbow: [-0.1, 0, 0], rHand: [-0.85, 0, -0.15], head: [0.05, 0.15, 0] }, 'snap'],
+        // Crush — flock lands.
+        [0.58, { hipY: -0.14, root: [0, 0, 0.28], hips: [0.1, 0.35, 0], spine: [0.35, -0.25, 0], lArm: [-1.55, -0.15, 0.15], rArm: [-1.55, 0.15, 0.15], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.2, 0, 0], rHand: [-1.2, 0, 0], head: [0.1, 0, 0] }, 'snap'],
+        [0.85, { hipY: -0.08, root: [0, 0, 0.14], spine: [0.1, 0, 0], lArm: [-0.7, 0, 0.45], rArm: [-0.7, 0, 0.45] }],
+        [1.1, P({}, IDLES.shy(0))],
+      ],
+      REST,
+    ),
+  },
   clawSwipe: {
     hit: 0.46,
     hits: [0.26, 0.46],
@@ -1679,23 +1788,6 @@ const SIGS: Record<AttackStyle, Sig> = {
         [0.36, { hipY: -0.12, root: [0, 0, 0.34], spine: [0.15, 0.4, 0], lFoot: [0.02, 0, 0.16], rArm: [-1.8, 0.2, 1.1], rElbow: [-0.2, 0, 0], rHand: [0, 0, 0.6] }],
         [0.7, { hipY: -0.1, root: [0, 0, 0.3], spine: [0.1, 0.35, 0], lFoot: [0.02, 0, 0.14], rArm: [-1.6, 0.2, 1.0], rElbow: [-0.3, 0, 0] }],
         [0.95, P({}, IDLES.scalpelTwirl(0))],
-      ],
-      REST,
-    ),
-  },
-  erase: {
-    hit: 0.6,
-    release: 0.6,
-    ranged: true,
-    fx: 'glitch',
-    clip: clip(
-      [
-        [0, P({}, IDLES.glitch(0.5))],
-        [0.4, { lFoot: [0.02, 0, 0], rFoot: [0.02, 0, 0], head: [-0.1, 0, 0.3], rArm: [-1.55, 0, 0.1], rElbow: [0, 0, 0], rHand: [-1.5, 0, 0] }],
-        [0.6, { lFoot: [0.02, 0, 0], rFoot: [0.02, 0, 0], head: [0.1, 0, 0.3], rArm: [-1.5, 0, 0.1], rElbow: [-0.2, 0, 0], rHand: [-0.2, 0, 0], vis: 1 }],
-        [0.66, { lFoot: [0.02, 0, 0], rFoot: [0.02, 0, 0], head: [0.1, 0, 0.3], rArm: [-1.5, 0, 0.1], rElbow: [-0.2, 0, 0], vis: 0.6 }],
-        [0.72, { lFoot: [0.02, 0, 0], rFoot: [0.02, 0, 0], head: [0.1, 0, 0.3], rArm: [-1.5, 0, 0.1], rElbow: [-0.2, 0, 0], vis: 1 }],
-        [1.0, P({}, IDLES.glitch(0.5))],
       ],
       REST,
     ),
@@ -1768,6 +1860,95 @@ const SIGS: Record<AttackStyle, Sig> = {
       [0.85, { rootRot: [0, PI * 2, 0], root: [0, 0, 0.1] }],
     ]),
   },
+  acidMelt: {
+    // Pinky — palms spray acid, then the square melts under them.
+    hit: 0.58,
+    hits: [
+      { t: 0.36, zone: 'mid', hold: true },
+      { t: 0.58, zone: 'mid' },
+    ],
+    zone: 'mid',
+    release: 0.22,
+    ranged: true,
+    fx: 'acid',
+    throwFx: { kind: 'acid', release: 0.12, arrive: 0.36 },
+    clip: clip(
+      [
+        [0, P({}, IDLES.cocky(0))],
+        // Low slide stance — palms open, acid pooling.
+        [0.12, { hipY: -0.14, hips: [0.08, -0.15, 0], spine: [0.18, 0.1, 0], chest: [0.08, 0.05, 0], lFoot: [0.05, 0, 0.1], rFoot: [0.06, 0, -0.08], lArm: [-0.55, -0.45, 0.95], rArm: [-0.55, 0.45, 0.95], lElbow: [-1.35, 0, 0], rElbow: [-1.35, 0, 0], lHand: [0.35, 0, -0.2], rHand: [0.35, 0, 0.2], head: [-0.08, -0.1, 0] }],
+        // Spray — both palms thrust, acid volley leaves.
+        [0.28, { hipY: -0.12, root: [0, 0, 0.08], hips: [0.05, 0.2, 0], spine: [0.22, -0.2, 0], chest: [0.1, -0.08, 0], lFoot: [0.04, 0, 0.14], rFoot: [0.06, 0, -0.1], lArm: [-1.55, -0.15, 0.12], rArm: [-1.55, 0.15, 0.12], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.35, 0, 0], rHand: [-1.35, 0, 0], head: [0.05, 0, 0] }, 'snap'],
+        // Hold the spray while acid softens them.
+        [0.48, { hipY: -0.1, root: [0, 0, 0.1], spine: [0.18, -0.15, 0], lArm: [-1.5, -0.1, 0.15], rArm: [-1.5, 0.1, 0.15], lElbow: [-0.05, 0, 0], rElbow: [-0.05, 0, 0], lHand: [-1.2, 0, 0], rHand: [-1.2, 0, 0] }],
+        // Melt finish — lean in as they dissolve.
+        [0.58, { hipY: -0.12, root: [0, 0, 0.16], hips: [0.08, 0.25, 0], spine: [0.28, -0.25, 0], chest: [0.12, -0.1, 0], lFoot: [0.04, 0, 0.16], rFoot: [0.07, 0, -0.1], lArm: [-1.6, 0, 0.08], rArm: [-1.6, 0, 0.08], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.4, 0, 0], rHand: [-1.4, 0, 0], head: [0.08, -0.08, 0] }, 'snap'],
+        [0.85, { hipY: -0.1, root: [0, 0, 0.1], spine: [0.15, -0.1, 0], lArm: [-1.2, -0.2, 0.35], rArm: [-1.2, 0.2, 0.35], lElbow: [-0.4, 0, 0], rElbow: [-0.4, 0, 0] }],
+        [1.15, P({}, IDLES.cocky(0))],
+      ],
+      REST,
+    ),
+  },
+  tapeYank: {
+    // Cellophane — shoot white tape, yank himself in, slam, then wrap.
+    hit: 0.52,
+    hits: [
+      { t: 0.34, zone: 'mid' },
+      { t: 0.52, zone: 'mid', hold: true },
+    ],
+    zone: 'mid',
+    release: 0.14,
+    ranged: false,
+    fx: 'tape',
+    throwFx: { kind: 'tape', release: 0.08, arrive: 0.22 },
+    clip: clip([
+      [0, {}],
+      // Elbows out — tape tips ready.
+      [0.08, { hipY: -0.1, spine: [0.1, 0.15, 0], lArm: [0.35, -0.85, 0.55], rArm: [0.35, 0.85, 0.55], lElbow: [-1.6, 0, 0], rElbow: [-1.6, 0, 0], head: [-0.05, -0.1, 0] }],
+      // Fire tape toward the target.
+      [0.16, { hipY: -0.08, root: [0, 0, 0.04], spine: [0.15, -0.2, 0], lArm: [-1.45, -0.35, 0.2], rArm: [-1.45, 0.35, 0.2], lElbow: [-0.15, 0, 0], rElbow: [-0.15, 0, 0], lHand: [-0.4, 0, 0], rHand: [-0.4, 0, 0] }, 'snap'],
+      // Vanish along the tape line.
+      [0.2, { vis: 0, root: [0, 0.08, 0.12], lArm: [-1.5, -0.2, 0.15], rArm: [-1.5, 0.2, 0.15] }],
+      [0.3, { vis: 0, root: [0, 0.05, 0.4] }],
+      // Arrive — body slam into them.
+      [0.34, { vis: 1, root: [0, 0, 0.44], hipY: -0.14, hips: [0.15, 0.55, 0], spine: [0.35, -0.55, 0], chest: [0.12, -0.2, 0], lFoot: [0.04, 0, 0.2], rFoot: [0.06, 0, -0.14], lArm: [-0.35, -0.5, 0.7], rArm: [-1.55, 0.15, 0.05], lElbow: [-1.2, 0, 0], rElbow: [0, 0, 0], head: [0.1, -0.15, 0] }, 'snap'],
+      // Wrap — elbows fire a binding loop.
+      [0.52, { root: [0, 0, 0.4], hipY: -0.1, hips: [0.1, 0.35, 0], spine: [0.2, 0.35, 0], chest: [0.08, 0.12, 0], lFoot: [0.04, 0, 0.16], rFoot: [0.05, 0, -0.1], lArm: [-1.35, -0.9, 0.85], rArm: [-1.35, 0.9, 0.85], lElbow: [-0.2, 0, 0], rElbow: [-0.2, 0, 0], lHand: [0.2, 0, -0.3], rHand: [0.2, 0, 0.3], head: [0.05, 0.1, 0] }, 'snap'],
+      [0.78, { root: [0, 0, 0.28], hipY: -0.08, spine: [0.12, 0.15, 0], lArm: [-0.7, -0.45, 0.55], rArm: [-0.7, 0.45, 0.55], lElbow: [-0.9, 0, 0], rElbow: [-0.9, 0, 0] }],
+      [1.05, {}],
+    ]),
+  },
+  grapePop: {
+    // Grape Juice — peel sticky orbs, pepper the square, then finish the stuck target.
+    hit: 0.62,
+    hits: [
+      { t: 0.32, zone: 'mid', hold: 'trap' },
+      { t: 0.46, zone: 'low', hold: 'trap' },
+      { t: 0.62, zone: 'mid' },
+    ],
+    zone: 'mid',
+    release: 0.18,
+    ranged: true,
+    fx: 'grapes',
+    throwFx: { kind: 'grapes', release: 0.1, arrive: 0.32 },
+    clip: clip(
+      [
+        [0, P({}, IDLES.boxer(0))],
+        // Reach for scalp orbs.
+        [0.1, { hipY: -0.08, spine: [-0.15, 0.1, 0], head: [-0.35, 0.15, 0], lArm: [-2.2, -0.35, 0.55], rArm: [-2.2, 0.35, 0.55], lElbow: [-0.55, 0, 0], rElbow: [-0.55, 0, 0], lHand: [0.4, 0, 0.2], rHand: [0.4, 0, -0.2] }],
+        // Lob sticky grapes.
+        [0.22, { hipY: -0.06, root: [0, 0, 0.04], spine: [0.1, -0.15, 0], head: [0.05, -0.1, 0], lArm: [-1.35, -0.55, 0.75], rArm: [-1.45, 0.45, 0.7], lElbow: [-0.25, 0, 0], rElbow: [-0.2, 0, 0], lHand: [0.15, 0, -0.25], rHand: [0.1, 0, 0.3] }, 'snap'],
+        // Second toss — seed the pad.
+        [0.36, { hipY: -0.08, root: [0, 0, 0.06], spine: [0.12, 0.2, 0], lArm: [-1.5, 0.35, 0.55], rArm: [-1.4, -0.4, 0.6], lElbow: [-0.15, 0, 0], rElbow: [-0.2, 0, 0], head: [0.05, 0.1, 0] }, 'snap'],
+        // Close and bounce-kick the stuck target.
+        [0.5, { hipY: -0.04, root: [0, 0.06, 0.22], spine: [-0.1, -0.2, 0], lFoot: [0.03, 0.08, 0.1], rFoot: [0.05, 0.12, -0.05], lArm: [0.4, 0, 0.7], rArm: [0.4, 0, 0.7], head: [0.1, -0.15, 0] }],
+        [0.62, { hipY: -0.12, root: [0, 0, 0.36], hips: [0.1, 0.4, 0], spine: [0.3, -0.35, 0], lFoot: [0.04, 0, 0.18], rFoot: [0.08, 0.15, 0.2], rToe: 0.5, lArm: [-0.5, 0, 1.0], rArm: [-0.5, 0, 1.0], lElbow: [-0.3, 0, 0], rElbow: [-0.3, 0, 0], head: [0.08, -0.1, 0] }, 'snap'],
+        [0.88, { hipY: -0.1, root: [0, 0, 0.22], spine: [0.15, -0.15, 0], lArm: [-0.6, 0, 0.55], rArm: [-0.6, 0, 0.55] }],
+        [1.15, P({}, IDLES.boxer(0))],
+      ],
+      REST,
+    ),
+  },
   axeKick: {
     hit: 0.46,
     zone: 'high',
@@ -1797,6 +1978,32 @@ const SIGS: Record<AttackStyle, Sig> = {
         [0.5, { root: [0, 0.3, 0], lFoot: [0, 0, -0.02], rFoot: [0, 0.05, -0.05], lToe: 0.7, rToe: 0.8, spine: [0.15, 0, 0], lArm: [-1.55, 0, 0.15], rArm: [-1.55, 0, 0.15], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.4, 0, 0], rHand: [-1.4, 0, 0] }],
         [1.0, { root: [0, 0.3, 0], lFoot: [0, 0, -0.02], rFoot: [0, 0.05, -0.05], lToe: 0.7, rToe: 0.8, spine: [0.15, 0, 0], lArm: [-1.55, 0, 0.15], rArm: [-1.55, 0, 0.15], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.4, 0, 0], rHand: [-1.4, 0, 0] }],
         [1.3, P({}, IDLES.float(0))],
+      ],
+      REST,
+    ),
+  },
+  darkShadow: {
+    // Tsukuyomi — open the cloak, summon Dark Shadow; the shadow lunges and claws the square.
+    hit: 0.62,
+    hits: [
+      { t: 0.48, zone: 'mid', hold: true },
+      { t: 0.62, zone: 'high' },
+    ],
+    zone: 'high',
+    release: 0.28,
+    ranged: true,
+    fx: 'darkShadow',
+    clip: clip(
+      [
+        [0, P({}, IDLES.perch(0))],
+        // Hands out — command the shadow.
+        [0.16, { hipY: -0.16, hips: [0.35, 0, 0], spine: [0.35, 0, 0], chest: [0.08, 0, 0], neck: [-0.25, 0, 0], head: [-0.2, 0.15, 0], lFoot: [0.06, 0, 0.04], rFoot: [0.06, 0, 0.02], lArm: [-1.35, -0.55, 0.85], rArm: [-1.35, 0.55, 0.85], lElbow: [-0.25, 0, 0], rElbow: [-0.25, 0, 0], lHand: [-0.35, 0, 0.15], rHand: [-0.35, 0, -0.15], blink: 0 }],
+        [0.28, { hipY: -0.18, root: [0, 0, 0.06], hips: [0.4, -0.15, 0], spine: [0.42, 0.2, 0], chest: [0.12, 0.1, 0], head: [0.05, -0.2, 0], lFoot: [0.06, 0, 0.06], rFoot: [0.06, 0, 0], lArm: [-1.5, -0.35, 0.35], rArm: [-0.55, 0.25, 0.65], lElbow: [-0.1, 0, 0], rElbow: [-1.15, 0, 0], lHand: [-0.9, 0, 0.1], blink: 0 }, 'snap'],
+        // Shadow lunges — host braces while familiar carves.
+        [0.48, { hipY: -0.2, root: [0, 0, 0.14], hips: [0.45, 0.25, 0], spine: [0.5, -0.25, 0], chest: [0.15, -0.1, 0], head: [0.08, 0.25, 0], lFoot: [0.07, 0, 0.08], rFoot: [0.06, 0, -0.02], lArm: [-0.5, -0.2, 0.7], rArm: [-1.55, 0.4, 0.2], lElbow: [-1.1, 0, 0], rElbow: [-0.05, 0, 0], rHand: [-1.1, 0, -0.1] }, 'snap'],
+        [0.62, { hipY: -0.22, root: [0, 0, 0.22], hips: [0.5, -0.3, 0], spine: [0.55, 0.3, 0], chest: [0.18, 0.12, 0], head: [0.1, -0.2, 0], lFoot: [0.07, 0, 0.1], rFoot: [0.06, 0, -0.04], lArm: [-1.55, -0.2, 0.15], rArm: [-1.55, 0.2, 0.15], lElbow: [0, 0, 0], rElbow: [0, 0, 0], lHand: [-1.2, 0, 0], rHand: [-1.2, 0, 0] }, 'snap'],
+        [0.9, { hipY: -0.18, root: [0, 0, 0.12], hips: [0.4, 0.1, 0], spine: [0.4, 0.05, 0], lArm: [-0.85, -0.25, 0.55], rArm: [-0.85, 0.25, 0.55], lElbow: [-0.55, 0, 0], rElbow: [-0.55, 0, 0] }],
+        [1.15, P({}, IDLES.perch(0))],
       ],
       REST,
     ),
@@ -1860,17 +2067,30 @@ const SIGS: Record<AttackStyle, Sig> = {
     ),
   },
   gravitySlam: {
-    hit: 0.6,
-    release: 0.3,
-    ranged: true,
+    // Close → five-finger touch → Zero-G float → fingertip Release → they drop.
+    hit: 0.95,
+    hits: [
+      { t: 0.4, zone: 'mid', hold: 'float' },
+      { t: 0.95, zone: 'mid' },
+    ],
+    zone: 'mid',
+    release: 0.4,
+    ranged: false,
     fx: 'gravity',
     clip: clip(
       [
-        [0, P({}, IDLES.lordly(0))],
-        [0.3, { lFoot: [0.06, 0, 0.04], rFoot: [0.06, 0, -0.03], spine: [-0.1, 0, 0], chest: [-0.1, 0, 0], head: [-0.15, 0, 0], lArm: [-2.6, 0, 0.3], lElbow: [-0.2, 0, 0], lHand: [-0.6, 0, -0.9], rArm: [0.3, 0.8, 0.12], rElbow: [-1.3, 0, 0] }],
-        [0.6, { hipY: -0.08, lFoot: [0.07, 0, 0.08], rFoot: [0.06, 0, -0.05], spine: [0.3, 0, 0], head: [0.1, 0, 0], lArm: [-1.0, 0, 0.3], lElbow: [-0.3, 0, 0], lHand: [0.8, 0, 0], rArm: [0.3, 0.8, 0.12], rElbow: [-1.3, 0, 0] }],
-        [0.9, { hipY: -0.08, lFoot: [0.07, 0, 0.08], rFoot: [0.06, 0, -0.05], spine: [0.28, 0, 0], lArm: [-1.0, 0, 0.3], lElbow: [-0.3, 0, 0], lHand: [0.8, 0, 0], rArm: [0.3, 0.8, 0.12], rElbow: [-1.3, 0, 0] }],
-        [1.15, P({}, IDLES.lordly(0))],
+        [0, P({}, IDLES.float(0))],
+        // Drift in, palms open for the touch.
+        [0.18, { root: [0, 0.14, 0.08], hipY: -0.04, hips: [0.06, 0.15, 0], spine: [0.08, -0.12, 0], chest: [0.04, -0.06, 0], head: [0.05, -0.08, 0], lFoot: [0.02, 0.04, 0.04], rFoot: [0.03, 0.05, -0.04], lToe: 0.55, rToe: 0.6, lArm: [-1.15, 0.1, 0.55], lElbow: [-0.85, 0, 0], lHand: [-0.15, 0.05, 0.1], rArm: [-0.35, 0.35, 0.45], rElbow: [-1.1, 0, 0], rHand: [0.2, 0, 0] }],
+        // Five-finger contact — Zero Gravity sticks.
+        [0.4, { root: [0, 0.12, 0.28], hipY: -0.08, hips: [0.08, 0.35, 0], spine: [0.18, -0.3, 0], chest: [0.1, -0.12, 0], head: [0.08, -0.12, 0], lFoot: [0.03, 0.02, 0.14], rFoot: [0.05, 0.04, -0.1], lToe: 0.45, rToe: 0.5, lArm: [-1.7, 0.05, 0.08], lElbow: [-0.08, 0, 0], lHand: [-0.55, 0, 0], rArm: [0.25, 0.4, 0.5], rElbow: [-1.2, 0, 0], rHand: [0.15, 0, 0] }, 'snap'],
+        // Drift back and watch them rise.
+        [0.58, { root: [0, 0.18, 0.16], hipY: -0.02, hips: [0.04, 0.1, 0], spine: [-0.05, 0.12, 0], chest: [-0.02, 0.06, 0], head: [-0.2, 0.15, 0], lFoot: [0.02, 0.06, 0.04], rFoot: [0.03, 0.08, -0.04], lToe: 0.65, rToe: 0.7, lArm: [-0.55, -0.15, 0.65], lElbow: [-0.45, 0, 0], lHand: [0.25, 0.1, -0.15], rArm: [-0.55, 0.15, 0.65], rElbow: [-0.45, 0, 0], rHand: [0.25, -0.1, -0.15] }],
+        // Fingertips together — "Release!"
+        [0.78, { root: [0, 0.2, 0.1], hips: [0.02, 0, 0], spine: [-0.08, 0, 0], chest: [-0.04, 0, 0], head: [-0.15, 0.05, 0], lFoot: [0.02, 0.08, 0.02], rFoot: [0.03, 0.1, -0.03], lToe: 0.7, rToe: 0.75, lArm: [-1.05, 0.35, 0.55], lElbow: [-0.55, 0, 0], lHand: [-0.35, 0.35, 0.45], rArm: [-1.05, -0.35, 0.55], rElbow: [-0.55, 0, 0], rHand: [-0.35, -0.35, 0.45] }],
+        // Press pads together — weight returns; they drop.
+        [0.95, { root: [0, 0.18, 0.08], spine: [0.05, 0, 0], chest: [0.02, 0, 0], head: [0.1, 0, 0], lFoot: [0.02, 0.06, 0.02], rFoot: [0.03, 0.08, -0.03], lArm: [-1.2, 0.15, 0.35], lElbow: [-0.35, 0, 0], lHand: [-0.55, 0.15, 0.25], rArm: [-1.2, -0.15, 0.35], rElbow: [-0.35, 0, 0], rHand: [-0.55, -0.15, 0.25] }, 'snap'],
+        [1.2, P({}, IDLES.float(0))],
       ],
       REST,
     ),
@@ -3267,10 +3487,15 @@ const COMBOS: Partial<Record<AttackStyle, ComboSpec>> = {
   shardPalm: { pre: ['jab', 'lowKick'] },
   powerPunch: { pre: ['jab', 'cross'] },
   clawSwipe: { pre: ['knee'], sever: 'lArm' },
+  darkShadow: { dmg: 'slash', sever: 'lArm' },
   zap: { pre: ['jab'] },
   hammerFist: { pre: ['frontKick', 'cross'] },
   slash: { sever: 'rArm' },
   slideKick: { pre: ['roundhouse'] },
+  ampKick: { pre: ['frontKick'], dmg: 'blunt' },
+  acidMelt: { dmg: 'burn', sever: 'all' },
+  tapeYank: { pre: ['jab'], dmg: 'blunt' },
+  grapePop: { dmg: 'blunt' },
   pounce: { pre: ['hook'] },
   tectonicRam: { pre: ['cross', 'uppercut'] },
   axeKick: { pre: ['jab', 'spinBackKick'] },
@@ -3327,10 +3552,12 @@ const COMBOS: Partial<Record<AttackStyle, ComboSpec>> = {
   hellfire: { dmg: 'burn' },
   rashomon: { dmg: 'slash', sever: 'all' },
   gravityCrush: { dmg: 'blunt', sever: 'head' },
+  gravitySlam: { pre: ['jab', 'cross'], dmg: 'blunt' },
   noLongerHuman: { dmg: 'beam' },
   scoreCut: { dmg: 'slash', sever: 'all' },
   santoryu: { dmg: 'slash', sever: 'all' },
   nozarashiSlash: { dmg: 'slash', sever: 'all' },
+  anivoice: { dmg: 'blunt' },
 }
 
 const DAMAGE: Record<FxKind, DamageType> = {
@@ -3341,8 +3568,12 @@ const DAMAGE: Record<FxKind, DamageType> = {
   pierce: 'pierce',
   beam: 'beam',
   darkBeam: 'beam',
+  darkShadow: 'slash',
   rings: 'blunt',
   chain: 'pierce',
+  tape: 'blunt',
+  acid: 'burn',
+  grapes: 'blunt',
   cards: 'slash',
   lightning: 'shock',
   voltBeam: 'shock',
@@ -3358,10 +3589,12 @@ const DAMAGE: Record<FxKind, DamageType> = {
   speed: 'blunt',
   phase: 'blunt',
   portal: 'slash',
+  warpGate: 'slash',
   kunai: 'pierce',
   rasengan: 'blunt',
   bullet: 'pierce',
   feather: 'pierce',
+  birds: 'blunt',
   ratioSlash: 'slash',
   sakura: 'slash',
   murasaki: 'pierce',
@@ -3625,8 +3858,40 @@ function portalSuckPose(t: number): Pose {
   )
 }
 
+/** Uravity Zero Gravity — body drifts up limp while weight is nullified. */
+function floatHoldPose(t: number): Pose {
+  const rise = t < 0.28 ? smooth(t / 0.28) : 1
+  const sway = sin(t * 3.2) * 0.08
+  const thrash = sin(t * 9) * 0.1
+  const thrash2 = cos(t * 7.5) * 0.08
+  return P(
+    {
+      root: [sway * 0.12, 0.12 + rise * 0.72, thrash * 0.04],
+      hipY: 0.02,
+      hips: [0.05 + thrash * 0.1, thrash2 * 0.35, sway * 0.4],
+      spine: [-0.15 + thrash * 0.12, sway * 0.5, thrash2 * 0.2],
+      chest: [-0.08, thrash * 0.15, sway * 0.15],
+      neck: [-0.1, 0, 0],
+      head: [-0.25 + thrash * 0.1, thrash2 * 0.5, sway * 0.25],
+      lArm: [-0.35 + thrash * 0.4, -0.85 + thrash2, 0.95],
+      rArm: [-0.35 - thrash * 0.4, 0.85 - thrash2, 0.95],
+      lElbow: [-0.55, 0, 0],
+      rElbow: [-0.55, 0, 0],
+      lHand: [0.35, 0.15, 0.2],
+      rHand: [0.35, -0.15, 0.2],
+      lFoot: [0.04, 0.12 + thrash * 0.05, 0.06],
+      rFoot: [0.05, 0.1 - thrash * 0.04, -0.05],
+      lToe: 0.75,
+      rToe: 0.7,
+      blink: 1,
+    },
+    STANCE,
+  )
+}
+
 function hurtPose(t: number, zone: HitZone, n: number, hold: HoldKind = false): Pose {
   if (hold === 'portal') return portalSuckPose(t)
+  if (hold === 'float') return floatHoldPose(t)
   if (hold) return trapPose(t)
   const env = t < 0.05 ? smooth(t / 0.05) : 1 - smooth((t - 0.08) / 0.38)
   const target = hurtTargets[zone][n % 2]
@@ -3752,6 +4017,7 @@ export function evalPose(d: HeroDesign, a: AnimInput, seed: number): Pose {
         if (d.extras.includes('finralSuit')) return sampleClip(PORTAL_LEAP, a.p, restPose())
         if (d.extras.includes('minatoSuit')) return sampleClip(KUNAI_LEAP, a.p, restPose())
         if (d.extras.includes('todoKit')) return sampleClip(CLAP_LEAP, a.p, restPose())
+        if (d.extras.includes('cellophaneSuit')) return sampleClip(TAPE_LEAP, a.p, restPose())
         return sampleClip(LEAP, a.p, restPose())
       }
       if (a.style === 'vector') return vectorPose(a.p, a.t)
@@ -3760,12 +4026,17 @@ export function evalPose(d: HeroDesign, a: AnimInput, seed: number): Pose {
         if (d.extras.includes('chuuyaSuit')) return gravityFlyPose(a.p, a.t)
         if (d.extras.includes('bakugoSuit')) return explosionJumpPose(a.p, a.t)
         if (d.extras.includes('silverSurferSuit')) return surfFlyPose(a.p, a.t)
+        if (d.extras.includes('animaSuit')) return birdRidePose(a.p, a.t)
         return flyPose(a.p, a.t)
       }
       // Shukaku — any ground travel collapses into a sliding sand pile.
-      if (d.extras.includes('shukakuAwaken') && a.style !== 'leap') return sandPilePose(a.p, a.t)
+      if (d.extras.includes('shukakuAwaken')) return sandPilePose(a.p, a.t)
       // Todoroki — ice-skate slide along a freezing trail.
-      if (d.extras.includes('todorokiSuit') && (a.style === 'run' || a.style === 'sprint')) {
+      // Pinky — same skate gait on a corrosive acid slick.
+      if (
+        (d.extras.includes('todorokiSuit') || d.extras.includes('pinkySuit')) &&
+        (a.style === 'run' || a.style === 'sprint')
+      ) {
         const stride = d.stride ?? STRIDE[a.style]
         return iceSlidePose(a.dist / stride, a.t)
       }

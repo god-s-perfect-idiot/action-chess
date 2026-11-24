@@ -1055,7 +1055,8 @@ export function Pieces({
       }
       const rasengan = atk.fx === 'rasengan'
       const babylon = atk.fx === 'babylon'
-      const portal = atk.fx === 'portal'
+      const warpGate = moverDesign.extras.includes('kurogiriSuit') && atk.fx === 'portal'
+      const portal = atk.fx === 'portal' || warpGate
       const inferno = atk.fx === 'inferno'
       const megaShock = atk.fx === 'megaShockwave'
       const airShock = atk.fx === 'airShockwave'
@@ -1079,7 +1080,7 @@ export function Pieces({
       const sakura = atk.fx === 'sakura'
       newFx.push({
         id: fxId++,
-        kind: atk.fx,
+        kind: warpGate ? 'warpGate' : atk.fx,
         start:
           t0 +
           attackAt +
@@ -1105,17 +1106,19 @@ export function Pieces({
               ? 0.95
               : atk.fx === 'rasengan'
                 ? 0.75
-                : nullify
-                  ? 0.9
-                  : inferno || megaShock
-                    ? 1.35
-                    : portal
-                      ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
-                      : sakura || babylon
-                        ? 0.95
-                        : airShock
-                          ? 0.75
-                          : 0.6,
+                : atk.fx === 'darkShadow'
+                  ? 0.85
+                  : nullify
+                    ? 0.9
+                    : inferno || megaShock
+                      ? 1.35
+                      : portal
+                        ? Math.max(0.7, atk.hit - atk.fxAt + 0.2)
+                        : sakura || babylon
+                          ? 0.95
+                          : airShock
+                            ? 0.75
+                            : 0.6,
         from: fxFrom,
         to: fxTo,
         color: nullify
@@ -1126,7 +1129,11 @@ export function Pieces({
               ? '#f0d050'
               : inferno
                 ? '#ff6a18'
-                : c1,
+                : warpGate
+                  ? '#5a2e78'
+                  : atk.fx === 'darkShadow'
+                    ? '#2a1a48'
+                    : c1,
         color2: nullify
           ? (victimFx?.c1 ?? '#39ff14')
           : sakura
@@ -1135,7 +1142,11 @@ export function Pieces({
               ? '#ffe060'
               : inferno
                 ? '#ffd24a'
-                : c2,
+                : warpGate
+                  ? '#6a3888'
+                  : atk.fx === 'darkShadow'
+                    ? '#e8c84a'
+                    : c2,
         size:
           UNIT_SCALE *
           (moverDesign.attack === 'emberFlick'

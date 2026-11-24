@@ -370,7 +370,15 @@ function BabylonGates({ e, count = 8 }: { e: FxEvent; count?: number }) {
 }
 
 /** Objects that fly from `from` to `to` during the travel phase. */
-function Volley({ e, count, shape }: { e: FxEvent; count: number; shape: 'card' | 'ring' | 'orb' | 'hook' | 'kunai' | 'bullet' | 'feather' }) {
+function Volley({
+  e,
+  count,
+  shape,
+}: {
+  e: FxEvent
+  count: number
+  shape: 'card' | 'ring' | 'orb' | 'hook' | 'kunai' | 'bullet' | 'feather' | 'bird'
+}) {
   const M = useMats(e)
   const ref = useFx(e, (g, tp, u) => {
     g.visible = u < 0
@@ -378,8 +386,20 @@ function Volley({ e, count, shape }: { e: FxEvent; count: number; shape: 'card' 
       const lag = i * 0.08
       const p = Math.min(1, Math.max(0, (tp - lag) / (1 - lag * count * 0.5 + 0.0001)))
       c.position.lerpVectors(e.from, e.to, p)
-      c.position.y += Math.sin(p * Math.PI) * (shape === 'card' ? (i - (count - 1) / 2) * 0.25 * e.size : shape === 'feather' ? (i - (count - 1) / 2) * 0.12 * e.size : 0)
-      c.position.x += shape === 'card' ? Math.sin(p * Math.PI) * (i - (count - 1) / 2) * 0.3 * e.size : shape === 'bullet' || shape === 'feather' ? (i - (count - 1) / 2) * 0.1 * e.size : 0
+      const mid = i - (count - 1) / 2
+      c.position.y +=
+        Math.sin(p * Math.PI) *
+        (shape === 'card'
+          ? mid * 0.25 * e.size
+          : shape === 'feather' || shape === 'bird'
+            ? mid * 0.14 * e.size + Math.sin(p * 9 + i) * 0.08 * e.size
+            : 0)
+      c.position.x +=
+        shape === 'card'
+          ? Math.sin(p * Math.PI) * mid * 0.3 * e.size
+          : shape === 'bullet' || shape === 'feather' || shape === 'bird'
+            ? mid * 0.12 * e.size
+            : 0
       c.visible = p > 0 && p < 1
       if (shape === 'ring') {
         c.lookAt(e.to)
@@ -388,11 +408,18 @@ function Volley({ e, count, shape }: { e: FxEvent; count: number; shape: 'card' 
       } else if (shape === 'card') {
         c.rotation.set(p * 20 + i, p * 14, 0)
         c.scale.setScalar(e.size)
-      } else if (shape === 'kunai' || shape === 'bullet' || shape === 'feather') {
+      } else if (shape === 'kunai' || shape === 'bullet' || shape === 'feather' || shape === 'bird') {
         c.lookAt(e.to)
         c.rotateX(Math.PI / 2)
-        if (shape === 'feather') c.rotateZ((i - (count - 1) / 2) * 0.35)
-        c.scale.setScalar(e.size * (shape === 'bullet' ? 0.7 : shape === 'feather' ? 0.9 : shape === 'kunai' ? 0.95 : 0.85))
+        if (shape === 'feather') c.rotateZ(mid * 0.35)
+        if (shape === 'bird') {
+          c.rotateZ(mid * 0.22)
+          c.rotateY(Math.sin(p * 12 + i) * 0.35)
+        }
+        c.scale.setScalar(
+          e.size *
+            (shape === 'bullet' ? 0.7 : shape === 'feather' ? 0.9 : shape === 'bird' ? 0.85 : shape === 'kunai' ? 0.95 : 0.85),
+        )
       } else {
         c.scale.setScalar(e.size)
       }
@@ -426,6 +453,17 @@ function Volley({ e, count, shape }: { e: FxEvent; count: number; shape: 'card' 
               <P s={S.shard(0.1, 0.42, 0.03)} m={M.a} shadow={false} />
               <P s={S.shard(0.06, 0.28, 0.02)} m={M.b} shadow={false} p={[0.02, -0.04, 0.01]} />
               <P s={S.cone(0.035, 0.1, 3)} m={M.dark} shadow={false} p={[0, 0.22, 0]} r={[Math.PI, 0, 0]} />
+            </group>
+          )}
+          {shape === 'bird' && (
+            <group>
+              <P s={S.sphere(0.1, 10, 8)} m={M.white} shadow={false} sc={[1.35, 0.85, 1.45]} />
+              <P s={S.sphere(0.045, 8, 6)} m={M.white} shadow={false} p={[0, 0.04, 0.12]} sc={[0.95, 0.9, 1.05]} />
+              <P s={S.cone(0.02, 0.055, 5)} m={M.a} shadow={false} p={[0, 0.03, 0.2]} r={[Math.PI / 2, 0, 0]} />
+              <P s={S.panel(0.18, 0.08, 0.014, 0.03)} m={M.b} shadow={false} p={[0.12, 0.02, 0]} r={[0.2, 0.55, 0.4]} />
+              <P s={S.panel(0.18, 0.08, 0.014, 0.03)} m={M.b} shadow={false} p={[-0.12, 0.02, 0]} r={[0.2, -0.55, -0.4]} />
+              <P s={S.sphere(0.012, 5, 4)} m={M.dark} line={false} shadow={false} p={[0.02, 0.055, 0.14]} />
+              <P s={S.sphere(0.012, 5, 4)} m={M.dark} line={false} shadow={false} p={[-0.02, 0.055, 0.14]} />
             </group>
           )}
         </group>
@@ -525,6 +563,131 @@ function Chain({ e }: { e: FxEvent }) {
       {Array.from({ length: links }, (_, i) => (
         <group key={i}>
           <P s={i === links - 1 ? S.cone(0.14, 0.35, 4) : S.torus(0.09, 0.025, Math.PI * 2, 10)} m={i === links - 1 ? M.b : M.a} shadow={false} r={i === links - 1 ? [Math.PI / 2, 0, 0] : [0, Math.PI / 2, 0]} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Cellophane — long white tape ribbon from elbows to the target pad. */
+function Tape({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const segs = 14
+  const ref = useFx(e, (g, tp, u) => {
+    const reach = u < 0 ? ease(tp) : 1 - ease(u) * 0.35
+    g.children.forEach((c, i) => {
+      const p = (i / (segs - 1)) * reach
+      c.position.lerpVectors(e.from, e.to, p)
+      c.position.y += Math.sin(p * Math.PI) * 0.08 * e.size
+      c.lookAt(e.to)
+      const fade = 1 - Math.abs(p - 0.5) * 0.25
+      c.scale.set(e.size * 0.55, e.size * 0.12, Math.max(0.08, e.size * 0.55 * fade))
+      c.visible = reach > 0.02
+    })
+  })
+  return (
+    <group ref={ref}>
+      {Array.from({ length: segs }, (_, i) => (
+        <group key={i}>
+          <P s={S.box(0.22, 0.035, 0.28, 0.01)} m={i % 3 === 0 ? M.white : M.a} shadow={false} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Tsukuyomi — Dark Shadow lunges from the host as one clawed shadow beast (not a beam). */
+function DarkShadow({ e }: { e: FxEvent }) {
+  const M = useMats(e)
+  const bodySegs = 5
+  const ref = useFx(e, (g, tp, u) => {
+    const reach = u < 0 ? ease(tp) : Math.max(0.4, 1 - ease(u) * 0.45)
+    const tip = new THREE.Vector3().lerpVectors(e.from, e.to, reach)
+    const mid = new THREE.Vector3().lerpVectors(e.from, tip, 0.45)
+    mid.y += 0.18 * e.size
+    g.children.forEach((c, i) => {
+      // Stretchy body volumes — one creature, not a volley of orbs.
+      if (i < bodySegs) {
+        const p = (i / (bodySegs - 1)) * reach
+        const along = new THREE.Vector3().lerpVectors(e.from, tip, p)
+        along.y += Math.sin(p * Math.PI) * 0.16 * e.size
+        c.position.copy(along)
+        c.lookAt(tip)
+        const fat = 0.85 + Math.sin(p * Math.PI) * 0.75
+        const len = (u < 0 ? 0.85 + tp * 0.35 : 1) * e.size * (1.1 + (1 - Math.abs(p - 0.5)) * 0.4)
+        c.scale.set(e.size * fat * 0.9, e.size * fat * 0.7, Math.max(0.0001, len * 0.55))
+        c.visible = reach > 0.05
+        return
+      }
+      // Shadow head + claws at the tip.
+      if (i === bodySegs) {
+        c.position.copy(tip)
+        c.position.y += 0.1 * e.size
+        c.lookAt(e.to.x, tip.y, e.to.z)
+        const s = e.size * (u < 0 ? 0.9 + ease(tp) * 0.7 : 1.15 + pop(u, 0.1, 0.5) * 0.4)
+        c.scale.setScalar(Math.max(0.0001, s))
+        c.visible = reach > 0.1
+        return
+      }
+      // Impact claw crescents.
+      c.position.copy(e.to)
+      c.lookAt(e.from.x, e.to.y, e.from.z)
+      if (u < 0) {
+        c.visible = false
+        return
+      }
+      const local = Math.min(1, Math.max(0, u * 1.35 - (i - bodySegs - 1) * 0.2))
+      c.rotation.z = -1.15 + ease(local) * 1.85 + (i - bodySegs) * 0.65
+      const w = pop(local, 0.1, 0.55)
+      c.scale.set(e.size * 1.25, e.size * 1.25, Math.max(0.0001, w * e.size))
+      c.visible = w > 0.001
+    })
+  })
+  return (
+    <group ref={ref}>
+      {Array.from({ length: bodySegs }, (_, i) => (
+        <group key={`body-${i}`}>
+          <P s={S.sphere(0.22, 12, 10)} m={i % 2 ? M.dark : M.a} line={false} shadow={false} sc={[1.6, 1.1, 1.8]} />
+        </group>
+      ))}
+      <group key="head">
+        <P s={S.sphere(0.28, 12, 10)} m={M.a} line={false} shadow={false} sc={[1.35, 1.1, 1.45]} />
+        <P s={S.sphere(0.18, 10, 8)} m={M.dark} line={false} shadow={false} p={[0, 0.08, 0.14]} sc={[1.15, 0.95, 1.25]} />
+        <P s={S.cone(0.1, 0.26, 6)} m={M.a} line={false} shadow={false} p={[0, -0.02, 0.34]} r={[Math.PI / 2 + 0.3, 0, 0]} />
+        <P s={S.sphere(0.045, 6, 5)} m={M.b} line={false} shadow={false} p={[0.09, 0.1, 0.26]} />
+        <P s={S.sphere(0.045, 6, 5)} m={M.b} line={false} shadow={false} p={[-0.09, 0.1, 0.26]} />
+        {/* Oversized clawed hands. */}
+        <P s={S.sphere(0.12, 8, 6)} m={M.a} line={false} shadow={false} p={[0.28, -0.06, 0.2]} />
+        <P s={S.sphere(0.12, 8, 6)} m={M.a} line={false} shadow={false} p={[-0.28, -0.06, 0.2]} />
+        {[0, 1, 2].map((i) => (
+          <P
+            key={`claw-l-${i}`}
+            s={S.cone(0.035, 0.16, 4)}
+            m={M.dark}
+            line={false}
+            shadow={false}
+            p={[0.3 + (i - 1) * 0.05, -0.12, 0.34]}
+            r={[Math.PI / 2, 0, (i - 1) * 0.45]}
+          />
+        ))}
+        {[0, 1, 2].map((i) => (
+          <P
+            key={`claw-r-${i}`}
+            s={S.cone(0.035, 0.16, 4)}
+            m={M.dark}
+            line={false}
+            shadow={false}
+            p={[-0.3 + (i - 1) * 0.05, -0.12, 0.34]}
+            r={[Math.PI / 2, 0, (i - 1) * 0.45]}
+          />
+        ))}
+      </group>
+      {[0, 1, 2].map((i) => (
+        <group key={`swipe-${i}`}>
+          <group rotation={[0.28 * (i % 2 ? -1 : 1), 0, 0]}>
+            <P s={S.torus(0.75, 0.09, Math.PI * 0.9, 20)} m={i % 2 ? M.b : M.a} shadow={false} sc={[1, 1, 0.3]} />
+            <P s={S.torus(0.75, 0.04, Math.PI * 0.85, 20)} m={M.dark} line={false} shadow={false} p={[0, 0, 0.02]} sc={[1, 1, 0.3]} />
+          </group>
         </group>
       ))}
     </group>
@@ -887,6 +1050,124 @@ function PortalSnap({ e }: { e: FxEvent }) {
               line={false}
               shadow={false}
               p={[Math.cos(a) * 0.22, Math.sin(a) * 0.22, 0.08]}
+            />
+          )
+        })}
+      </group>
+    </group>
+  )
+}
+
+/** Kurogiri — purple warp mist gate that extends from his body, then snaps shut. */
+function WarpGateSnap({ e }: { e: FxEvent }) {
+  const mats = useMemo(
+    () => ({
+      mist: new THREE.MeshBasicMaterial({ color: e.color, transparent: true, opacity: 0.55, depthWrite: false }),
+      fringe: new THREE.MeshBasicMaterial({ color: e.color2, transparent: true, opacity: 0.35, depthWrite: false }),
+      void: new THREE.MeshBasicMaterial({ color: '#0a0610', transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }),
+      core: new THREE.MeshBasicMaterial({ color: '#1a0c28', transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide }),
+      blood: new THREE.MeshBasicMaterial({ color: '#8a0a14' }),
+    }),
+    [e.color, e.color2],
+  )
+  const behind = useMemo(() => {
+    const forward = new THREE.Vector3().subVectors(e.to, e.from)
+    if (forward.lengthSq() < 1e-8) forward.set(0, 0, 1)
+    else forward.normalize()
+    return new THREE.Vector3().copy(e.to).addScaledVector(forward, e.size * 0.72)
+  }, [e.from, e.to, e.size])
+  const tendril = useMemo(
+    () =>
+      Array.from({ length: 8 }, (_, i) => ({
+        t: i / 7,
+        size: 0.06 + (1 - Math.abs(i / 7 - 0.45)) * 0.07,
+      })),
+    [],
+  )
+  const rim = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => {
+        const a = (i / 12) * Math.PI * 2
+        return { a, r: 0.32 + (i % 3) * 0.07, size: 0.07 + (i % 4) * 0.03 }
+      }),
+    [],
+  )
+
+  const ref = useFx(e, (g, tp, u) => {
+    // Anchor at the gate; tendril child stretches back toward Kurogiri.
+    g.position.copy(behind)
+    g.lookAt(e.from)
+    let open = 0
+    if (u < 0) open = ease(tp)
+    else if (u < 0.68) open = 1
+    else open = 1 - ease((u - 0.68) / 0.22)
+    const pulse = 1 + Math.sin((now() - e.start) * 8) * 0.05 * open
+    const s = Math.max(0.0001, open * e.size * 1.4 * pulse)
+    g.scale.setScalar(s)
+    g.visible = open > 0.04
+    const pull = u < 0 ? 0 : Math.min(1, u / 0.68)
+    const dist = e.from.distanceTo(behind)
+    g.children.forEach((c, i) => {
+      if (i === 0) {
+        // Mist bridge from attacker → gate (local −Z points toward from via lookAt).
+        c.visible = open > 0.08
+        c.children.forEach((puff, pi) => {
+          const t = pi / Math.max(1, c.children.length - 1)
+          const reach = (dist / Math.max(s, 0.01)) * 0.92
+          puff.position.set(
+            Math.sin((now() - e.start) * 5 + pi) * 0.04 * (1 - t),
+            Math.cos((now() - e.start) * 4 + pi) * 0.03 * (1 - t),
+            -t * reach,
+          )
+          puff.scale.setScalar((0.75 + open * 0.5) * (1 - t * 0.2))
+        })
+      } else if (i === 1 || i === 2) {
+        const wave = ((now() - e.start) * 1.5 + i * 0.4) % 1
+        c.scale.setScalar(Math.max(0.0001, 1 - pull * 0.3 - wave * 0.1))
+        c.rotation.z = (now() - e.start) * (1.1 + i * 0.3) * (i % 2 ? 1 : -1)
+      } else if (i === 4) {
+        const snap = u >= 0.68 && u < 0.95 ? pop((u - 0.68) / 0.27, 0.15, 0.55) : 0
+        c.visible = snap > 0.04
+        c.scale.setScalar(Math.max(0.0001, snap * 1.4))
+      }
+    })
+  })
+
+  return (
+    <group ref={ref} visible={false}>
+      <group>
+        {tendril.map((p, i) => (
+          <P key={i} s={S.sphere(p.size, 10, 8)} m={i % 2 ? mats.mist : mats.fringe} line={false} shadow={false} />
+        ))}
+      </group>
+      <group>
+        <P s={S.cyl(0.4, 0.4, 0.024, 24)} m={mats.void} line={false} shadow={false} r={[Math.PI / 2, 0, 0]} />
+        {rim.map((d, i) => (
+          <P
+            key={i}
+            s={S.sphere(d.size, 8, 6)}
+            m={i % 2 ? mats.mist : mats.fringe}
+            line={false}
+            shadow={false}
+            p={[Math.cos(d.a) * d.r, Math.sin(d.a) * d.r, (i % 3) * 0.02]}
+          />
+        ))}
+      </group>
+      <group>
+        <P s={S.cyl(0.26, 0.26, 0.018, 20)} m={mats.core} line={false} shadow={false} r={[Math.PI / 2, 0, 0]} />
+      </group>
+      <P s={S.sphere(0.12, 10, 8)} m={mats.void} line={false} shadow={false} />
+      <group>
+        {Array.from({ length: 8 }, (_, i) => {
+          const a = (i / 8) * Math.PI * 2
+          return (
+            <P
+              key={i}
+              s={S.sphere(0.05, 6, 5)}
+              m={mats.blood}
+              line={false}
+              shadow={false}
+              p={[Math.cos(a) * 0.2, Math.sin(a) * 0.2, 0.06]}
             />
           )
         })}
@@ -1774,6 +2055,19 @@ function FxView({ e }: { e: FxEvent }) {
           <Burst e={e} spikes={8} mat="b" />
         </>
       )
+    case 'darkShadow':
+      // Tsukuyomi — Dark Shadow lunges from the host and claws the square.
+      return (
+        <>
+          <DarkShadow e={e} />
+          <Slash e={e} sweeps={3} />
+          <Burst e={e} spikes={10} scale={0.95} mat="b" />
+          <Ring e={e} radius={1.2} />
+          <Ring e={e} ground radius={1.05} delay={0.06} />
+          <Debris e={e} count={10} kind="smoke" />
+          <Debris e={e} count={8} kind="shard" />
+        </>
+      )
     case 'murasaki':
       return (
         <>
@@ -1818,11 +2112,41 @@ function FxView({ e }: { e: FxEvent }) {
           <Burst e={e} spikes={6} scale={0.7} />
         </>
       )
+    case 'tape':
+      return (
+        <>
+          <Tape e={e} />
+          <Volley e={e} count={2} shape="orb" />
+          <Burst e={e} spikes={6} scale={0.65} />
+          <Ring e={e} ground radius={0.9} delay={0.08} />
+        </>
+      )
     case 'cards':
       return (
         <>
           <Volley e={e} count={5} shape="card" />
           <Burst e={e} spikes={8} />
+        </>
+      )
+    case 'acid':
+      return (
+        <>
+          <Volley e={e} count={6} shape="orb" />
+          <Burst e={e} spikes={10} scale={1.05} />
+          <Ring e={e} ground radius={1.35} />
+          <Ring e={e} ground radius={0.75} delay={0.12} />
+          <Debris e={e} count={10} kind="smoke" />
+          <Debris e={e} count={8} kind="star" />
+        </>
+      )
+    case 'grapes':
+      return (
+        <>
+          <Volley e={e} count={7} shape="orb" />
+          <Burst e={e} spikes={8} scale={0.8} />
+          <Ring e={e} ground radius={1.1} />
+          <Ring e={e} ground radius={0.55} delay={0.14} />
+          <Debris e={e} count={6} kind="cube" />
         </>
       )
     case 'lightning':
@@ -1960,6 +2284,19 @@ function FxView({ e }: { e: FxEvent }) {
           <Debris e={e} count={10} kind="blood" />
         </>
       )
+    case 'warpGate':
+      // Same pull/snap as portal, but purple warp mist extending from Kurogiri.
+      return (
+        <>
+          <WarpGateSnap e={e} />
+          <Ring e={e} ground radius={1.4} delay={0.05} />
+          <Ring e={e} ground radius={0.8} delay={0.18} />
+          <SpeedLines e={e} />
+          <Burst e={e} spikes={8} scale={0.85} />
+          <Debris e={e} count={12} kind="smoke" />
+          <Debris e={e} count={10} kind="blood" />
+        </>
+      )
     case 'kunai':
       return (
         <>
@@ -2006,6 +2343,20 @@ function FxView({ e }: { e: FxEvent }) {
           <Ring e={e} ground radius={1.05} delay={0.06} />
           <Burst e={e} spikes={10} scale={0.9} />
           <Debris e={e} count={12} kind="star" />
+        </>
+      )
+    case 'birds':
+      // Anima — Anivoice flock: several birds dive the pad, then the tide hits.
+      return (
+        <>
+          <Volley e={e} count={7} shape="bird" />
+          <Burst e={e} spikes={10} scale={0.95} />
+          <Ring e={e} radius={1.25} />
+          <Ring e={e} radius={0.7} delay={0.1} />
+          <Ring e={e} ground radius={1.15} delay={0.06} />
+          <Ring e={e} ground radius={0.6} delay={0.16} />
+          <Debris e={e} count={10} kind="star" />
+          <Debris e={e} count={6} kind="smoke" />
         </>
       )
     case 'babylon':

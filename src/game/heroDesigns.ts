@@ -13,6 +13,8 @@ export type Figure = 'm' | 'f'
 
 export interface HeroPalette {
   skin: string
+  /** Burned / scarred / shaded skin patches (falls back to darkened skin). */
+  skinAlt?: string
   hair: string
   hairAlt?: string
   /** Main garment (top). */
@@ -43,6 +45,7 @@ export type FaceMark =
   | 'scarBrow'
   | 'scarCheek'
   | 'scarEye'
+  | 'burnGraft'
   | 'scarCross'
   | 'nosePaint'
   | 'circuit'
@@ -133,7 +136,6 @@ export type HandStyle =
 
 export type Extra =
   | 'scarf'
-  | 'longScarf'
   | 'goggles'
   | 'headphones'
   | 'headset'
@@ -254,6 +256,31 @@ export type Extra =
   | 'zoroSuit'
   /** Killua — lavender tee over navy turtleneck, grey shorts, maroon boots; blue Godspeed lightning. */
   | 'killuaSuit'
+  /** Froppy — green/black frog suit, cream goggles, web gloves, frog boots. */
+  | 'froppySuit'
+  /** Uravity — teal suit, white stripe/arms/gauntlets/boots, pink collar + ear pads. */
+  | 'uravitySuit'
+  /** Tsukuyomi — crow head, red choker, tattered dark cloak. */
+  | 'tsukuyomiSuit'
+  /** Endeavor — navy flame armor, silver pauldrons, blazing panels. */
+  | 'endeavorSuit'
+  /** Kurogiri — mist shroud, metal neck brace, bartender waistcoat. */
+  | 'kurogiriSuit'
+  /** Chargebolt — black jacket, lightning trim, pointer gauntlet, visor. */
+  | 'chargeboltSuit'
+  | 'gangOrcaSuit'
+  | 'pinkySuit'
+  /** Cellophane — cylindrical elbow tape dispensers + yellow pads. */
+  | 'cellophaneSuit'
+  /** Grape Juice — Pop Off crown, half-mask, yellow cape-scarf, grape-pod belt. */
+  | 'grapeBalls'
+  | 'dabiSuit'
+  | 'earphoneJackSuit'
+  | 'nejireSuit'
+  /** Anima — rock crest, red/yellow mask, mouth-button emblem; bird mount is move-only. */
+  | 'animaSuit'
+  /** Sugarman — mustard dome cowl, white gloves/boots, sugar-pouch belt. */
+  | 'sugarmanSuit'
 
 export type Weapon =
   | 'none'
@@ -379,6 +406,8 @@ export type AttackStyle =
   | 'stomp'
   | 'thrust'
   | 'soundBlast'
+  /** Earphone Jack — plugs jacks into amp boots, heartbeat sonic blast from the legs. */
+  | 'ampKick'
   | 'shoulderCharge'
   | 'palmPush'
   | 'hookThrow'
@@ -401,13 +430,20 @@ export type AttackStyle =
   | 'zap'
   | 'hammerFist'
   | 'slash'
-  | 'erase'
   | 'peck'
   | 'slideKick'
   | 'pounce'
   | 'spinKick'
+  /** Pinky — acid spray then spinning kick. */
+  | 'acidMelt'
+  /** Cellophane — elbow tape yank-in slam. */
+  | 'tapeYank'
+  /** Grape Juice — sticky orb barrage. */
+  | 'grapePop'
   | 'axeKick'
   | 'darkBeam'
+  /** Tsukuyomi — summons Dark Shadow; the shadow claws the square (not a beam). */
+  | 'darkShadow'
   | 'featherShot'
   | 'micSwing'
   | 'gravitySlam'
@@ -475,6 +511,8 @@ export type AttackStyle =
   | 'santoryu'
   /** Killua — Flash-pace sprint-in, Godspeed claw flurry; full dismember. */
   | 'godspeedSlash'
+  /** Anima — Anivoice call, then a summoned animal tide crashes the square. */
+  | 'anivoice'
 
 export type DeathStyle =
   | 'fallBack'
@@ -2226,6 +2264,450 @@ export const HERO_DESIGNS: Record<string, HeroDesign> = {
     tempo: 0.95,
     locomotion: 'run',
     stride: 0.58,
+    moveSpeedMul: 1.25,
+  },
+
+  // --- MHA push ---
+  'froppy': {
+    body: 'athletic',
+    figure: 'f',
+    tweak: { height: 0.98, bulk: 0.96, shoulders: 0.98, head: 1.02 },
+    palette: {
+      skin: '#f0c8a8',
+      hair: '#142818',
+      hairAlt: '#0c1810',
+      primary: '#38a858',
+      secondary: '#14181a',
+      accent: '#f0d878',
+      trim: '#e8c8a8',
+      eye: '#1a2a28',
+      glow: '#78e8a8',
+    },
+    face: { eyes: 'round', brows: 'flat', mouth: 'grin' },
+    hair: 'long',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['froppySuit'],
+    weapon: 'none',
+    idle: 'lookout',
+    attack: 'pounce',
+    death: 'faceplant',
+    tempo: 1.0,
+    locomotion: 'leap',
+  },
+  'pinky': {
+    // Acid — slide the file on a corrosive slick, then melt them with a palm spray.
+    // Ref: purple/teal camo leotard, tan cropped vest, white fur collar, yellow horns, purple boots.
+    body: 'athletic',
+    figure: 'f',
+    tweak: { height: 1.0, bulk: 0.98, shoulders: 1.0 },
+    palette: {
+      skin: '#f2a0c4',
+      hair: '#f4a8c8',
+      primary: '#6b348a',
+      secondary: '#2db8a8',
+      accent: '#f0d028',
+      trim: '#c9a87a',
+      eye: '#f0d028',
+      glow: '#b8ff40',
+    },
+    face: { eyes: 'round', brows: 'raised', mouth: 'grin', marks: ['blush'] },
+    hair: 'messy',
+    top: 'tank',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['pinkySuit'],
+    weapon: 'none',
+    idle: 'cocky',
+    attack: 'acidMelt',
+    death: 'dissolve',
+    locomotion: 'run',
+    moveSpeedMul: 1.25,
+  },
+  'cellophane': {
+    // Black suit + white tape jagged + yellow dispenser helm/pads — zip-line leap, yank-in slam.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.02, bulk: 1.0, shoulders: 1.04 },
+    palette: {
+      skin: '#e8c4a0',
+      hair: '#1a1410',
+      primary: '#121418',
+      secondary: '#f5f3ef',
+      accent: '#f5c400',
+      trim: '#0c0c10',
+      metal: '#8a9098',
+      eye: '#2a2218',
+      glow: '#f8f4ec',
+    },
+    face: { eyes: 'sharp', brows: 'soft', mouth: 'grin' },
+    hair: 'messy',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['cellophaneSuit'],
+    weapon: 'none',
+    idle: 'coolStand',
+    attack: 'tapeYank',
+    death: 'spinOut',
+    locomotion: 'leap',
+  },
+  'grape-juice': {
+    // Heroic Pop Off — sticky scalp grapes seed the square, then he finishes the stuck target.
+    body: 'petite',
+    figure: 'm',
+    tweak: { height: 0.9, bulk: 0.88, shoulders: 0.92, head: 1.04 },
+    palette: {
+      skin: '#e8b890',
+      hair: '#5a2080',
+      primary: '#3a1860',
+      secondary: '#2a1048',
+      accent: '#f0c820',
+      trim: '#f0c820',
+      eye: '#1a1028',
+      glow: '#c888f0',
+    },
+    face: { eyes: 'round', brows: 'soft', mouth: 'grin' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'shorts',
+    shoes: 'boots',
+    hands: 'mitts',
+    extras: ['grapeBalls'],
+    weapon: 'none',
+    idle: 'boxer',
+    attack: 'grapePop',
+    death: 'crumple',
+    locomotion: 'run',
+  },
+  'anima': {
+    body: 'heavy',
+    figure: 'm',
+    tweak: { height: 1.08, bulk: 1.12, shoulders: 1.14, head: 1.12 },
+    palette: {
+      skin: '#c8a888',
+      hair: '#a88868',
+      primary: '#b02028',
+      secondary: '#e8c028',
+      accent: '#f0f0f0',
+      trim: '#7a1420',
+      eye: '#1a1814',
+      glow: '#ffe868',
+    },
+    face: { eyes: 'hidden', brows: 'none', mouth: 'none' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'shorts',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['animaSuit'],
+    weapon: 'none',
+    idle: 'shy',
+    attack: 'anivoice',
+    death: 'crumple',
+    locomotion: 'fly',
+    moveSpeedMul: 1.35,
+  },
+
+  'sugarman': {
+    // Sato — mustard jumpsuit, dome cowl, rear spikes, white gloves/boots, sugar belt.
+    body: 'heavy',
+    figure: 'm',
+    tweak: { height: 1.08, bulk: 1.32, shoulders: 1.28, head: 1.04 },
+    palette: {
+      skin: '#c89068',
+      hair: '#2a1c14',
+      primary: '#d4a018',
+      secondary: '#c89810',
+      accent: '#e8e4dc',
+      trim: '#4a4848',
+      metal: '#6a6868',
+      eye: '#1a1410',
+      glow: '#f0c040',
+    },
+    face: { eyes: 'round', brows: 'angry', mouth: 'none' },
+    hair: 'none',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['sugarmanSuit'],
+    weapon: 'none',
+    idle: 'boxer',
+    attack: 'powerPunch',
+    death: 'fallBack',
+    locomotion: 'sprint',
+    moveSpeedMul: 1.9,
+    attackSpeedMul: 1.55,
+  },
+
+  'gang-orca': {
+    body: 'titan',
+    figure: 'm',
+    tweak: { height: 1.12, bulk: 1.18, shoulders: 1.2, head: 1.18 },
+    palette: {
+      skin: '#121820',
+      hair: '#0c1010',
+      primary: '#f4f2ee',
+      secondary: '#ebe8e2',
+      accent: '#e87898',
+      trim: '#0c0c10',
+      eye: '#f4f2f0',
+      glow: '#60b8e8',
+    },
+    face: { eyes: 'hidden', brows: 'none', mouth: 'none' },
+    hair: 'none',
+    top: 'jacket',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'claws',
+    extras: ['gangOrcaSuit'],
+    weapon: 'none',
+    idle: 'commander',
+    attack: 'soundBlast',
+    death: 'launched',
+    locomotion: 'dash',
+  },
+
+  'nejire-chan': {
+    body: 'athletic',
+    figure: 'f',
+    // Ref: navy/mint spiral suit, gold gloves, corkscrew hair horns, golden Wave Motion.
+    tweak: { height: 1.04, bulk: 0.98, shoulders: 1.0 },
+    palette: {
+      skin: '#f0c8a8',
+      hair: '#5088e0',
+      hairAlt: '#78b0f8',
+      primary: '#1a2848',
+      secondary: '#7ec8b0',
+      accent: '#f0c848',
+      trim: '#2a3038',
+      metal: '#d8e0e8',
+      eye: '#4888c8',
+      glow: '#ffd060',
+    },
+    face: { eyes: 'round', brows: 'soft', mouth: 'smile' },
+    hair: 'long',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['nejireSuit'],
+    weapon: 'none',
+    idle: 'flutter',
+    attack: 'whirlwind',
+    death: 'launched',
+    locomotion: 'leap',
+  },
+
+  'kurogiri': {
+    body: 'tall',
+    figure: 'm',
+    tweak: { height: 1.12, bulk: 1.0, shoulders: 1.04, head: 0.96 },
+    palette: {
+      skin: '#1a1024',
+      hair: '#0c0814',
+      primary: '#3a4a56',
+      secondary: '#f4f2ee',
+      accent: '#f0d848',
+      trim: '#14161c',
+      metal: '#c8ccd4',
+      eye: '#f0d848',
+      glow: '#5a2e78',
+    },
+    face: { eyes: 'glow', brows: 'none', mouth: 'none' },
+    hair: 'none',
+    top: 'vest',
+    bottom: 'pants',
+    shoes: 'slippers',
+    hands: 'gloves',
+    extras: ['kurogiriSuit'],
+    weapon: 'none',
+    idle: 'portalReady',
+    attack: 'portalGate',
+    death: 'dissolve',
+    locomotion: 'teleport',
+  },
+  'uravity': {
+    body: 'petite',
+    figure: 'f',
+    tweak: { height: 0.96, bulk: 0.94, shoulders: 0.96 },
+    palette: {
+      skin: '#f0c8a8',
+      hair: '#6a4030',
+      primary: '#1a3848',
+      secondary: '#e878a8',
+      accent: '#f4f2ee',
+      trim: '#141820',
+      eye: '#8a4838',
+      glow: '#ffb8d8',
+    },
+    face: { eyes: 'round', brows: 'soft', mouth: 'smile', marks: ['blush'] },
+    hair: 'bob',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['uravitySuit'],
+    weapon: 'none',
+    idle: 'float',
+    attack: 'gravitySlam',
+    death: 'launched',
+    locomotion: 'fly',
+  },
+  'chargebolt': {
+    // Black open jacket + white lightning, blue forehead visor, pointer gauntlet, white belt.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 1.02, bulk: 1.0, shoulders: 1.02 },
+    palette: {
+      skin: '#e8c4a0',
+      hair: '#f0d848',
+      hairAlt: '#1a1410',
+      primary: '#141418',
+      secondary: '#f4f2ee',
+      accent: '#3d82c8',
+      trim: '#0c0c10',
+      metal: '#c4a070',
+      eye: '#5a5040',
+      glow: '#f0e040',
+    },
+    face: { eyes: 'round', brows: 'soft', mouth: 'grin' },
+    hair: 'spiky',
+    top: 'jacket',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['chargeboltSuit'],
+    weapon: 'none',
+    idle: 'crackle',
+    attack: 'zap',
+    death: 'spinOut',
+    locomotion: 'run',
+  },
+  'tsukuyomi': {
+    // Crow head, yellow beak, red eyes, jet-black cloak, red choker; Dark Shadow fights.
+    body: 'athletic',
+    figure: 'm',
+    tweak: { height: 0.98, bulk: 0.98, shoulders: 1.04 },
+    palette: {
+      skin: '#e8c8b0',
+      hair: '#0a0a0e',
+      primary: '#0e0c12',
+      secondary: '#1a1520',
+      accent: '#c01828',
+      trim: '#08080c',
+      metal: '#e8c84a',
+      eye: '#e01828',
+      glow: '#3a2858',
+    },
+    face: { eyes: 'hidden', brows: 'none', mouth: 'none' },
+    hair: 'none',
+    top: 'tee',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['tsukuyomiSuit'],
+    weapon: 'none',
+    idle: 'perch',
+    attack: 'darkShadow',
+    death: 'dissolve',
+    locomotion: 'run',
+  },
+
+  'earphone-jack': {
+    // Pink ripped tee, cropped black jacket, blue cans, jack cords, white R gauntlet, amp boots.
+    body: 'athletic',
+    figure: 'f',
+    tweak: { height: 1.0, bulk: 0.96, shoulders: 0.98 },
+    palette: {
+      skin: '#e8c4a0',
+      hair: '#4a2868',
+      primary: '#141418',
+      secondary: '#2a4850',
+      accent: '#e87898',
+      trim: '#0c0c10',
+      metal: '#d0d8e0',
+      eye: '#5a4060',
+      glow: '#e878c8',
+    },
+    face: { eyes: 'sharp', brows: 'flat', mouth: 'line' },
+    hair: 'bob',
+    top: 'jacket',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['earphoneJackSuit'],
+    weapon: 'none',
+    idle: 'musicBob',
+    attack: 'ampKick',
+    death: 'launched',
+    locomotion: 'run',
+  },
+
+  'dabi': {
+    // Classic League look — black-dyed spikes, navy overcoat, burner cuffs, blueflame.
+    body: 'lean',
+    figure: 'm',
+    tweak: { height: 1.08, bulk: 0.94, shoulders: 1.0 },
+    palette: {
+      skin: '#e4c8b4',
+      skinAlt: '#7a5a78',
+      hair: '#12141a',
+      hairAlt: '#2a2430',
+      primary: '#1a2848',
+      secondary: '#162038',
+      accent: '#38b8f0',
+      trim: '#0a0c12',
+      metal: '#b8c0c8',
+      eye: '#40d0d0',
+      glow: '#60d8ff',
+    },
+    face: { eyes: 'sharp', brows: 'flat', mouth: 'grin', marks: ['burnGraft', 'thread'] },
+    hair: 'spiky',
+    top: 'longcoat',
+    bottom: 'pants',
+    shoes: 'boots',
+    hands: 'bare',
+    extras: ['dabiSuit'],
+    weapon: 'none',
+    idle: 'armsCrossed',
+    attack: 'hellfire',
+    death: 'dissolve',
+    locomotion: 'walk',
+  },
+
+  'endeavor': {
+    body: 'titan',
+    figure: 'm',
+    tweak: { height: 1.12, bulk: 1.16, shoulders: 1.2 },
+    palette: {
+      skin: '#c89068',
+      hair: '#c82818',
+      hairAlt: '#e85828',
+      primary: '#2a3848',
+      secondary: '#1a2838',
+      accent: '#e84818',
+      trim: '#141820',
+      eye: '#40b8b8',
+      glow: '#ff5820',
+    },
+    face: { eyes: 'fierce', brows: 'angry', mouth: 'frown', marks: ['scarBrow'] },
+    hair: 'spiky',
+    top: 'bodysuit',
+    bottom: 'tights',
+    shoes: 'boots',
+    hands: 'gloves',
+    extras: ['endeavorSuit'],
+    weapon: 'none',
+    idle: 'commander',
+    attack: 'hellfire',
+    death: 'launched',
+    locomotion: 'run',
     moveSpeedMul: 1.25,
   },
 }

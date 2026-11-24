@@ -18,9 +18,24 @@ export function buildHead(c: Ctx) {
     c.has('engineVents') ||
     c.has('kanekiMask') ||
     c.has('shukakuAwaken') ||
-    c.has('dominoMask')
+    c.has('dominoMask') ||
+    c.has('tsukuyomiSuit') ||
+    c.has('kurogiriSuit') ||
+    c.has('gangOrcaSuit') ||
+    c.has('cellophaneSuit')
 
-  if (!c.has('shukakuAwaken')) {
+  /** Full replacement heads — skip the human skull / face / hair under them. */
+  const replaceHead =
+    c.has('tsukuyomiSuit') ||
+    c.has('kurogiriSuit') ||
+    c.has('gangOrcaSuit')
+
+  /** Closed helmet — keep skull for neck seal, skip default hair (rear spikes live on the suit). */
+  const helmHair =
+    c.has('cellophaneSuit') ||
+    c.has('sugarmanSuit')
+
+  if (!c.has('shukakuAwaken') && !replaceHead) {
     add('head', <P s={S.sphere(r, 20, 16)} m={M.skin} sc={[0.96, 1, 0.98]} />)
     add('head', <P s={S.sphere(r * 0.74, 16, 12)} m={M.skin} p={[0, -r * 0.36, r * 0.16]} sc={[0.86, 0.78, 0.8]} />)
     sides((s) =>
@@ -30,7 +45,7 @@ export function buildHead(c: Ctx) {
   if (!covered) {
     buildFace(c)
   }
-  if (!c.has('shukakuAwaken')) buildHair(c)
+  if (!c.has('shukakuAwaken') && !replaceHead && !helmHair) buildHair(c)
   buildHeadgear(c)
 }
 
@@ -164,6 +179,51 @@ function buildFace(c: Ctx) {
         add('head', <P s={S.sphere(r * 0.12, 10, 6)} m={M.skinShade} line={false} shadow={false} p={[x, y, faceZ(r, x, y) - r * 0.03]} sc={[1.3, 0.6, 0.3]} r={[0, -0.5, 0.3]} />)
         break
       }
+      case 'burnGraft': {
+        // Stapled purple burn mask — under-eyes + lower jaw (half-face).
+        sides((s) => {
+          const ux = s * r * 0.42
+          const uy = -r * 0.22
+          add(
+            'head',
+            <P
+              s={S.sphere(r * 0.2, 12, 8)}
+              m={M.skinShade}
+              line={false}
+              shadow={false}
+              p={[ux, uy, faceZ(r, ux, uy) - r * 0.02]}
+              sc={[1.15, 0.7, 0.35]}
+              r={[0, s * 0.45, s * 0.15]}
+            />,
+          )
+          const jx = s * r * 0.38
+          const jy = -r * 0.55
+          add(
+            'head',
+            <P
+              s={S.sphere(r * 0.26, 12, 8)}
+              m={M.skinShade}
+              line={false}
+              shadow={false}
+              p={[jx, jy, faceZ(r, jx, jy) - r * 0.04]}
+              sc={[1.2, 0.75, 0.4]}
+              r={[0.15, s * 0.4, 0]}
+            />,
+          )
+        })
+        add(
+          'head',
+          <P
+            s={S.sphere(r * 0.28, 12, 8)}
+            m={M.skinShade}
+            line={false}
+            shadow={false}
+            p={[0, -r * 0.62, faceZ(r, 0, -r * 0.62) - r * 0.02]}
+            sc={[1.35, 0.55, 0.45]}
+          />,
+        )
+        break
+      }
       case 'scarBrow': {
         const x = r * 0.38
         const y = r * 0.18
@@ -266,10 +326,27 @@ function buildFace(c: Ctx) {
         })
         break
       case 'thread':
+        // Surgical staples along the pale/burn seam (cheek → jaw).
         sides((s) => {
-          const x = s * r * 0.4
-          const y = -r * 0.36
-          add('head', <P s={S.box(r * 0.025, r * 0.26, r * 0.02, r * 0.01)} m={M.accent} line={false} shadow={false} p={[x, y, faceZ(r, x, y) + r * 0.004]} r={[0, s * 0.4, s * 0.15]} />)
+          ;[
+            [-0.18, 0.22],
+            [-0.36, 0.2],
+            [-0.52, 0.18],
+          ].forEach(([yMul, len]) => {
+            const x = s * r * 0.42
+            const y = r * yMul
+            add(
+              'head',
+              <P
+                s={S.box(r * 0.04, r * len, r * 0.022, r * 0.01)}
+                m={M.metal}
+                line={false}
+                shadow={false}
+                p={[x, y, faceZ(r, x, y) + r * 0.006]}
+                r={[0, s * 0.4, s * 0.12]}
+              />,
+            )
+          })
         })
         break
     }

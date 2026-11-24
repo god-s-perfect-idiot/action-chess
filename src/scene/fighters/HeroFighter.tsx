@@ -5,6 +5,7 @@ import { CELL_SIZE, UNIT_SCALE, type PieceColor } from '../../game/types'
 import { deathDuration, evalPose, type AnimInput, type Sever, type SeverSpec } from './anims'
 import { bakeFighter, SKIN_BONES } from './bake'
 import { DeathFx } from './death'
+import { celMaterial } from './materials'
 import { P } from './Part'
 import { applyPose, lerpPose, restPose, type BoneName, type RigBones } from './rig'
 import { S } from './shapes'
@@ -276,6 +277,184 @@ function PortalTrail({
               r={[Math.PI / 2, 0, 0]}
             />
           )}
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Kurogiri — translucent purple warp mist that drifts on head / hands (never a solid surface). */
+function WarpMistShell({
+  shellRef,
+  kind,
+  headR = 0.08,
+  hand = 0.04,
+}: {
+  shellRef: (g: THREE.Group | null) => void
+  kind: 'head' | 'hand'
+  headR?: number
+  hand?: number
+}) {
+  const mats = useMemo(
+    () => ({
+      void: new THREE.MeshBasicMaterial({ color: '#08040c', transparent: true, opacity: 0.82, depthWrite: false }),
+      mist: new THREE.MeshBasicMaterial({ color: '#3a1848', transparent: true, opacity: 0.5, depthWrite: false }),
+      fringe: new THREE.MeshBasicMaterial({ color: '#6a3888', transparent: true, opacity: 0.32, depthWrite: false }),
+      eye: new THREE.MeshBasicMaterial({ color: '#f0d848', transparent: true, opacity: 0.95, depthWrite: false }),
+    }),
+    [],
+  )
+  const puffs = useMemo(() => {
+    const n = kind === 'head' ? 14 : 9
+    return Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2
+      const elev = kind === 'head' ? (i % 5) * 0.045 - 0.05 : (i % 3) * 0.03 - 0.04
+      const orbit = kind === 'head' ? headR * (0.55 + (i % 4) * 0.22) : hand * (1.1 + (i % 3) * 0.55)
+      return {
+        a,
+        elev,
+        orbit,
+        size: kind === 'head' ? headR * (0.28 + (i % 4) * 0.1) : hand * (0.9 + (i % 3) * 0.35),
+        spin: 0.7 + (i % 5) * 0.35,
+        phase: i * 0.73,
+      }
+    })
+  }, [kind, headR, hand])
+  return (
+    <group ref={shellRef} visible>
+      {kind === 'head' && (
+        <>
+          <P s={S.sphere(headR * 0.55, 12, 10)} m={mats.void} line={false} shadow={false} sc={[1.05, 1.0, 1.1]} />
+          <P
+            s={S.box(headR * 0.12, headR * 0.045, headR * 0.03, headR * 0.012)}
+            m={mats.eye}
+            line={false}
+            shadow={false}
+            p={[headR * 0.26, headR * 0.04, headR * 0.55]}
+            r={[0.1, 0.12, -0.35]}
+          />
+          <P
+            s={S.box(headR * 0.12, headR * 0.045, headR * 0.03, headR * 0.012)}
+            m={mats.eye}
+            line={false}
+            shadow={false}
+            p={[-headR * 0.26, headR * 0.04, headR * 0.55]}
+            r={[0.1, -0.12, 0.35]}
+          />
+        </>
+      )}
+      {kind === 'hand' && (
+        <P s={S.sphere(hand * 1.15, 10, 8)} m={mats.void} line={false} shadow={false} p={[0, -hand * 0.6, 0]} sc={[1.2, 0.9, 1.1]} />
+      )}
+      {puffs.map((p, i) => (
+        <P
+          key={i}
+          s={S.sphere(p.size, 10, 8)}
+          m={i % 3 === 0 ? mats.mist : mats.fringe}
+          line={false}
+          shadow={false}
+          p={[Math.cos(p.a) * p.orbit, p.elev + (kind === 'hand' ? -hand * 0.7 : 0), Math.sin(p.a) * p.orbit * 0.75]}
+        />
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Kurogiri warp gates — same purple mist as his head/hands.
+ * Child 0 = tendril root→gate, 1–3 = entry mist disk, 4–6 = exit mist disk.
+ */
+function WarpGateTrail({
+  streakRef,
+  color,
+  color2,
+}: {
+  streakRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      mist: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false }),
+      fringe: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.32, depthWrite: false }),
+      void: new THREE.MeshBasicMaterial({ color: '#0a0610', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }),
+      core: new THREE.MeshBasicMaterial({ color: '#1a0c28', transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }),
+    }),
+    [color, color2],
+  )
+  const tendril = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => ({
+        t: i / 6,
+        size: 0.05 + (1 - Math.abs(i / 6 - 0.5) * 1.2) * 0.06,
+      })),
+    [],
+  )
+  const disk = useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2
+        return { a, r: 0.28 + (i % 3) * 0.08, size: 0.07 + (i % 4) * 0.035 }
+      }),
+    [],
+  )
+  return (
+    <group ref={streakRef} visible={false}>
+      {/* 0 — mist tendril that grows out of his body toward the gate. */}
+      <group>
+        {tendril.map((p, i) => (
+          <P
+            key={i}
+            s={S.sphere(p.size, 10, 8)}
+            m={i % 2 ? mats.mist : mats.fringe}
+            line={false}
+            shadow={false}
+            p={[0, 0.55, 0.12 + p.t * 0.55]}
+          />
+        ))}
+      </group>
+      {/* 1–3 — entry warp disk (in front). */}
+      {[0, 1, 2].map((ring) => (
+        <group key={`in-${ring}`} position={[0, 0.58, 0.72]}>
+          <P
+            s={S.cyl(0.32 - ring * 0.06, 0.32 - ring * 0.06, 0.02, 20)}
+            m={ring === 0 ? mats.void : mats.core}
+            line={false}
+            shadow={false}
+            r={[Math.PI / 2, 0, 0]}
+          />
+          {disk.map((d, i) => (
+            <P
+              key={i}
+              s={S.sphere(d.size * (1 - ring * 0.12), 8, 6)}
+              m={i % 2 ? mats.mist : mats.fringe}
+              line={false}
+              shadow={false}
+              p={[Math.cos(d.a) * d.r * (1 - ring * 0.15), Math.sin(d.a) * d.r * (1 - ring * 0.15), (i % 3) * 0.02]}
+            />
+          ))}
+        </group>
+      ))}
+      {/* 4–6 — exit warp disk (behind). */}
+      {[0, 1, 2].map((ring) => (
+        <group key={`out-${ring}`} position={[0, 0.58, -0.55]}>
+          <P
+            s={S.cyl(0.32 - ring * 0.06, 0.32 - ring * 0.06, 0.02, 20)}
+            m={ring === 0 ? mats.void : mats.core}
+            line={false}
+            shadow={false}
+            r={[Math.PI / 2, 0, 0]}
+          />
+          {disk.map((d, i) => (
+            <P
+              key={i}
+              s={S.sphere(d.size * (1 - ring * 0.12), 8, 6)}
+              m={i % 2 ? mats.mist : mats.fringe}
+              line={false}
+              shadow={false}
+              p={[Math.cos(d.a) * d.r * (1 - ring * 0.15), Math.sin(d.a) * d.r * (1 - ring * 0.15), (i % 3) * 0.02]}
+            />
+          ))}
         </group>
       ))}
     </group>
@@ -605,6 +784,128 @@ function FlameShell({
       <P s={S.cyl(rad * 0.55, rad * 0.45, len * 0.7, 10)} m={mats.core} line={false} shadow={false} p={[0, -len * 0.45, 0]} />
       {spikes(7, -len * 0.85, -len * 0.12, rad * 0.45, rad * 1.15)}
       <P s={S.cone(rad * 0.7, rad * 1.6, 6)} m={mats.tip} line={false} shadow={false} p={[0, -len * 0.05, 0]} r={[Math.PI, 0, 0]} />
+    </group>
+  )
+}
+
+/**
+ * Endeavor — Hellflame beard + mask. Static base volumes plus live tongues/embers
+ * that the fighter update loop flickers and licks like real fire.
+ * Children layout (index-driven animation):
+ *   0–1 beard mass, 2–3 brow pads, 4–15 mask/crown tongues, 16–23 beard tongues, 24–31 embers.
+ */
+function EndeavorHeadFlames({
+  shellRef,
+  headR,
+  color,
+  color2,
+}: {
+  shellRef: (g: THREE.Group | null) => void
+  headR: number
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      core: new THREE.MeshBasicMaterial({ color: '#fff3a8', transparent: true, opacity: 0.95, depthWrite: false }),
+      hot: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, depthWrite: false }),
+      mid: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.88, depthWrite: false }),
+      tip: new THREE.MeshBasicMaterial({ color: '#ff2a08', transparent: true, opacity: 0.85, depthWrite: false }),
+    }),
+    [color, color2],
+  )
+  const r = headR
+  const maskTongues = useMemo(
+    () =>
+      [
+        // Center crest rising between the eyes.
+        { x: 0, y: 0.35, z: 0.72, len: 0.85, rad: 0.14, rx: 0.15, ry: 0, rz: 0 },
+        { x: 0, y: 0.55, z: 0.55, len: 1.05, rad: 0.12, rx: -0.05, ry: 0, rz: 0 },
+        // Left brow / temple sweep.
+        { x: 0.38, y: 0.28, z: 0.68, len: 0.78, rad: 0.13, rx: 0.2, ry: 0.35, rz: -0.55 },
+        { x: 0.55, y: 0.45, z: 0.42, len: 0.95, rad: 0.11, rx: 0.1, ry: 0.55, rz: -0.7 },
+        { x: 0.48, y: 0.7, z: 0.2, len: 0.88, rad: 0.1, rx: -0.15, ry: 0.4, rz: -0.45 },
+        { x: 0.28, y: 0.85, z: 0.05, len: 0.72, rad: 0.09, rx: -0.25, ry: 0.2, rz: -0.25 },
+        // Right brow / temple sweep.
+        { x: -0.38, y: 0.28, z: 0.68, len: 0.78, rad: 0.13, rx: 0.2, ry: -0.35, rz: 0.55 },
+        { x: -0.55, y: 0.45, z: 0.42, len: 0.95, rad: 0.11, rx: 0.1, ry: -0.55, rz: 0.7 },
+        { x: -0.48, y: 0.7, z: 0.2, len: 0.88, rad: 0.1, rx: -0.15, ry: -0.4, rz: 0.45 },
+        { x: -0.28, y: 0.85, z: 0.05, len: 0.72, rad: 0.09, rx: -0.25, ry: -0.2, rz: 0.25 },
+        // Back / crown fill so the silhouette reads from behind.
+        { x: 0.22, y: 0.75, z: -0.35, len: 0.7, rad: 0.1, rx: -0.35, ry: 0.25, rz: -0.15 },
+        { x: -0.22, y: 0.75, z: -0.35, len: 0.7, rad: 0.1, rx: -0.35, ry: -0.25, rz: 0.15 },
+      ] as const,
+    [],
+  )
+  const beardTongues = useMemo(
+    () =>
+      [
+        { x: 0, y: -0.55, z: 0.7, len: 0.42, rad: 0.12, rx: 0.85, ry: 0, rz: 0 },
+        { x: 0.22, y: -0.48, z: 0.62, len: 0.38, rad: 0.1, rx: 0.7, ry: 0.35, rz: -0.35 },
+        { x: -0.22, y: -0.48, z: 0.62, len: 0.38, rad: 0.1, rx: 0.7, ry: -0.35, rz: 0.35 },
+        { x: 0.4, y: -0.35, z: 0.45, len: 0.36, rad: 0.09, rx: 0.55, ry: 0.7, rz: -0.55 },
+        { x: -0.4, y: -0.35, z: 0.45, len: 0.36, rad: 0.09, rx: 0.55, ry: -0.7, rz: 0.55 },
+        { x: 0.32, y: -0.42, z: 0.2, len: 0.34, rad: 0.08, rx: 0.6, ry: 0.9, rz: -0.4 },
+        { x: -0.32, y: -0.42, z: 0.2, len: 0.34, rad: 0.08, rx: 0.6, ry: -0.9, rz: 0.4 },
+        { x: 0, y: -0.5, z: 0.35, len: 0.4, rad: 0.11, rx: 0.95, ry: 0, rz: 0 },
+      ] as const,
+    [],
+  )
+  const embers = useMemo(
+    () =>
+      Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2
+        return {
+          x: Math.sin(a) * 0.55,
+          y: -0.15 + (i % 4) * 0.28,
+          z: Math.cos(a) * 0.45,
+          size: 0.05 + (i % 3) * 0.02,
+          spin: 1.4 + (i % 5) * 0.3,
+        }
+      }),
+    [],
+  )
+  return (
+    <group ref={shellRef}>
+      {/* Beard mass — solid Hellflame chin. */}
+      <P s={S.sphere(r * 0.42, 12, 10)} m={mats.mid} line={false} shadow={false} p={[0, -r * 0.42, r * 0.45]} sc={[1.35, 0.85, 1.15]} />
+      <P s={S.sphere(r * 0.28, 10, 8)} m={mats.core} line={false} shadow={false} p={[0, -r * 0.38, r * 0.55]} sc={[1.2, 0.75, 1.05]} />
+      {/* Brow pads — ignition points for the mask. */}
+      <P s={S.sphere(r * 0.22, 10, 8)} m={mats.hot} line={false} shadow={false} p={[r * 0.28, r * 0.05, r * 0.68]} sc={[1.3, 0.7, 0.85]} />
+      <P s={S.sphere(r * 0.22, 10, 8)} m={mats.hot} line={false} shadow={false} p={[-r * 0.28, r * 0.05, r * 0.68]} sc={[1.3, 0.7, 0.85]} />
+      {maskTongues.map((t, i) => (
+        <P
+          key={`m${i}`}
+          s={S.cone(r * t.rad, r * t.len, 5)}
+          m={i % 3 === 0 ? mats.core : i % 2 ? mats.hot : mats.tip}
+          line={false}
+          shadow={false}
+          p={[t.x * r, t.y * r, t.z * r]}
+          r={[t.rx, t.ry, t.rz]}
+        />
+      ))}
+      {beardTongues.map((t, i) => (
+        <P
+          key={`b${i}`}
+          s={S.cone(r * t.rad, r * t.len, 5)}
+          m={i % 2 ? mats.hot : mats.tip}
+          line={false}
+          shadow={false}
+          p={[t.x * r, t.y * r, t.z * r]}
+          r={[t.rx, t.ry, t.rz]}
+        />
+      ))}
+      {embers.map((e, i) => (
+        <P
+          key={`e${i}`}
+          s={S.shard(r * e.size * 0.45, r * e.size, r * e.size * 0.3)}
+          m={i % 2 ? mats.core : mats.hot}
+          line={false}
+          shadow={false}
+          p={[e.x * r, e.y * r, e.z * r]}
+          r={[0.4, e.spin, 0.3]}
+        />
+      ))}
     </group>
   )
 }
@@ -986,6 +1287,58 @@ function IceTrail({
             line={false}
             shadow={false}
             p={[((i % 3) - 1) * 0.04, s.spike * 0.45, -TRAIL_BOLT_LEN * 0.35]}
+          />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Pinky — corrosive acid puddles cast ahead of the skate-slide. */
+function AcidTrail({
+  streakRef,
+  color,
+  color2,
+}: {
+  streakRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      core: new THREE.MeshBasicMaterial({ color: '#e8ff90', transparent: true, opacity: 0.92, depthWrite: false }),
+      a: new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false }),
+      b: new THREE.MeshBasicMaterial({ color: color2, transparent: true, opacity: 0.7, depthWrite: false }),
+    }),
+    [color, color2],
+  )
+  const slots = useMemo(
+    () =>
+      Array.from({ length: TRAIL_SEGS * TRAIL_STRANDS }, (_, i) => ({
+        w: 0.14 + (i % 3) * 0.05,
+        h: 0.018 + (i % 2) * 0.01,
+        blob: 0.05 + (i % 4) * 0.02,
+      })),
+    [],
+  )
+  return (
+    <group ref={streakRef} visible={false}>
+      {slots.map((s, i) => (
+        <group key={i}>
+          <P
+            s={S.box(s.w, s.h, TRAIL_BOLT_LEN, 0.008)}
+            m={i % 3 === 0 ? mats.core : i % 2 ? mats.a : mats.b}
+            line={false}
+            shadow={false}
+            p={[0, 0, -TRAIL_BOLT_LEN * 0.5]}
+          />
+          <P
+            s={S.sphere(s.blob, 8, 6)}
+            m={i % 2 ? mats.a : mats.core}
+            line={false}
+            shadow={false}
+            p={[((i % 3) - 1) * 0.05, s.blob * 0.35, -TRAIL_BOLT_LEN * 0.3]}
+            sc={[1.35, 0.45, 1.1]}
           />
         </group>
       ))}
@@ -1474,6 +1827,45 @@ function HardenArmor({
   )
 }
 
+/** Anima — summoned ride bird under the pelvis; only visible while flying between pads. */
+function AnimaBirdMount({
+  mountRef,
+  color,
+  color2,
+}: {
+  mountRef: (g: THREE.Group | null) => void
+  color: string
+  color2: string
+}) {
+  const mats = useMemo(
+    () => ({
+      body: celMaterial(color),
+      wing: celMaterial(color2),
+      beak: celMaterial('#e8a028'),
+      eye: new THREE.MeshBasicMaterial({ color: '#1a1814' }),
+    }),
+    [color, color2],
+  )
+  return (
+    <group ref={mountRef} position={[0, -0.24, 0.02]} visible={false}>
+      <P s={S.sphere(0.11, 12, 10)} m={mats.body} p={[0, 0, 0]} sc={[1.35, 0.85, 1.55]} />
+      <P s={S.sphere(0.055, 10, 8)} m={mats.body} p={[0, 0.06, 0.16]} sc={[0.9, 0.85, 1.1]} />
+      <P s={S.cone(0.022, 0.06, 6)} m={mats.beak} p={[0, 0.07, 0.26]} r={[Math.PI / 2, 0, 0]} />
+      <P s={S.sphere(0.016, 6, 5)} m={mats.eye} line={false} p={[0.035, 0.1, 0.18]} />
+      <P s={S.sphere(0.016, 6, 5)} m={mats.eye} line={false} p={[-0.035, 0.1, 0.18]} />
+      <P s={S.cone(0.03, 0.1, 5)} m={mats.wing} p={[0, 0.02, -0.2]} r={[-0.9, 0, 0]} />
+      <group name="animaWingL">
+        <P s={S.panel(0.22, 0.1, 0.018, 0.04)} m={mats.wing} p={[0.14, 0.02, 0]} r={[0.15, 0.55, 0.35]} />
+        <P s={S.panel(0.16, 0.07, 0.012, 0.03)} m={mats.body} p={[0.2, 0.04, -0.02]} r={[0.25, 0.7, 0.2]} />
+      </group>
+      <group name="animaWingR">
+        <P s={S.panel(0.22, 0.1, 0.018, 0.04)} m={mats.wing} p={[-0.14, 0.02, 0]} r={[0.15, -0.55, -0.35]} />
+        <P s={S.panel(0.16, 0.07, 0.012, 0.03)} m={mats.body} p={[-0.2, 0.04, -0.02]} r={[0.25, -0.7, -0.2]} />
+      </group>
+    </group>
+  )
+}
+
 /** Iron filings that snap into straight-line grid patterns around the railgun. */
 function MagFilings({
   fieldRef,
@@ -1572,6 +1964,8 @@ export function HeroFighter({
   const hasPhaseForm = design.extras.includes('lemillionSuit')
   /** Finral — silver spatial gates while hopping the L. */
   const hasPortalForm = design.extras.includes('finralSuit')
+  /** Kurogiri — purple warp mist body + mist gates that extend from him. */
+  const hasWarpForm = design.extras.includes('kurogiriSuit')
   /** Yuno — floating wind grimoire with idle page flips. */
   const hasYunoGrimoire = design.extras.includes('yunoSuit')
   /** Minato — Flying Thunder God kunai marks while hopping the L. */
@@ -1588,6 +1982,10 @@ export function HeroFighter({
   const hasFullCowl = design.extras.includes('dekuAwaken')
   /** Todoroki — ice sheet trail under a sliding run. */
   const hasIceTrail = design.extras.includes('todorokiSuit')
+  /** Pinky — acid slick trail under a corrosive skate-slide. */
+  const hasAcidTrail = design.extras.includes('pinkySuit')
+  /** Ground cast trail (ice or acid) — shares the Todoroki sample path. */
+  const hasGroundTrail = hasIceTrail || hasAcidTrail
   /** Todoroki — left (fire) side engulfs during flame rush. */
   const hasHalfHot = design.extras.includes('todorokiSuit')
   /** Gohan SSJ2 — blue lightning crackle around the body. */
@@ -1604,6 +2002,8 @@ export function HeroFighter({
   const hasJackpot = design.extras.includes('hakariJackpot')
   /** Might Guy Eighth Gate — crimson flame aura swirling around the body. */
   const hasEightGates = design.extras.includes('eightGates')
+  /** Endeavor — live Hellflame beard + mask on the head. */
+  const hasEndeavorFlames = design.extras.includes('endeavorSuit')
   /** All Might — steam bursts when True Form ↔ muscle form remounts. */
   const hasMightSteam =
     design.extras.includes('allMightTruth') || design.extras.includes('allMightSuit')
@@ -1617,6 +2017,8 @@ export function HeroFighter({
   const hasLimitless = design.extras.includes('gojoSuit')
   /** Bakugo — palm explosions that fire behind the hands on blast-jumps. */
   const hasBakugoBlast = design.extras.includes('bakugoSuit')
+  /** Anima — summoned bird mount underfoot while flying between pads. */
+  const hasAnimaMount = design.extras.includes('animaSuit')
 
   const bones = useRef<RigBones>({})
   const pose = useRef(restPose())
@@ -1659,7 +2061,10 @@ export function HeroFighter({
   })
   const phaseGhosts = useRef<THREE.Group | null>(null)
   const portalGates = useRef<THREE.Group | null>(null)
+  const warpGates = useRef<THREE.Group | null>(null)
+  const warpMist = useRef<Record<string, THREE.Group | null>>({})
   const yunoPages = useRef<THREE.Group | null>(null)
+  const animaBird = useRef<THREE.Group | null>(null)
   const kunaiMarks = useRef<THREE.Group | null>(null)
   const clapRings = useRef<THREE.Group | null>(null)
   const mobForms = useRef<{ purple: THREE.Mesh[]; black: THREE.Mesh[] } | null>(null)
@@ -1671,6 +2076,7 @@ export function HeroFighter({
   const mugetsuAura = useRef<THREE.Group | null>(null)
   const jackpotAura = useRef<THREE.Group | null>(null)
   const gatesAura = useRef<THREE.Group | null>(null)
+  const endeavorFlames = useRef<THREE.Group | null>(null)
   const mightSteam = useRef<THREE.Group | null>(null)
   const hardenShells = useRef<Record<string, THREE.Group | null>>({})
   const chainsawShells = useRef<Record<string, THREE.Group | null>>({})
@@ -1688,6 +2094,9 @@ export function HeroFighter({
   }
   const setFlame = (key: string) => (g: THREE.Group | null) => {
     flameShells.current[key] = g
+  }
+  const setWarpMist = (key: string) => (g: THREE.Group | null) => {
+    warpMist.current[key] = g
   }
 
   const bone = (name: BoneName) => (g: THREE.Group | null) => {
@@ -1809,6 +2218,8 @@ export function HeroFighter({
             ...Object.values(flameShells.current),
             phaseGhosts.current,
             portalGates.current,
+            warpGates.current,
+            ...Object.values(warpMist.current),
             yunoPages.current,
             kunaiMarks.current,
             clapRings.current,
@@ -1821,6 +2232,7 @@ export function HeroFighter({
             hollowMask.current,
             mightSteam.current,
             gatesAura.current,
+            endeavorFlames.current,
             ...Object.values(hardenShells.current),
             ...Object.values(chainsawShells.current),
           ]) {
@@ -1872,7 +2284,7 @@ export function HeroFighter({
           b.propHand.scale.setScalar(Math.max(0.2, dr.yeoui))
         }
 
-        if ((hasVoltForm || hasVectorForm || hasZenitsuTrail || hasFullCowl || hasIceTrail) && streaks.current) {
+        if ((hasVoltForm || hasVectorForm || hasZenitsuTrail || hasFullCowl || hasGroundTrail) && streaks.current) {
           const trailing =
             (anim.kind === 'move' && speed > 0.12) ||
             (hasZenitsuTrail && anim.kind === 'attack' && anim.t > 0.05 && anim.t < 0.85) ||
@@ -1894,13 +2306,13 @@ export function HeroFighter({
             frame.current.getWorldScale(_trailScale)
             wScale = Math.max(0.05, Math.abs(_trailScale.x))
           }
-          const minStep = TRAIL_LOCAL_STEP * wScale * (hasIceTrail ? 0.75 : 1)
+          const minStep = TRAIL_LOCAL_STEP * wScale * (hasGroundTrail ? 0.75 : 1)
           const maxLen = TRAIL_LOCAL_LEN * wScale
 
           if (trailing && body) {
             body.getWorldPosition(_trailWorld)
-            if (hasIceTrail && frame.current) {
-              // Cast ice ahead of him — sample a point in front of his facing, not underfoot.
+            if (hasGroundTrail && frame.current) {
+              // Cast ice/acid ahead — sample a point in front of facing, not underfoot.
               frame.current.getWorldQuaternion(_trailQuat)
               _trailDir.set(0, 0, 1).applyQuaternion(_trailQuat)
               _trailDir.y = 0
@@ -1946,13 +2358,13 @@ export function HeroFighter({
             const isShadow = hasVectorForm
             const isLightning = hasVoltForm || hasZenitsuTrail || hasFullCowl
             const tick = Math.floor(
-              dr.t * (isShadow ? 14 : hasZenitsuTrail || hasFullCowl || hasIceTrail ? 42 : 38),
+              dr.t * (isShadow ? 14 : hasZenitsuTrail || hasFullCowl || hasGroundTrail ? 42 : 38),
             )
             const nSeg = Math.min(TRAIL_SEGS, path.count - 1)
             // Hide past ~1 board-cell of wake (scaled for Characters vs board).
             let runLen = 0
             let maxK = nSeg
-            if (!hasIceTrail) {
+            if (!hasGroundTrail) {
               for (let k = 0; k < nSeg; k++) {
                 const idxA = (path.head - k + TRAIL_SAMPLES) % TRAIL_SAMPLES
                 const idxB = (path.head - k - 1 + TRAIL_SAMPLES) % TRAIL_SAMPLES
@@ -1967,7 +2379,7 @@ export function HeroFighter({
               for (let k = 0; k < TRAIL_SEGS; k++) {
                 const c = g.children[s * TRAIL_SEGS + k]
                 if (!c) continue
-                if (k >= nSeg || (!hasIceTrail && k >= maxK)) {
+                if (k >= nSeg || (!hasGroundTrail && k >= maxK)) {
                   c.visible = false
                   continue
                 }
@@ -2002,7 +2414,7 @@ export function HeroFighter({
                   TRAIL_Y0 +
                   (TRAIL_STRANDS <= 1 ? TRAIL_HEIGHT * 0.5 : (s / (TRAIL_STRANDS - 1)) * TRAIL_HEIGHT)
 
-                if (hasIceTrail) {
+                if (hasGroundTrail) {
                   const lane = (s - (TRAIL_STRANDS - 1) * 0.5) * 0.07 + (r1 - 0.5) * 0.06
                   c.position.copy(_trailMid).addScaledVector(_trailSide, lane)
                 } else if (isShadow) {
@@ -2024,13 +2436,15 @@ export function HeroFighter({
                   c.rotateZ((r1 - 0.5) * 0.35)
                 }
 
-                if (hasIceTrail) {
+                if (hasGroundTrail) {
                   const iceFade = Math.max(0.12, 1 - k / Math.max(1, nSeg)) * dr.trail
                   const rad = (0.7 + r1 * 0.45) * 1.7 * (0.7 + iceFade * 0.55)
                   const erupt = Math.max(0.35, 1.35 - k * 0.045) * (0.85 + iceFade * 0.4)
+                  // Acid reads flatter/gooier; ice keeps the taller erupt scale.
+                  const yScale = hasAcidTrail ? Math.max(0.45, erupt * 0.55) : erupt
                   c.scale.set(
-                    rad * 1.45,
-                    erupt,
+                    rad * (hasAcidTrail ? 1.65 : 1.45),
+                    yScale,
                     Math.max(0.14, (dist / TRAIL_BOLT_LEN) * (0.92 + r2 * 0.2) * iceFade * 1.1),
                   )
                   c.visible = true
@@ -2123,6 +2537,84 @@ export function HeroFighter({
               c.scale.setScalar(fade * (1.05 + ring * 0.08) * (0.7 + gate * 0.45))
               c.visible = true
             })
+          }
+        }
+
+        if (hasWarpForm) {
+          // Live mist drift on head / hands — sells the non-solid warp body.
+          for (const g of Object.values(warpMist.current)) {
+            if (!g) continue
+            g.visible = cur.vis > 0.05
+            g.children.forEach((c, i) => {
+              // Skip void core / eye plates (first few solid markers); swirl the puff cloud.
+              if (i < 3 && g.children.length > 8) return
+              const base = (c.userData.base as THREE.Vector3 | undefined) ?? (c.userData.base = c.position.clone())
+              const wob = dr.t * (1.4 + (i % 5) * 0.35) + seed + i
+              c.position.set(
+                base.x + Math.sin(wob) * 0.014,
+                base.y + Math.cos(wob * 1.15) * 0.012,
+                base.z + Math.sin(wob * 0.9) * 0.01,
+              )
+              c.scale.setScalar(0.9 + Math.sin(wob * 1.3) * 0.12)
+            })
+          }
+          if (warpGates.current) {
+            const gating =
+              (anim.kind === 'move' && (speed > 0.08 || cur.prop > 0.2 || cur.vis < 0.95)) ||
+              (anim.kind === 'attack' && ((anim.t > 0.1 && anim.t < 0.7) || cur.prop > 0.2)) ||
+              ((anim.kind === 'idle' || anim.kind === 'ready') && cur.prop > 0.12)
+            dr.trail += ((gating ? 1 : 0) - dr.trail) * (1 - Math.exp(-11 * Math.min(dt, 0.1)))
+            const body = b.body
+            const g = warpGates.current
+            if (body) {
+              g.position.copy(body.position)
+              g.rotation.copy(body.rotation)
+            }
+            const on = dr.trail > 0.05
+            g.visible = on
+            if (on) {
+              const gate = Math.max(dr.trail, cur.prop)
+              const moving = anim.kind === 'move'
+              const appearHalf = moving && 'p' in anim ? anim.p >= 0.5 : false
+              g.children.forEach((c, i) => {
+                if (i === 0) {
+                  // Tendril always visible when casting — grows out of the torso toward the gate.
+                  c.visible = true
+                  c.scale.setScalar(0.55 + gate * 0.7)
+                  c.position.set(-0.08 + Math.sin(dr.t * 3) * 0.01, 0.02, 0.02)
+                  c.children.forEach((puff, pi) => {
+                    const u = pi / Math.max(1, c.children.length - 1)
+                    const reach = 0.12 + gate * 0.58
+                    puff.position.set(
+                      Math.sin(dr.t * 4 + pi) * 0.025 * (1 - u),
+                      0.52 + Math.sin(dr.t * 5 + pi * 0.7) * 0.03,
+                      0.08 + u * reach,
+                    )
+                    puff.scale.setScalar((0.7 + gate * 0.55) * (1 - u * 0.25 + Math.sin(dr.t * 6 + pi) * 0.08))
+                  })
+                  return
+                }
+                const isExit = i >= 4
+                const ring = (i - 1) % 3
+                const show = !moving ? !isExit : appearHalf ? isExit : !isExit
+                if (!show) {
+                  c.visible = false
+                  return
+                }
+                const fade = Math.max(0.4, 1 - ring * 0.12) * gate
+                const spin = dr.t * (1.3 + ring * 0.2) + seed + (isExit ? 2 : 0)
+                const z = moving ? (isExit ? -0.5 : 0.7) : 0.72
+                c.position.set(Math.sin(spin) * 0.02, Math.sin(dr.t * 3.5 + ring) * 0.025, z)
+                c.rotation.set(0, 0, Math.sin(spin) * 0.12)
+                c.scale.setScalar(fade * (1.0 + ring * 0.06) * (0.65 + gate * 0.5))
+                c.visible = true
+                // Drift mist blobs on the disk rim.
+                c.children.forEach((puff, pi) => {
+                  if (pi === 0) return
+                  puff.position.z = Math.sin(dr.t * 5 + pi + ring) * 0.025
+                })
+              })
+            }
           }
         }
 
@@ -2669,6 +3161,101 @@ export function HeroFighter({
           }
         }
 
+        if (hasEndeavorFlames && endeavorFlames.current) {
+          // Hellflame beard + mask — always roaring while he's alive on the board.
+          const g = endeavorFlames.current
+          const r = pr.headR
+          g.visible = true
+          const breath = 1 + Math.sin(dr.t * 18 + seed) * 0.04
+          g.scale.setScalar(breath)
+          const tick = Math.floor(dr.t * 22 + seed * 5)
+          // Rest poses for tongues/embers (must match EndeavorHeadFlames layout).
+          const maskRest = [
+            [0, 0.35, 0.72, 0.15, 0, 0],
+            [0, 0.55, 0.55, -0.05, 0, 0],
+            [0.38, 0.28, 0.68, 0.2, 0.35, -0.55],
+            [0.55, 0.45, 0.42, 0.1, 0.55, -0.7],
+            [0.48, 0.7, 0.2, -0.15, 0.4, -0.45],
+            [0.28, 0.85, 0.05, -0.25, 0.2, -0.25],
+            [-0.38, 0.28, 0.68, 0.2, -0.35, 0.55],
+            [-0.55, 0.45, 0.42, 0.1, -0.55, 0.7],
+            [-0.48, 0.7, 0.2, -0.15, -0.4, 0.45],
+            [-0.28, 0.85, 0.05, -0.25, -0.2, 0.25],
+            [0.22, 0.75, -0.35, -0.35, 0.25, -0.15],
+            [-0.22, 0.75, -0.35, -0.35, -0.25, 0.15],
+          ] as const
+          const beardRest = [
+            [0, -0.55, 0.7, 0.85, 0, 0],
+            [0.22, -0.48, 0.62, 0.7, 0.35, -0.35],
+            [-0.22, -0.48, 0.62, 0.7, -0.35, 0.35],
+            [0.4, -0.35, 0.45, 0.55, 0.7, -0.55],
+            [-0.4, -0.35, 0.45, 0.55, -0.7, 0.55],
+            [0.32, -0.42, 0.2, 0.6, 0.9, -0.4],
+            [-0.32, -0.42, 0.2, 0.6, -0.9, 0.4],
+            [0, -0.5, 0.35, 0.95, 0, 0],
+          ] as const
+          const baseSc = [
+            [1.35, 0.85, 1.15],
+            [1.2, 0.75, 1.05],
+            [1.3, 0.7, 0.85],
+            [1.3, 0.7, 0.85],
+          ] as const
+          g.children.forEach((c, i) => {
+            if (i < 4) {
+              // Beard mass + brow pads breathe / pulse (keep flattened silhouette).
+              const pulse = 0.94 + Math.abs(Math.sin(dr.t * 12 + i * 1.7 + seed)) * 0.14
+              const sc = baseSc[i]!
+              c.scale.set(sc[0] * pulse, sc[1] * pulse, sc[2] * pulse)
+              c.visible = true
+              return
+            }
+            if (i < 16) {
+              // Mask / crown tongues — lick upward, sway, occasional pop-out.
+              const fi = i - 4
+              const rest = maskRest[fi]!
+              const sway = Math.sin(dr.t * (9 + (fi % 4) * 1.4) + fi + seed) * 0.06
+              const rise = Math.abs(Math.sin(dr.t * (11 + fi * 0.7) + fi)) * 0.08
+              const side = Math.cos(dr.t * (7.5 + (fi % 3)) + fi * 1.3) * 0.045
+              c.position.set((rest[0] + side) * r, (rest[1] + rise) * r, (rest[2] + sway * 0.4) * r)
+              c.rotation.set(
+                rest[3] + Math.sin(dr.t * 10 + fi) * 0.18,
+                rest[4] + sway * 2.2,
+                rest[5] + Math.cos(dr.t * 8 + fi) * 0.15,
+              )
+              const lick = 0.78 + Math.abs(Math.sin(dr.t * 16 + fi * 1.1)) * 0.55
+              c.scale.set(lick * 0.82, lick, lick * 0.75)
+              c.visible = ((tick + fi) % 5) !== 0
+              return
+            }
+            if (i < 24) {
+              // Beard tongues — shorter, denser flicker around the jaw.
+              const bi = i - 16
+              const rest = beardRest[bi]!
+              const sway = Math.sin(dr.t * (13 + (bi % 3) * 1.6) + bi + seed) * 0.05
+              const drip = Math.abs(Math.sin(dr.t * (14 + bi * 0.9) + bi)) * 0.05
+              c.position.set((rest[0] + sway) * r, (rest[1] - drip) * r, (rest[2] + sway * 0.3) * r)
+              c.rotation.set(
+                rest[3] + Math.sin(dr.t * 12 + bi) * 0.22,
+                rest[4] + sway * 1.8,
+                rest[5] + Math.cos(dr.t * 9 + bi) * 0.18,
+              )
+              const lick = 0.8 + Math.abs(Math.sin(dr.t * 18 + bi * 1.3)) * 0.5
+              c.scale.set(lick * 0.88, lick, lick * 0.8)
+              c.visible = ((tick + bi * 2) % 4) !== 0
+              return
+            }
+            // Embers drift up and around the head, popping in/out.
+            const ei = i - 24
+            const a = (ei / 8) * Math.PI * 2 + dr.t * (1.4 + (ei % 5) * 0.3)
+            const orbit = 0.5 + (ei % 3) * 0.08 + Math.sin(dr.t * 3 + ei) * 0.04
+            const elev = -0.2 + ((dr.t * (1.6 + (ei % 3) * 0.35) + ei * 0.4) % 1) * 1.15
+            c.position.set(Math.sin(a) * orbit * r, elev * r, Math.cos(a) * orbit * 0.75 * r)
+            c.rotation.set(0.5, a + dr.t * 4, 0.4)
+            c.scale.setScalar(0.65 + Math.abs(Math.sin(dr.t * 14 + ei)) * 0.7)
+            c.visible = ((tick + ei) % 3) !== 0
+          })
+        }
+
         if (hasHalfHot) {
           // Left half of the body becomes solid flame for the whole fire rush.
           const burning = anim.kind === 'attack' && anim.t > 0.05 && anim.t < 1.3
@@ -2744,6 +3331,21 @@ export function HeroFighter({
               const s = crush * (0.7 + (i % 3) * 0.15)
               c.scale.setScalar(s)
             })
+          }
+        }
+
+        if (hasAnimaMount && animaBird.current) {
+          // Ride bird only while flying — idle keeps the chest button clear of fauna.
+          const flying = anim.kind === 'move'
+          const g = animaBird.current
+          g.visible = flying
+          if (flying) {
+            const flap = cur.flap
+            const wl = g.getObjectByName('animaWingL')
+            const wr = g.getObjectByName('animaWingR')
+            if (wl) wl.rotation.z = flap * 0.55
+            if (wr) wr.rotation.z = -flap * 0.55
+            g.position.y = -0.24 + Math.sin(dr.t * 4.4) * 0.02
           }
         }
 
@@ -2827,7 +3429,7 @@ export function HeroFighter({
     return () => {
       apiRef.current = null
     }
-  }, [apiRef, design, pr, seed, hasEngines, hasTremor, hasMag, hasVoltForm, hasZenitsuTrail, hasVectorForm, hasPhaseForm, hasPortalForm, hasYunoGrimoire, hasKunaiForm, hasClapForm, hasRiotHarden, hasChainsawForm, hasHollowMask, hasMobForm, hasFullCowl, hasIceTrail, hasHalfHot, hasSsj2, hasKilluaSpark, hasSpiritDive, hasZenitsuThunder, hasMugetsu, hasJackpot, hasEightGates, hasMightSteam, hasGaaraSand, hasShukaku, hasYeoui, hasLimitless, hasBakugoBlast])
+  }, [apiRef, design, pr, seed, hasEngines, hasTremor, hasMag, hasVoltForm, hasZenitsuTrail, hasVectorForm, hasPhaseForm, hasPortalForm, hasWarpForm, hasYunoGrimoire, hasKunaiForm, hasClapForm, hasRiotHarden, hasChainsawForm, hasHollowMask, hasMobForm, hasFullCowl, hasIceTrail, hasAcidTrail, hasGroundTrail, hasHalfHot, hasSsj2, hasKilluaSpark, hasSpiritDive, hasZenitsuThunder, hasMugetsu, hasJackpot, hasEightGates, hasEndeavorFlames, hasMightSteam, hasGaaraSand, hasShukaku, hasYeoui, hasLimitless, hasBakugoBlast])
 
   const limb = (side: 'l' | 'r') => {
     const s = side === 'l' ? 1 : -1
@@ -2889,6 +3491,9 @@ export function HeroFighter({
           <group ref={bone(`${side}Hand`)} position={[0, -pr.forearm, 0]}>
             {hasRiotHarden && <HardenArmor shellRef={setHarden(`${side}Hand`)} kind="hand" side={s} limb={pr.limb} />}
             {fire && <FlameShell shellRef={setFlame('lHand')} kind="hand" limb={pr.limb} />}
+            {hasWarpForm && (
+              <WarpMistShell shellRef={setWarpMist(`${side}Hand`)} kind="hand" hand={pr.hand} />
+            )}
             {hasLimitless && (
               <LimitlessBomb
                 bombRef={(g) => {
@@ -2945,6 +3550,15 @@ export function HeroFighter({
           }}
         />
       )}
+      {hasAcidTrail && (
+        <AcidTrail
+          color={design.palette.glow ?? '#b8ff40'}
+          color2="#e8ff90"
+          streakRef={(g) => {
+            streaks.current = g
+          }}
+        />
+      )}
       {hasPhaseForm && (
         <PhaseTrail
           color={design.palette.accent}
@@ -2960,6 +3574,15 @@ export function HeroFighter({
           color2={design.palette.metal ?? '#c4ccd6'}
           streakRef={(g) => {
             portalGates.current = g
+          }}
+        />
+      )}
+      {hasWarpForm && (
+        <WarpGateTrail
+          color={design.palette.glow ?? '#5a2e78'}
+          color2="#6a3888"
+          streakRef={(g) => {
+            warpGates.current = g
           }}
         />
       )}
@@ -3091,6 +3714,15 @@ export function HeroFighter({
               }}
             />
           )}
+          {hasAnimaMount && (
+            <AnimaBirdMount
+              mountRef={(g) => {
+                animaBird.current = g
+              }}
+              color={design.palette.accent}
+              color2={design.palette.secondary}
+            />
+          )}
           {hasMag && (
             <MagFilings
               color={design.palette.glow ?? design.palette.accent}
@@ -3136,6 +3768,17 @@ export function HeroFighter({
                   {/* Head mesh is baked with slotOffset y = headR*0.95 — face overlays live here. */}
                   <group position={[0, pr.headR * 0.95, 0]}>
                     {hasHalfHot && <FlameShell shellRef={setFlame('head')} kind="head" headR={pr.headR} />}
+                    {hasEndeavorFlames && (
+                      <EndeavorHeadFlames
+                        shellRef={(g) => {
+                          endeavorFlames.current = g
+                        }}
+                        headR={pr.headR}
+                        color={design.palette.glow ?? '#ff5820'}
+                        color2={design.palette.accent ?? '#e84818'}
+                      />
+                    )}
+                    {hasWarpForm && <WarpMistShell shellRef={setWarpMist('head')} kind="head" headR={pr.headR} />}
                     {hasHollowMask && (
                       <HollowMask
                         shellRef={(g) => {
